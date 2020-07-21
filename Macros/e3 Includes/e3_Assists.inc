@@ -291,8 +291,8 @@ SUB CombatAbilities
   }
 
   /for i 1 to ${Abilities2D.Size[1]}
-    |skip the ability if current aggro is less than defined PctAggro or the taret is not a Named
-    /if (${Abilities2D[${i},${iPctAggro}]} > 0 && (${Me.PctAggro} < ${Abilities2D[${i},${iPctAggro}]} || !${Target.Named})) {
+    |skip the ability if current aggro is less than defined PctAggro
+    /if (${Abilities2D[${i},${iPctAggro}]} > 0 && (${Me.PctAggro} < ${Abilities2D[${i},${iPctAggro}]})) {
       /if (${Debug} || ${Debug_Assists}) /echo skipping ${Abilities2D[${i},${iCastName}]}, current aggro ${Me.PctAggro} defined ${Abilities2D[${i},${iPctAggro}]} named ${Target.Named}
       /goto :skipAbility
     }
@@ -334,7 +334,10 @@ SUB CombatAbilities
 #event EnrageOn "#1# has become ENRAGED."
 SUB Event_EnrageOn(line, RageOn)
   /if (${Target.ID} == ${Spawn[${RageOn}].ID}) /varset isEnraged TRUE
-  /if (${Me.Pet.ID}) /pet back off
+  /if (${Me.Pet.ID}) {
+    /pet back off
+    /echo ${Me.Name} is backing off pet for enrage
+  } 
 /RETURN
 |------------------------------------------------|
 |- Turns attack back on, after enrage is over.	-|
@@ -463,7 +466,20 @@ SUB check_Nukes
         }
       }
 
+      | fix for using Ifs in Nukes, retarget to the AssistTarget before checking Ifs
+      /if (${Target.ID} != ${AssistTarget}) /call TrueTarget ${AssistTarget}
+	  
       /call check_Ready "Nukes2D" ${castIndex}
+	  
+      /if (${Debug} || ${Debug_Assists}) {
+        /echo Checking Nuke ${Nukes2D[${castIndex},${iIfs}]}
+        /echo Mana ${check_Mana["Nukes2D",${castIndex}]}
+        /echo Target  ${AssistTarget}
+        /echo Cast index ${castIndex}
+        /echo Check Distance ${check_Distance[${AssistTarget},${Nukes2D[${s},${iMyRange}]}]}
+        /echo Range ${Nukes2D[${s},${iMyRange}]}
+      }
+	  
       /if (${c_Ready} && ${Nukes2D[${castIndex},${iIfs}]}) {
         /if (${check_Mana["Nukes2D",${castIndex}]}) {
           /if (${check_Distance[${AssistTarget},${Nukes2D[${s},${iMyRange}]}]}) {
@@ -580,7 +596,7 @@ SUB cast_longTermSpells(int spellTarget, string ArrayName)
     |/if (${Debug} || ${Debug_Assists}) /echo castretun ${castReturn} res ${Cast.Result}
     |/if (${Debug} || ${Debug_Assists}) /echo maxtries ${${ArrayName}[${i},${iMaxTries}]} rescount ${resistCount} ${${resistCount}}
     |/if (${Debug} || ${Debug_Assists}) /echo castname ${${ArrayName}[${i},${iCastName}]} stored ${Cast.Stored.Name} return ${castReturn}
-    | If the spell was resisted.
+    | If the spell was resisted.	
     /if (${Cast.Stored.Name.Equal[${${ArrayName}[${s},${iSpellName}]}]} && ${castReturn.Equal[CAST_RESIST]}) {
       /if (!${Defined[${resistCount}]}) {
         /declare ${resistCount} int outer 1
@@ -592,13 +608,13 @@ SUB cast_longTermSpells(int spellTarget, string ArrayName)
         }
       }
     | If the spell did not take hold.
-    } else /if (${Cast.Stored.Name.Equal[${${ArrayName}[${s},${iSpellName}]}]} && ${castReturn.Equal[CAST_TAKEHOLD]}) {
+    } else /if (${Cast.Stored.Name.Equal[${${ArrayName}[${s},${iSpellName}]}]} && ${castReturn.Equal[CAST_TAKEHOLD]} && !${Cast.Stored.Name.Equal[Mesmerize]}) {
       /if (${Defined[${resistCount}]}) {
         /deletevar ${resistCount}
       }
       /call createTimer "${spellTimer}" "3m"
       | If the target was immune.
-    } else /if (${Cast.Stored.Name.Equal[${${ArrayName}[${s},${iSpellName}]}]} && ${castReturn.Equal[CAST_IMMUNE]}) {
+    } else /if (${Cast.Stored.Name.Equal[${${ArrayName}[${s},${iSpellName}]}]} && ${castReturn.Equal[CAST_IMMUNE]} && !${Cast.Stored.Name.Equal[Mesmerize]}) {
       /if (${Defined[${resistCount}]}) {
         /deletevar ${resistCount}
       }
@@ -727,13 +743,17 @@ SUB Debuffs_OnCommand
 SUB Event_DoTsOn(line, ChatSender, MobID)
 /if (${Debug} || ${Debug_Assists}) /echo |- event_DoTsOn ==>
   /if (${Defined[Command_DoTs2D]}) {
-    /if (!${checkEventArgs[${ChatSender},${line},UZR,${MobID}]}) /return
+    /if (!${checkEventArgs[${ChatSender},${line},UZR,${MobID}]}) {
+      /echo event args failed
+      /return
+    }
       /varset MobID ${c_eventArgData}
       /if (${Spawn[id ${MobID}].Type.Equal[Corpse]} || !${Select[${Spawn[id ${MobID}].Type},${AcceptableTargetTypes}]}) {
         /echo Unacceptable Target ${Spawn[id ${MobID}].Type}
       } else {
         | Check range to the DoTs target.
         /if (${Spawn[id ${MobID}].Distance} > ${MaxAssistDistance}) {
+			    /echo ${Spawn[${MobID}].CleanName} is too far away
           /docommand ${ChatToggle} ${Spawn[${MobID}].CleanName} is too far away.
         } else {
           | Check if the DoT_Targets array is already defined
@@ -827,6 +847,7 @@ SUB Event_AEs(line, ChatSender, aeType, aeToggle)
     }
     /if (${aeType.Equal[Target]} || ${aeType.Equal[All]}) {
       /varset use_TargetAE TRUE
+	  /if (${Debug} || ${Debug_Assists}) /echo use_TargetAE = TRUE
       /varset aeTarget ${Spawn[=${ChatSender}].ID}
       /if (${Me.Class.ShortName.Equal[RNG]}) {
         /if (${swapTgtAeRanged}) /call swapToRangedSet TRUE
@@ -882,6 +903,7 @@ SUB check_AE
   /if (${use_TargetAE} && ${Defined[TargetAE_Spells2D]}) {
     |if i have an assist target, use that as ae target, else use aeTarget
     /declare useBestTarget int local
+	/if (${Debug} || ${Debug_Assists}) /echo AssistTarget set = ${Bool[${AssistTarget}]}
     /if (${Bool[${AssistTarget}]}) {
       /varset useBestTarget ${AssistTarget}
     } else {
@@ -891,6 +913,8 @@ SUB check_AE
       /call check_Ready "TargetAE_Spells2D" ${s}
       /if (${c_Ready} && ${TargetAE_Spells2D[${s},${iIfs}]}) {
         /if (${check_Mana["TargetAE_Spells2D",${s}]}) {
+		  /if (${Debug} || ${Debug_Assists}) /echo Distance Check = ${check_Distance[${useBestTarget},${TargetAE_Spells2D[${s},${iMyRange}]}]}
+		  /if (${Debug} || ${Debug_Assists}) /echo Range = ${TargetAE_Spells2D[${s},${iMyRange}]}
           /if (${check_Distance[${useBestTarget},${TargetAE_Spells2D[${s},${iMyRange}]}]}) {
             /squelch /face fast id ${useBestTarget}
             /call e3_Cast ${useBestTarget} "TargetAE_Spells2D" "${s}"
@@ -940,6 +964,7 @@ SUB event_SwarmPets(line, ChatSender, int swarmTarget)
         /if (${c_Ready} && ${swarmPets2D[${i},${iIfs}]}) {
           /if (${check_Distance[${swarmTarget},${swarmPets2D[1,${iMyRange}]}]}) {
 				    /call e3_Cast ${swarmTarget} "swarmPets2D" "${i}"
+					  /delay 2s
           }
         }
 			/next i
@@ -1323,18 +1348,19 @@ SUB assist_SpellArrays
   /call IniToArrayV "${Character_Ini},Burn,Full Burn#"                  FULLBurns
 
   /if (${Me.Class.ShortName.Equal[MAG]}) {
-    /declare summonMoltenOrb bool outer FALSE
+	/if (!${Defined[summonMoltenOrb]}) /declare summonMoltenOrb bool outer FALSE
     /if (${Bool[${Me.AltAbility[Servant of Ro]}]})        /call BuildArray "swarmPets" "Servant of Ro"
     /if (${Bool[${Me.AltAbility[Host of the Elements]}]}) /call BuildArray "swarmPets" "Host of the Elements"
     /if (${Defined[MyNukes]}) {
       /declare i int local
       /for i 1 to ${MyNukes.Size}
-        /if (${MyNukes[${i}].Find[Molten Orb]}) /varset summonMoltenOrb TRUE
+        /if (${MyNukes[${i}].Find[Lava Orb]}) /varset summonMoltenOrb TRUE
       /next i
     }
   } else /if (${Me.Class.ShortName.Equal[NEC]}) {
     /if (${Bool[${Me.AltAbility[Swarm of Decay]}]}) /call BuildArray "swarmPets" "Swarm of Decay"
     /if (${Bool[${Me.AltAbility[Wake the Dead]}]})  /call BuildArray "swarmPets" "Wake the Dead"
+	/if (${Bool[${Me.AltAbility[Wake the Dead]}]})  /call BuildArray "swarmPets" "Rise of Bones"
   } else /if (${Me.Class.ShortName.Equal[SHM]}) {
     /if (${Bool[${Me.AltAbility[Spirit Call]}]})    /call BuildArray "swarmPets" "Spirit Call"
   } else /if (${Me.Class.ShortName.Equal[WIZ]}) {
@@ -1343,6 +1369,21 @@ SUB assist_SpellArrays
     /if (${Bool[${Me.AltAbility[Song of Stone]}]})   /call BuildArray "swarmPets" "Song of Stone"
   } else /if (${Me.Class.ShortName.Equal[CLR]}) {
     /if (${Bool[${Me.AltAbility[Celestial Hammer]}]}) /call BuildArray "swarmPets" "Celestial Hammer"
+  } else /if (${Me.Class.ShortName.Equal[ENC]}) {
+    /if (${Bool[${Me.AltAbility[Doppelganger]}]}) {
+      /call BuildArray "swarmPets" "Doppelganger"
+    }
+  } else /if (${Me.Class.ShortName.Equal[PAL]}) {
+    /if (${Bool[${Me.AltAbility[Projection of Piety]}]}) /call BuildArray "swarmPets" "Projection of Piety"
+  } else /if (${Me.Class.ShortName.Equal[DRU]}) {
+    /if (${Bool[${Me.AltAbility[Spirits of Nature]}]}) {
+      /echo Loading Spirits of Nature
+      /call BuildArray "swarmPets" "Spirits of Nature"
+    }
+    /if (${Bool[${Me.AltAbility[Nature's Guardian]}]}) {
+      /echo Loading Nature's Guardian
+      /call BuildArray "swarmPets" "Nature's Guardian"
+    }
   }
 
   /if (${Defined[MyAbilities]})		    /call BuildSpellArray "MyAbilities"	      "Abilities2D"
@@ -1498,7 +1539,7 @@ Sub assist_Aliases
   /squelch /alias /Intensity /bc VetAA Intensity of the Resolute
   /squelch /alias /Armor /bc VetAA Armor of Experience
   /squelch /alias /Expedient /bc VetAA Expedient Recovery
-  /squelch /alias /Throne /bc VetAA Throne of Heroes
+  |/squelch /alias /Throne /bc VetAA Throne of Heroes
   /squelch /alias /Jester /bc VetAA Chaotic Jester
 
 /if (${Debug}) /echo <== assist_Aliases -|
