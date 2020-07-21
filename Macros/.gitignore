@@ -1,0 +1,140 @@
+# Windows image file caches
+Thumbs.db
+ehthumbs.db
+
+# Folder config file
+Desktop.ini
+
+# Recycle Bin used on file shares
+$RECYCLE.BIN/
+
+# Windows Installer files
+*.cab
+*.msi
+*.msm
+*.msp
+
+# Windows shortcuts
+*.lnk
+
+# =========================
+# Operating System Files
+# =========================
+
+# OSX
+# =========================
+
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Thumbnails
+._*
+
+# Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+
+# Directories potentially created on remote AFP share
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+*.name
+.idea/compiler.xml
+*.xml
+*_CreamTest.ini
+ArrayTest.mac
+beg.mac
+Cams.mac
+DoorTests.mac
+combine.mac
+combine_ikk4.mac
+click.mac
+Arrows.mac
+camp.mac
+ch.mac
+campkill.mac
+Coho.mac
+Coh_new2.mac
+e3 Includes.rar
+E3.iml
+EventTest.mac
+Fish.mac
+Follow.mac
+pethot.mac
+robe_camp.mac
+ShowBonuses.mac
+forage.mac
+Inventory.mac
+tail.mac
+e3 Macro Inis/doorquery.txt
+ground.mac
+Coho2.mac
+Loopcast.mac
+feign.mac
+hidesneak.mac
+NULL.ini
+e3 Bot Inis/zmtz/*
+e3 Bot Inis/zmtz_pre/*
+e3 Bot Inis/foresight/*
+e3 Bot Inis/endurance/*
+e3 Bot Inis/Recall_PEQTGC.ini
+e3 Bot Inis/Callmemaybe_PEQTGC.ini
+e3 Bot Inis/Cerltwo_CreamTest.ini
+e3 Bot Inis/Ranga_CreamTest.ini
+e3 Bot Inis/Monky_CreamTest.ini
+e3 Bot Inis/Abeast_Akkas PEQ Installer.ini
+e3 Bot Inis/Druu_CreamTest.ini
+e3 Bot Inis/Echs_CreamTest.ini
+e3 Bot Inis/Moinkay_CreamTest.ini
+testinv.mac
+e3 Includes/e3_Alerts - Copy.inc
+e3 Includes/e3_Alerts_slim.inc
+e3 Includes/e3_Alerts.inc
+e3 Bot Inis/Planeoffire_PEQTGC.ini
+ch_model.mac
+*_CODS.ini
+e3 Bot Inis/Pixels_PEQTGC.ini
+e3 Bot Inis/Amage_PEQTGC.ini
+e3 Bot Inis/All Doors Are Broken Known Issue_PEQTGC.ini
+doorsarebroken.mac
+e3 Bot Inis/Kestirkopp_PEQTGC.ini
+e3 Bot Inis/Figgio_PEQTGC.ini
+e3 Bot Inis/Druu_PEQTGC.ini
+e3 Bot Inis/Shammy_PEQTGC.ini
+e3 Bot Inis/Testrng_PEQTGC.ini
+e3 Bot Inis/Oink_PEQTGC.ini
+e3 Macro Inis/e3 Data - Copy.ini
+e3 Macro Inis/e3 Data - CORRUPT.ini
+e3 Bot Inis/Derp_PEQTGC.ini
+e3 Bot Inis/Zwar_PEQTGC.ini
+e3 Bot Inis/Sksugg_PEQTGC.ini
+e3 Macro Inis/e3 Data - Copy (2).ini
+e3 Bot Inis/Pain_PEQTGC.ini
+e3 Bot Inis/Pallypoo_PEQTGC.ini
+testbind.mac
+test_bind.mac
+test_func.mac
+test_func4.mac
+test_func2.mac
+test_func3.mac
+test_bind2.mac
+test_nb.mac
+test_timed.mac
+e3 Bot Inis/Enya_PEQTGC.ini
+e3 Bot Inis/Holesale_PEQTGC.ini
+e3 Bot Inis/Rarespawn_PEQTGC.ini
+e3 Bot Inis/Abard_PEQTGC.ini
+e3 Bot Inis/Nagpal_PEQTGC.ini
+e3 Bot Inis/Nagavox_PEQTGC.ini
+e3 Includes/e3_Alerts.inc
+comma.mac
+e3 Bot Inis/Xisdatik_PEQTGC.ini
+pick.mac
+e3 Bot Inis/Kuvonexa_PEQTGC.ini

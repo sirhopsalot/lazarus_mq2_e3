@@ -30,7 +30,7 @@ SUB EVENT_Follow(line, ChatSender, eventParams)
     /if (${NetAdvPath.Following}) /squelch /netfollow off
   } else {
     | -Check Range
-    /if (${Spawn[=${FollowTarget}].Distance} > ${MaxResponseDist}) {
+    /if (${Spawn[=${FollowTarget}].Distance} > ${MaxResponseDist} && ${Bool[${NetBots[${SpawnToFollow}].InZone}]}) {
       /docommand ${ChatToggle} [${FollowTarget}] is too far away.
     } else {
       | -Check LoS.
@@ -268,7 +268,7 @@ SUB EVENT_clickIt(line, ChatSender, eventParams)
     /for i 1 to ${doorList.Size}
       /if (${debug_clickit}) /echo ${i} ${doorList[${i}]}
       /squelch /doortarget id ${doorList[${i}].Arg[1,,]}
-      /if ((${closestDoorDist}==0 || ${DoorTarget.Distance} < ${closestDoorDist}) && ${DoorTarget.DistanceZ} < 75) {
+      /if ((${closestDoorDist}==0 || ${DoorTarget.Distance} < ${closestDoorDist}) && ${DoorTarget.DistanceZ} < 125 && ${DoorTarget.Distance} < 400) {
         /varset closestDoorDist ${DoorTarget.Distance}
         /varset closestDoorID ${doorList[${i}].Arg[1,,]}
       }
@@ -288,7 +288,7 @@ SUB EVENT_clickIt(line, ChatSender, eventParams)
   }
   /squelch /doortarget id ${closestDoorID}
   /if (${DoorTarget.Distance} > 20) /call MoveToLoc ${DoorTarget.Y} ${DoorTarget.X} 50 15
-  /if (${DoorTarget.Distance} > 20) {
+  /if (${DoorTarget.Distance} > 35) {
     /echo \ay Aborting ClickIt: I could not moveto < 20 units of ${DoorTarget.Name} within 5s
     /moveto off
     /return
@@ -856,7 +856,7 @@ SUB EVENT_FindSlot(line, ChatSender, SlotToFind)
      /if (${c_eventArgData.Equal[fingers]}) {
         /say Finger Slots --- leftfinger : ${LinkDB[${InvSlot[leftfinger].Item}]} rightfinger: ${LinkDB[${InvSlot[rightfinger].Item}]}
      } else /if (${c_eventArgData.Equal[wrists]}) {
-        /say Wrist Slots --- leftwrist: ${LinkDB[${InvSlot[leftwrist].Item}]} rightfinger: ${LinkDB[${InvSlot[rightwrist].Item}]}
+        /say Wrist Slots --- leftwrist: ${LinkDB[${InvSlot[leftwrist].Item}]} rightwrist: ${LinkDB[${InvSlot[rightwrist].Item}]}
      } else /if (${c_eventArgData.Equal[ears]}) {
         /say Ear Slots --- leftear: ${LinkDB[${InvSlot[leftear].Item}]} rightear : ${LinkDB[${InvSlot[rightear].Item}]}
      } else /if (!${InvSlot[${c_eventArgData}].Item.ID}) {
@@ -867,7 +867,7 @@ SUB EVENT_FindSlot(line, ChatSender, SlotToFind)
 
   } else {
     /if (${c_eventArgChatSender.Equal[${Me}]}) {
-      /echo Valid Slots: charm, leftear, head, face, rightear, neck, shoulder, arms, leftwrist, rightwrist, ranged, hands, mainhand, offhand, ammo, back, leftfinger, rightfinger, chest, legs, feet, waist, powersource, fingers, wrists
+      /echo Valid Slots: charm, leftear, head, face, rightear, neck, shoulder, arms, leftwrist, rightwrist, ranged, hands, mainhand, offhand, ammo, back, leftfinger, rightfinger, chest, legs, feet, waist, powersource, fingers, wrists, ears
     }
   }
 /RETURN

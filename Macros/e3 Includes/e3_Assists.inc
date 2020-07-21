@@ -212,7 +212,7 @@ SUB check_AssistStatus
         | If I am target of target and not sticking to front(tank) attack/stick off
         | If I am < 50% life turn off attack (unless tank/stick front)
         /if (${Me.TargetOfTarget.CleanName.Equal[${Me.CleanName}]} && ${AssistStickPoint.NotEqual[front]}) {
-          /if (${Me.PctHPs} < 80 ) /attack off
+          /if (${Me.PctHPs} < 80 && !${Bool[${Select[${Me.TargetOfTarget.Class.ShortName},WAR,PAL,SHD]}]}) /attack off
           /stick off
         } else {
           | If the mob is not targeting me
@@ -263,11 +263,25 @@ SUB CombatAbilities
     /if (${doTaunt} && ${Me.AbilityReady[Taunt]} && ${Me.PctAggro}< 100) /doability Taunt
   }
   /if (${Defined[smartTaunt]}) {
-    /if (${smartTaunt} && ${Me.AbilityReady[Taunt]}) {
+    /if (${smartTaunt}) {
       /if (${Bool[${Me.TargetOfTarget}]} && !${Select[${Me.TargetOfTarget.Class.ShortName},WAR,PAL,SHD]}) {
         /if (${Select[${Spawn[id ${Target.ID}].Type},${AcceptableTargetTypes}]}) {
-          /bc Taunting ${Target.CleanName}: ${Me.TargetOfTarget.Class.ShortName}-${Me.TargetOfTarget} has aggro
-          /doability Taunt
+          /if (${Me.AbilityReady[Taunt]}) {
+            /bc Taunting ${Target.CleanName}: ${Me.TargetOfTarget.Class.ShortName}-${Me.TargetOfTarget} has aggro
+            /doability Taunt
+          |} else /if (${Me.CombatAbilityReady[Mock]}) {
+          |  /bc Mock on ${Target.CleanName}: ${Me.TargetOfTarget.Class.ShortName}-${Me.TargetOfTarget} has aggro
+          |  /doability Mock
+          | } else /if (${Me.CombatAbilityReady[Bazu Bellow]}) {
+          |  /bc Bazu Bellow on ${Target.CleanName}: ${Me.TargetOfTarget.Class.ShortName}-${Me.TargetOfTarget} has aggro
+          |   /doability "Bazu Bellow"
+          } else /if (${Me.AltAbilityReady[Divine Stun]}) {
+            /bc Divine Stun on ${Target.CleanName}: ${Me.TargetOfTarget.Class.ShortName}-${Me.TargetOfTarget} has aggro
+            /casting "Divine Stun"
+          } else /if (${Me.SpellReady[Terror of Discord]}) {
+            /bc Terror of Discord on ${Target.CleanName}: ${Me.TargetOfTarget.Class.ShortName}-${Me.TargetOfTarget} has aggro
+            /casting "Terror of Discord"
+          }
         }
       }
     }
@@ -1254,28 +1268,28 @@ Sub assist_Setup
 
   | Epic Definitions for EpicBurn -exclude defensive or buffs
   /declare EpicName string outer
-  /if (${FindItemCount[Prismatic Dragon Blade]})                /varset EpicName Prismatic Dragon Blade
-  /if (${FindItemCount[Blade of Vesagran]})                     /varset EpicName Blade of Vesagran
-  /if (${FindItemCount[Raging Taelosian Alloy Axe]})            /varset EpicName Raging Taelosian Alloy Axe
-  /if (${FindItemCount[Vengeful Taelosian Blood Axe]})          /varset EpicName Vengeful Taelosian Blood Axe
-  /if (${FindItemCount[Staff of Living Brambles]})              /varset EpicName Staff of Living Brambles
-  /if (${FindItemCount[Staff of Everliving Brambles]})          /varset EpicName Staff of Everliving Brambles
-  /if (${FindItemCount[Fistwraps of Celestial Discipline]})     /varset EpicName Fistwraps of Celestial Discipline
-  /if (${FindItemCount[Transcended Fistwraps of Immortality]})  /varset EpicName Transcended Fistwraps of Immortality
-  /if (${FindItemCount[Redemption]})                            /varset EpicName Redemption
-  /if (${FindItemCount[Nightbane, Sword of the Valiant]})       /varset EpicName Nightbane, Sword of the Valiant
-  /if (${FindItemCount[=Heartwood Blade]})                      /varset EpicName Heartwood Blade
-  /if (${FindItemCount[Aurora, the Heartwood Blade]})           /varset EpicName Aurora, the Heartwood Blade
-  /if (${FindItemCount[Fatestealer]})                           /varset EpicName Fatestealer
-  /if (${FindItemCount[Nightshade, Blade of Entropy]})          /varset EpicName Nightshade, Blade of Entropy
-  /if (${FindItemCount[Innoruuk's Voice]})                      /varset EpicName Innoruuk's Voice
-  /if (${FindItemCount[Innoruuk's Dark Blessing]})              /varset EpicName Innoruuk's Dark Blessing
-  /if (${FindItemCount[Crafted Talisman of Fates]})             /varset EpicName Crafted Talisman of Fates
-  /if (${FindItemCount[Blessed Spiritstaff of the Heyokah]})    /varset EpicName Blessed Spiritstaff of the Heyokah
-  /if (${FindItemCount[Staff of Prismatic Power]})              /varset EpicName Staff of Prismatic Power
-  /if (${FindItemCount[Staff of Phenomenal Power]})             /varset EpicName Staff of Phenomenal Power
-  /if (${FindItemCount[=Soulwhisper]})                          /varset EpicName Soulwhisper
-  /if (${FindItemCount[=Deathwhisper]})                         /varset EpicName Deathwhisper
+  /if (${FindItemCount[=Prismatic Dragon Blade]})                /varset EpicName Prismatic Dragon Blade
+  /if (${FindItemCount[=Blade of Vesagran]})                     /varset EpicName Blade of Vesagran
+  /if (${FindItemCount[=Raging Taelosian Alloy Axe]})            /varset EpicName Raging Taelosian Alloy Axe
+  /if (${FindItemCount[=Vengeful Taelosian Blood Axe]})          /varset EpicName Vengeful Taelosian Blood Axe
+  /if (${FindItemCount[=Staff of Living Brambles]})              /varset EpicName Staff of Living Brambles
+  /if (${FindItemCount[=Staff of Everliving Brambles]})          /varset EpicName Staff of Everliving Brambles
+  /if (${FindItemCount[=Fistwraps of Celestial Discipline]})     /varset EpicName Fistwraps of Celestial Discipline
+  /if (${FindItemCount[=Transcended Fistwraps of Immortality]})  /varset EpicName Transcended Fistwraps of Immortality
+  /if (${FindItemCount[=Redemption]})                            /varset EpicName Redemption
+  /if (${FindItemCount[=Nightbane, Sword of the Valiant]})       /varset EpicName Nightbane, Sword of the Valiant
+  /if (${FindItemCount[=Heartwood Blade]})                       /varset EpicName Heartwood Blade
+  /if (${FindItemCount[=Aurora, the Heartwood Blade]})           /varset EpicName Aurora, the Heartwood Blade
+  /if (${FindItemCount[=Fatestealer]})                           /varset EpicName Fatestealer
+  /if (${FindItemCount[=Nightshade, Blade of Entropy]})          /varset EpicName Nightshade, Blade of Entropy
+  /if (${FindItemCount[=Innoruuk's Voice]})                      /varset EpicName Innoruuk's Voice
+  /if (${FindItemCount[=Innoruuk's Dark Blessing]})              /varset EpicName Innoruuk's Dark Blessing
+  /if (${FindItemCount[=Crafted Talisman of Fates]})             /varset EpicName Crafted Talisman of Fates
+  /if (${FindItemCount[=Blessed Spiritstaff of the Heyokah]})    /varset EpicName Blessed Spiritstaff of the Heyokah
+  /if (${FindItemCount[=Staff of Prismatic Power]})              /varset EpicName Staff of Prismatic Power
+  /if (${FindItemCount[=Staff of Phenomenal Power]})             /varset EpicName Staff of Phenomenal Power
+  /if (${FindItemCount[=Soulwhisper]})                           /varset EpicName Soulwhisper
+  /if (${FindItemCount[=Deathwhisper]})                          /varset EpicName Deathwhisper
   /if (${EpicName.Length})     /call BuildArray EPICBurns "${EpicName}"
 
   /declare AnguishChest string outer
