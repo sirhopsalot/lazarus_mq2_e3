@@ -1,0 +1,27 @@
+#event OutOfStuff "You are missing some required components."
+
+Sub Main(gemNumber, delay)
+	
+	:Loop
+	/if (${Cursor.ID}) /autoinv
+	/doevents
+	/if (${Me.PctMana} < 20) {
+		/sit on
+		/delay 15s
+		/goto :Loop
+	}
+	/delay ${delay}
+	/if (!${Me.SpellReady[${gemNumber}]}) {
+		/if (${Cursor.ID}) /autoinv
+		/goto :Loop
+	} else {
+		/cast ${gemNumber}
+		/delay 10s !${Me.Casting.ID}
+		/goto :Loop
+	}
+
+/return
+
+Sub Event_OutOfStuff 
+/endmacro 
+/return

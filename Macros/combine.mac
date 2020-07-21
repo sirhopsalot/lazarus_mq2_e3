@@ -1,0 +1,24 @@
+#event OutOfStuff "Sorry, but you don't have everything you need for this recipe in your general inventory." 
+  
+Sub Main 
+:Loop 
+ 
+:ClearCursor 
+/if (${Cursor.ID}) { 
+	/autoinventory 
+	/goto :ClearCursor 
+} 
+ 
+/notify TradeskillWnd CombineButton leftmouseup 
+/doevents 
+/delay 6
+/if (${Select[${Cursor.ID},16925,16933,8238,21612,21614,9686,10269,3061,3059]}>0) /destroy
+/delay 3
+/autoinventory
+/delay 1
+/goto :Loop 
+/return 
+ 
+Sub Event_OutOfStuff 
+/endmacro 
+/return

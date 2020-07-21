@@ -1,0 +1,93 @@
+|---------------------------------------------------|
+|- e3.mac	v7.0				                             -|
+|- Originally written by Killians of PEQ.	         -|
+|- Enhanced and maintained by Creamo of PEQ.       -|
+|- Thanks to Vysra for IDE,additional plugins,code -|
+|---------------------------------------------------|
+|#warning
+#turbo 100
+#include e3 Includes\e3_Setup.inc
+
+SUB Main(modeSelect)
+  /declare macroVersion string outer 7.0
+  /declare Debug bool outer false
+  /declare IniMode string outer Ini
+  /if (${Bool[${Plugin[MQ2IniExt]}]}) {
+    /varset IniMode IniExt
+    /iniext clear
+  }
+  /call e3_Setup "${modeSelect}"
+	/if (${Debug}) {
+		/echo Post Setup
+		/delay 5
+	}
+  /declare i int local
+
+:MainLoop
+/if (${Debug}) /echo |- MainLoop ==>
+		/varset ActionTaken FALSE
+		/call check_Active
+		/call check_Idle
+    /call check_autoTribute
+    /if (${currentZone} != ${Zone.ID})  /call check_Zone
+    /if (${Following} && !${Assisting}) /call check_Follow
+
+		/if (${Defined[lifeSupport2D]} && ${Me.PctHPs} < 99) /call check_lifeSupport
+    |workaround for item cast array
+    /if (${reloadOnLoot}) /call reloadSpellArrays
+
+		/call Background_Events
+		| If I'm not active, call mainFunctions
+		/if (!${activeTimer}) {
+      |These are functions in the e3_setup/Advanced.ini class sections... ex CLR Function#1=check_DivineArb
+			/for i 1 to ${mainLoop_Array.Size}
+				/if (${Bool[${mainLoop_Array[${i}]}]}) /call ${mainLoop_Array[${i}]}
+			/if (!${ActionTaken}) /next i
+
+      /if (${Me.CombatState.NotEqual[COMBAT]}) {
+        /if ((!${Me.Casting.ID} || ${Me.Class.ShortName.Equal[BRD]}) && !${use_TargetAE}) /call completePendingExchange
+        /if (!${Me.Moving} && !${Following} && !${Me.Casting.ID}) {
+          /if ((${Me.PctMana} < ${autoMedPctMana} && ${Me.MaxMana} > 1) || (${Me.PctEndurance} < ${autoMedPctMana})) {
+            /varset medBreak TRUE
+          }
+        }
+      }
+      /if (${medBreak}) /call check_MedBreak
+		}
+
+  /if (${MoveUtils.GM}) {
+    /squelch /stick imsafe
+    /echo GM Safe kicked in, issued /stick imsafe.  you may need to reissue /followme or /assiston
+  }
+/if (${Debug}) {
+	/echo <== MainLoop -|
+	/delay 5
+}
+/goto :MainLoop	
+/RETURN
+
+|----------------------------------------------------------------------------------------------------------------|
+|- Background events and functions that are checked even while casting or otherwise considered active.		   		-|
+|- This function is checked constantly, included events and functions should have minimal character interaction.-|
+|- These are functions in the e3_setup Included Setups section
+SUB Background_Events
+	/declare i int local
+	/for i 1 to ${macroSetups.Size}
+		/if (${Bool[${macroSetups[${i}]}]}) /call ${macroSetups[${i}]}_Background_Events
+  /next i
+/RETURN
+
+|----------------------------------------------------------------------------------------------------------------|
+|- this handles removing and readding of items from spell arrays, ie when you die
+|- criteria to reload = wearing a chest and having >=1 platinum
+SUB reloadSpellArrays
+  /if (${Bool[${FindItem[=${missingSpellItem}].ID}]}) {
+    /varset reloadOnLoot FALSE
+    /varset missingSpellItem 0
+    /call buff_SpellArrays
+    /call heal_SpellArrays
+    /call assist_SpellArrays
+    /call pet_spellArrays
+    /call cure_spellArrays
+  }
+/RETURN
