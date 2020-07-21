@@ -188,9 +188,9 @@ SUB ListToArray(ArrayName, Data, delimiter)
 |- 2D array for spell casting/full e3_casting use
 |--------------------------------------------------------|
 SUB BuildSpellArray(ArrayName, NewArrayName)
-  |/echo Array ${ArrayName} ${NewArrayName}
+  /if (${Debug}) /echo Array ${ArrayName} ${NewArrayName}
 	/if (!${Defined[SpellProp]}) {
-		/declare SpellProp[38] string outer 0
+		/declare SpellProp[39] string outer 0
 		/varset SpellProp[1] CastName
 		/varset SpellProp[2] CastType
 		/varset SpellProp[3] TargetType
@@ -274,7 +274,7 @@ SUB BuildSpellArray(ArrayName, NewArrayName)
 	/if (!${Defined[iZone]})		/declare iZone int outer 36
   /if (!${Defined[iMinSick]})		/declare iMinSick int outer 37
   /if (!${Defined[iIfs]})		/declare iIfs int outer 38
-
+  
 	/declare i int local
 	/declare printAll bool local FALSE
 	|first loop through array to ensure i can identify all listed spells
@@ -440,7 +440,7 @@ SUB BuildSpellArray(ArrayName, NewArrayName)
 				/varset	${NewArrayName}[${i},${iMyRange}] ${Me.AltAbility[${${NewArrayName}[${i},${iCastName}]}].Spell.MyRange}
 			}		
 		} else /if (${${NewArrayName}[${i},${iCastType}].Equal[Spell]}) {
-			/if (${Spell[${${NewArrayName}[${i},${iCastName}]}].AERange} > 0) {
+			/if (${Spell[${${NewArrayName}[${i},${iCastName}]}].AERange} > 0 && ${Spell[${${NewArrayName}[${i},${iCastName}]}].MyRange} == 0) {
 				/varset	${NewArrayName}[${i},${iMyRange}] ${Spell[${${NewArrayName}[${i},${iCastName}]}].AERange}
 			} else {
 				/varset	${NewArrayName}[${i},${iMyRange}] ${Spell[${${NewArrayName}[${i},${iCastName}]}].MyRange}
@@ -591,7 +591,6 @@ SUB BuildSpellArray(ArrayName, NewArrayName)
     }
     /if (${printAll}) /echo ${${NewArrayName}[${i},${iCastName}]} ${${NewArrayName}[${i},${iCheckFor}]} iCheckForID ${${NewArrayName}[${i},${iCheckForID}]}
 
-
 		| get MinEnd
 		/if (${${ArrayName}[${i}].Find[/MinEnd|]}) {
 			/call argueString MinEnd| "${${ArrayName}[${i}]}"
@@ -608,12 +607,12 @@ SUB BuildSpellArray(ArrayName, NewArrayName)
 		} else /if (${${NewArrayName}[${i},${iCastType}].Equal[AA]}) {
 			/varset	${NewArrayName}[${i},${iSpellType}] ${Me.AltAbility[${${NewArrayName}[${i},${iCastName}]}].Spell.SpellType}
 		} else /if (${${NewArrayName}[${i},${iCastType}].Equal[Spell]}) {
-			/varset	${NewArrayName}[${i},${iSpellType}] ${Spell[${${NewArrayName}[${i},${iCastName}]}].SpellType}			
+			/varset	${NewArrayName}[${i},${iSpellType}] ${Spell[${${NewArrayName}[${i},${iCastName}]}].SpellType}		
 		} 
 		/if (${printAll}) /echo SpellType ${${NewArrayName}[${i},${iSpellType}]}
 
 		| get CastTarget
-		/if (${Select[${ArrayName},BotBuffs,CombatBuffs,cureTargets]}) /varset ${NewArrayName}[${i},${iCastTarget}] ${${ArrayName}[${i}].Arg[2,/]}
+		/if (${Select[${ArrayName},BotBuffs,PetBuffs,CombatBuffs,cureTargets]}) /varset ${NewArrayName}[${i},${iCastTarget}] ${${ArrayName}[${i}].Arg[2,/]}
 		/if (${printAll}) /echo CastTarget ${${NewArrayName}[${i},${iCastTarget}]}
 
     | get GiftOfMana
@@ -791,7 +790,8 @@ SUB TrueTarget(TargetID)
 |------------------------------------------------------------------------------------|
 SUB createTimer(timerName, timerSetting)
 /if (${Debug}) /echo |- createTimer ==>
-	/if (${Defined[${timerName}]}) {
+  /if (${timerName.Length} == 0) /return
+  /if (${Defined[${timerName}]}) {
     /varset ${timerName} ${timerSetting}
   } else {
     /declare ${timerName} timer outer ${timerSetting}
