@@ -9,7 +9,7 @@ sub event_petWeapons(line, ChatSender)
 /if (${Debug} || ${Debug_MAG}) /echo |- event_petWeapons ==>
   /declare wasFollowing bool local ${Following}
   /varset Following FALSE
-  |/varset Debug_MAG TRUE
+  /varset Debug_MAG FALSE
   /declare singlePet bool local TRUE
   /if (${Defined[petIDArray]}) /deletevar petIDArray
   /if (${Bool[${line.Find[Distribute]}]}) /varset singlePet FALSE
@@ -21,9 +21,9 @@ sub event_petWeapons(line, ChatSender)
   } else /if (!${SpawnCount[${c_eventArgChatSender}]}) {
     /echo ${c_eventArgChatSender} is not in the zone
     /if (${c_eventArgChatSender.NotEqual[${Me}]}) /tell ${c_eventArgChatSender} We are not in the same zone...
-  } else /if (!${singlePet} && !${SpawnCount[pcpet radius 100]}) {
-      /echo There are no PC Pets withing a radius of 100
-      /if (${c_eventArgChatSender.NotEqual[${Me}]}) /tell ${c_eventArgChatSender} No pets a radius of 100...
+  } else /if (!${singlePet} && !${SpawnCount[pcpet radius 50]}) {
+      /echo There are no PC Pets withing a radius of 50
+      /if (${c_eventArgChatSender.NotEqual[${Me}]}) /tell ${c_eventArgChatSender} No pets a radius of 50...
   } else /if (${singlePet} && ${Spawn[${c_eventArgChatSender}].Pet.Distance}>100) {
       /if (${c_eventArgChatSender.NotEqual[${Me}]}) /tell ${c_eventArgChatSender} Your pet is not in a radius of 100...
   } else {
@@ -31,7 +31,7 @@ sub event_petWeapons(line, ChatSender)
     /declare originalLoc string local ${Me.Loc}
     /declare p int local
     |if distribute, give to everyone, else just give to the single chatsender
-    /for p 1 to ${SpawnCount[pcpet radius 100]}
+    /for p 1 to ${SpawnCount[pcpet radius 50]}
       /if (!${NearestSpawn[${p},pcpet].Name.Find[familiar]}) {
         |/echo ${p} ${NearestSpawn[${p},pcpet]} ${NearestSpawn[${p},pcpet].Name} ${NearestSpawn[${p},pcpet].Master} ${c_eventArgChatSender}
         |/echo los ${NearestSpawn[${p},pcpet].LineOfSight} d ${Bool[${line.Find[Distribute]}]}
@@ -65,6 +65,7 @@ SUB give_PetsWeapons(autoWeap)
   /declare w int local
   /declare allWeapSuccess bool local
   /declare retryWeapTimer timer local 10s
+  /declare DebugPetWeapons bool local false
 
   /for p 1 to ${petIDArray.Size}
     |/echo ${p}-${petIDArray[${p}]}-${Spawn[id ${petIDArray[${p}]}].Name}-${Spawn[id ${petIDArray[${p}]}].Master}
@@ -77,14 +78,32 @@ SUB give_PetsWeapons(autoWeap)
           :SummonWeap_Loop
           /if (${petItems2D[${w},${iCastName}].Equal["Blazing Stone of Demise"]} && ${FindItemCount[=Summoned: Burning Shank]}) {
             /call SwapItem "Summoned: Burning Shank" "Cursor"
-          |fix me later
-          |} else /if (${FindItemCount[${petItems2D[${w},${iCastName}].Replace[Summon ,]}]}) {
-          |  /call SwapItem "${petItems2D[${w},${iCastName}].Replace[Summon ,]}" "Cursor"
+          } else /if (${Bool[${FindItem[=${petItems2D[${w},${iCastName}]}]}]} && ${Bool[${FindItem[=${petItems2D[${w},${iCastName}]}].NoRent}]}) {
+            /ItemNotify "${petItems2D[${w},${iCastName}]}" leftmouseup
+          } else /if (${Bool[${FindItem[=Summoned: ${petItems2D[${w},${iCastName}]}]}]} && ${Bool[${FindItem[=Summoned: ${petItems2D[${w},${iCastName}]}].NoRent}]}) {
+            /ItemNotify "Summoned: ${petItems2D[${w},${iCastName}]}" leftmouseup
           } else {
             /call check_Ready "petItems2D" ${w}
             /if (${c_Ready}) {
               /if (${check_Mana["petItems2D",${w}]}) {
-                /call e3_Cast ${Me.ID} "petItems2D" ${w}
+				/if (${DebugPetWeapons}) /echo Item = ${petItems2D[${w},${iCastName}]}
+				/if (${Select[${petItems2D[${w},${iCastName}]},Grant Spectral Plate]}) {
+					/if (${Bool[${FindItem[=Folded Pack of Spectral Plate]}]}) {
+						/ItemNotify "Folded Pack of Spectral Plate" rightmouseup
+					} else {
+						/if (${DebugPetWeapons}) /echo Grant Spectral Plate
+						/tar ${Me}
+						/delay 5s ${Select[${Target},${Me}]}
+						/call e3_Cast ${Me.ID} "petItems2D" ${w}
+						/delay 5s ${Cursor.ID}
+						/autoinventory
+						/if (${Bool[${FindItem[=Folded Pack of Spectral Plate]}]}) {
+							/ItemNotify "Folded Pack of Spectral Plate" rightmouseup
+						}
+					}
+				} else {
+					/call e3_Cast ${Me.ID} "petItems2D" ${w}
+				}
                 /delay 5s ${Cursor.ID}
               }
             }
@@ -180,6 +199,7 @@ SUB check_SummonItems
 /RETURN
 |----------------------------------------------------------------------------|
 #event auto_coh "#1# tells you, 'autocoh #2#'"
+#event auto_coh "<#1#> autocoh #2#"
 SUB event_auto_coh(line, ChatSender, toggleCoH)
   /declare i int local
   /if (${toggleCoH.Equal[on]}) {
@@ -206,21 +226,28 @@ SUB event_auto_coh(line, ChatSender, toggleCoH)
 SUB check_CoH
 /if (${Debug} || ${Debug_MAG}) /echo |- MAG_checkCoH ==>
   /if (${Defined[cohTargets]}) {
+	/if (${Debug_MAG}) /echo cohTargets=${cohTargets.Size}
     /declare t int local
     /declare s int local
     /for t 1 to ${cohTargets.Size}
       /if (${Bool[${Group.Member[${cohTargets[${t}]}]}]}) {
-        /for s 1 to ${cohSpells2D.Size[1]}
-          /call check_Ready "cohSpells2D" ${s}
-            /if (${c_Ready}) {
-              /if (${Spawn[pc =${cohTargets[${t}]}].Distance} >= ${coh_dist}) {
+        /for s 1 to ${cohSpells2D.Size[1]}     
+		  /if (${Debug_MAG}) /echo Checking ${cohTargets[${t}]}
+		  /if (${Debug_MAG}) /echo Distance ${Spawn[pc =${cohTargets[${t}]}].Distance}
+		  /if (${Debug_MAG}) /echo check_Mana ${check_Mana["cohSpells2D",${s}]}
+            /if (${Spawn[pc =${cohTargets[${t}]}].Distance} >= ${coh_dist}) {
+			  /call check_Ready "cohSpells2D" ${s}
+			  /if (${c_Ready}) {
                 /if (${check_Mana["cohSpells2D",${s}]}) {
                   /docommand ${ChatToggle} << Auto CoH casting on ${cohTargets[${t}]} >>
                   /g << Auto CoH casting on ${cohTargets[${t}]} >>
                   /call e3_cast ${Spawn[pc =${cohTargets[${t}]}].ID} "cohSpells2D" ${s}
                 } else /if (${Debug} || ${Debug_MAG}) /docommand ${ChatToggle} << AutoCoH CoH is not ready for ${cohTargets[${t}]}  >>
-              }
-            } else /if (${Debug} || ${Debug_MAG}) /docommand ${ChatToggle} << AutoCoH CoH is not ready for ${cohTargets[${t}]}  >>
+              } else /if (${Debug} || ${Debug_MAG}) /docommand ${ChatToggle} << AutoCoH CoH is not ready for ${cohTargets[${t}]}  >>
+			} else {
+				/echo AutoCoh complete on ${cohTargets[${t}]}
+				/call RemoveArrayElement cohTargets "${cohTargets[${t}]}"				
+			}
         /if (!${ActionTaken})  /next s
       } else /if (${Debug} || ${Debug_MAG}) /docommand ${ChatToggle} << AutoCoH ${cohTargets[${t}]} is not in my group >>
     /if (!${ActionTaken})  /next t
