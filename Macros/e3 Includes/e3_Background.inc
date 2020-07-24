@@ -176,8 +176,8 @@ SUB check_Active
 
 |------------------------------------------------------------|
 |- loot, check exp allocation, announce exp	-|
-#event YourKill "You have gained #*#"
-#event YourKill "#*# party experience!"
+#event YourKill "You gain experience!!"
+#event YourKill "You gain party experience!!"
 #event YourKill "You gained raid experience!"
 SUB Event_YourKill(line)
   /if (!${line.Find[raid]}) {
@@ -196,7 +196,7 @@ SUB Event_YourKill(line)
       /bc [+y+] Auto setting AA Exp to 100%, at ${Me.PctExp}% of Level ${Me.Level}
     }
   }
-  /if (${Auto_Loot} && (${Me.CombatState.NotEqual[Combat]} && ${Me.PctAggro} <= 0 && ${Me.XTarget} <= 2 || ${combatLooting})) /call loot_Area
+  /if (${Auto_Loot} && (${Me.CombatState.NotEqual[Combat]} || ${combatLooting})) /call loot_Area
 /RETURN
 
 |----------------------------------------------------------------------------------------------------|
