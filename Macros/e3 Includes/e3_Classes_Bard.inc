@@ -66,9 +66,13 @@ SUB EVENT_startMelody(line, ChatSender, melodyName)
       |/echo ${i} ${melodyArray[${i}]}
       /if (${melodyArray[${i}].Length} && ${melodyArray[${i}].NotEqual[PLACEHOLDER]}) {
         /varset spellName ${melodyArray[${i}].Arg[1,/]}
-        | Check that the song is in my book
-        /if (!${Me.Book[${spellName}]}) {
-          /echo I don't have [${spellName}] in my spellbook, playing the melody without it.
+        | Check that the song is in my book or the item is in my inventory
+        /if (!${Me.Book[${spellName}]} && !${Bool[${FindItem[=${spellName}]}]}) {
+          /echo I don't have [${spellName}] in my spellbook and I don't have an item named [${spellName}], playing the melody without it.
+        } else /if (${Bool[${FindItem[=${spellName}]}]}) {
+          /call argueString gem| "${melodyArray[${i}]}"
+          /echo Found item for twist ${spellName}, will use item slot ${c_argueString}
+          /varset songList ${songList} ${c_argueString}
         } else {
           | If the song is not memmed, use mq2Cast to mem
           /if (!${Me.Gem[${spellName}]}) {
@@ -80,7 +84,7 @@ SUB EVENT_startMelody(line, ChatSender, melodyName)
             }
             /memorize "${spellName}" "${memGem}"
             /if (${Cast.Status.Find[M]}) /delay 3s !${Cast.Status.Find[M]}
-          }
+          } 
           | Update songList with the corresponding gem#
           /varset songList ${songList} ${Me.Gem[${spellName}]}
         }
