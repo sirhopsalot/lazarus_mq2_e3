@@ -64,7 +64,7 @@ SUB buffBots(ArrayName)
   /if (${Select[${ArrayName},SelfBuffs2D,InstantBuffs2D]}) {
     /if (!${Bool[${Me.Buff[${buffSpellName}]}]} || (${Bool[${Me.Buff[${buffSpellName}]}]} && ${Me.Buff[${buffSpellName}].Duration.TotalSeconds} <= ${buffRecastTime})) {
       /if (!${Bool[${Me.Song[${buffSpellName}]}]} && !${Bool[${Me.Song[${buffCheckForName}]}]}) {
-        /if (${Spell[${buffSpellID}].NewStacks} && !${Bool[${Me.Buff[${buffCheckForName}]}]}) {
+        /if (!${Bool[${Me.Buff[${buffCheckForName}]}]}) {
           /call check_Ready "${ArrayName}" ${s}
           /if (${c_Ready} && ${${ArrayName}[${s},${iIfs}]}) {
             /if (${check_Mana["${ArrayName}",${s}]}) {
@@ -97,6 +97,7 @@ SUB buffBots(ArrayName)
   } else {
   |------- Netbots ------|
     /if (!${Select[${ArrayName},PetBuffs2D]} && !${Bool[${NetBots[${buffTarget}].Buff.Find[${buffSpellID} ]}]}	&& !${Bool[${NetBots[${buffTarget}].ShortBuff.Find[${buffSpellID} ]}]} && ${NetBots[${buffTarget}].FreeBuffSlots}>0 && ${Bool[${NetBots[${buffTarget}].InZone}]}) {
+		|/echo Bots: ${buffTarget} ${buffSpellName} ${NetBots[${buffTarget}].PetBuff.Find[${buffSpellID} ]}
       /if (!${Bool[${NetBots[${buffTarget}].Buff.Find[${buffCheckForID} ]}]}	&& !${Bool[${NetBots[${buffTarget}].ShortBuff.Find[${buffCheckForID} ]}]}) {
         /if (!${${ArrayName}[${s},${iTargetType}].Equal[Single in Group]} || ${Bool[${Group.Member[${buffTarget}]}]}) {
           /call check_Ready "${ArrayName}" ${s}
@@ -326,6 +327,7 @@ SUB event_castGroupBuffsL47(line, ChatSender)
   /echo IN event_castGroupBuffsL47
   /if (${Debug} || ${Debug_BuffCheck}) /echo |- event_castGroupBuffs L47 ==>
   /if (!${Defined[GroupBuffsL472D]}) /return
+  /echo GroupBuffsL472D Defined
   /if (!${checkEventArgs[${ChatSender},${line},UZR,""]}) /return
 | -------------------Find buffTarget------------------- |
   /declare buffTarget string local ${line.Right[-${Math.Calc[${line.Find[buff]}+4]}]}
