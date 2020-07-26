@@ -1584,6 +1584,8 @@ Sub basics_Background_Events
   /doevents macroHelp
   /doevents exp_group
   /doevents campdesktop
+  /doevents gimme
+  /doevents LinkLoot
 |		/varset event_counter 1
 |	} else {
 |		/varcalc event_counter ${event_counter}+1
@@ -1670,3 +1672,524 @@ Sub basics_Aliases
 	/squelch /alias /mana /bc Report Mana
 /if (${Debug}) /echo <== basics_Aliases -|
 /return
+
+|-----------------------------------------------------------|
+|- When *anyone* asks for a Temporary/NoRent item it will
+|- move to the requestor and trade the item to them.
+|- If the requestor is a bot in the same NetBots it will also
+|- accept the trade on both sides.
+|- Permanent items requested from a bot in the same NetBots
+|- will be given.
+|- Must add /doevents gimme to basics_Background_Events in e3_Basics.ini
+|-----------------------------------------------------------|
+#event gimme "#1# tells you, 'Gimme #2#'"
+|#event gimme "<#1#> Gimme #2#"
+sub event_gimme(line, ChatSender, RequestedItem)
+	/declare DebugGimme false
+	/if (${DebugGimme}) /echo |- event_gimme ==>
+	/echo Gimme Event: ${ChatSender} has requested a ${RequestedItem}
+	/declare senderLoc string local ${Spawn[${ChatSender}].Loc}
+	/if (${DebugGimme}) /echo ${senderLoc}
+	/if (${DebugGimme}) /echo Distance = ${Math.Distance[${senderLoc}]}
+	/if (${Math.Distance[${Spawn[${ChatSender}].Loc}]}>100) {
+		/tell ${ChatSender} You're too far away. Please move closer and ask again.
+		/return
+	}
+	/if (${Bool[${Cursor.ID}]} || ${medBreak} || ${Me.Invis} || ${Me.PctHPs} < 85 || ${Me.PctAggro} > 1 || ${Me.CombatState.Equal[COMBAT]} || ${Assisting} || ${Me.Moving} || ${Me.Combat}) {
+		/tell ${ChatSender} I'm busy
+		/return
+	}
+	/declare platOnCursor local false
+	/target pc ${ChatSender}
+	/declare IsMyBot bool local ${Bool[${Select[${ChatSender}, ${NetBots.Client}]}]}
+	| check if the requestor can be reached
+	/if (!${Spawn[${ChatSender}].LineOfSight}) {
+		/tell ${ChatSender} Where are you? I don't see you. Please move closer if you want me to give you something.
+		/delay 10
+		/return
+	}	
+	
+	/if (${DebugGimme}) /echo RequestedItem IsModShard = ${Bool[${RequestedItem.Find[Modulation Shard]}]}
+	/declare IsRequestedItemModShard bool local ${Bool[${RequestedItem.Find[Modulation Shard]}]}
+	
+	/tell ${ChatSender} ${RequestedItem}, coming right up
+	/declare DiamondCoinName Diamond Coin
+	/declare DCName DC
+	/declare DiamondCoinsName Diamond Coins
+	/declare DCRequested false
+	/if (${DCName.Equal[${RequestedItem}]} || ${DiamondCoinName.Equal[${RequestedItem}]} || ${DiamondCoinsName.Equal[${RequestedItem}]}) {
+		/varset RequestedItem ${DiamondCoinName}
+	}	
+	/if (${DebugGimme}) /echo IsMyBot = ${IsMyBot}
+	/if (${DebugGimme}) /echo RequestedItem = ${RequestedItem}
+	/if (${IsMyBot} && ${DiamondCoinName.Equal[${RequestedItem}]}) {
+		/delay 1
+		/echo Collecting Diamond Coins to give to ${ChatSender}
+		/delay 1
+		/if (${Window[InventoryWindow].DoOpen}) /echo Inventory Window Open
+		/delay 5s ${Window[InventoryWindow].Open}
+		/notify InventoryWindow IW_Subwindows tabselect 5
+		/delay 1s
+		/notify InventoryWindow AltCurr_PointList listselect 4
+		/delay 1s
+		/notify InventoryWindow IW_AltCurr_ReclaimButton leftmouseup
+		/delay 1s
+		/notify InventoryWindow IW_AltCurr_CreateItemButton leftmouseup
+		/delay 1s
+		/notify QuantityWnd QTYW_Accept_Button leftmouseup
+		/delay 3s ${Cursor.ID}
+		/if (${Window[InventoryWindow].Child[IW_AltCurrPage].Open}) /if (${Window[InventoryWindow].DoClose}) /echo Inventory Window Closed
+	} else /if (${IsMyBot} && (${RequestedItem.Equal[platinum]} || ${RequestedItem.Equal[pp]} || ${RequestedItem.Equal[plat]})) {
+		/if (${Me.Platinum} > 0) {
+			/delay 1
+			/echo Collecting Plat to give to ${ChatSender}
+			/delay 1
+			/if (${Window[InventoryWindow].DoOpen}) /echo Inventory Window Open
+			/delay 5s ${Window[InventoryWindow].Open}
+			/notify InventoryWindow IW_Money0 leftmouseup
+			/delay 1s
+			/notify QuantityWnd QTYW_Accept_Button leftmouseup
+			/delay 1s
+			/varset platOnCursor true
+		} else {
+			/delay 3s
+			/tell ${ChatSender} I'm all out of ${RequestedItem}
+		}
+	} else /if (${Bool[${FindItem[=${RequestedItem}]}]} && !${IsRequestedItemModShard}) {
+		/if (${DebugGimme}) /echo Found item ${RequestedItem}
+		/declare IsNoRent bool local ${Bool[${FindItem[=${RequestedItem}].NoRent}]}
+		/if (${DebugGimme}) /echo Item is NoRent = ${IsNoRent}
+		/if (${DebugGimme}) /echo IsMyBot = ${IsMyBot}		
+		/if (${IsNoRent} || ${IsMyBot}) {
+			/ItemNotify "${RequestedItem}" leftmouseup
+			/delay 2s ${Cursor.ID}
+		} else {
+			/delay 2s
+			/tell ${ChatSender} Only temporary items can be requested
+			/return
+		}
+	} else /if (${Bool[${FindItem[=Summoned: ${RequestedItem}]}]}) {
+		/ItemNotify "Summoned: ${RequestedItem}" leftmouseup
+		/delay 2s ${Cursor.ID}
+	} else {
+		/if (${DebugGimme}) /echo Summoning ${RequestedItem}
+		/declare RequestedItemString string local ${RequestedItem}
+		/declare RequestedItemStringWithoutSummoned string local ${RequestedItemString.Replace["Summoned: ",]}
+		/declare SummoningItem bool local true
+		/echo ${RequestedItem}
+		/if (${Bool[${Me.Book[${RequestedItem}]}]} || ${Bool[${Me.AltAbility[${RequestedItem}]}]}) {
+			/if (${DebugGimme}) /echo casting "${RequestedItem}"
+			/casting "${RequestedItem}"
+		} else /if (${Bool[${Me.Book[Summon: ${RequestedItem}]}]}) {
+			/if (${DebugGimme}) /echo casting "Summon: ${RequestedItem}"
+			/casting "Summon: ${RequestedItem}"
+		} else /if (${Bool[${Me.Book[${RequestedItemStringWithoutSummoned}]}]} || ${Bool[${Me.AltAbility[${RequestedItemStringWithoutSummoned}]}]}) {
+			/if (${DebugGimme}) /echo casting ${RequestedItemStringWithoutSummoned}
+			/casting "${RequestedItemStringWithoutSummoned}"
+		} else {
+			/delay 2s
+			/tell ${ChatSender} Spell ${RequestedItem} not found
+			/varset SummoningItem false
+		}
+		/if (${SummoningItem}) /delay 10s ${Cursor.ID}
+		/if (${DebugGimme}) /echo Summoned ${RequestedItem} ${SummoningItem}
+	}
+	/if (${Cursor.ID} || ${platOnCursor}) {
+		/declare originalLoc string local ${Me.Loc}
+		/if (${DebugGimme}) /echo IsClose = ${Bool[${Math.Distance[${senderLoc}]}<20]}
+		/stick 12
+		/while (${Math.Distance[${Spawn[${ChatSender}].Loc}]}>20) {
+			/if (${Debug}) /echo Distance = ${Math.Distance[${senderLoc}]}
+			/delay 1s
+		}
+		/if (${DebugGimme}) /echo Distance = ${Math.Distance[${senderLoc}]}
+		/if (${DebugGimme}) /echo IsClose = ${Bool[${Math.Distance[${senderLoc}]}<20]}
+		/click left target
+		/delay 3s ${Window[TradeWnd].Open}
+		/while (${Window[TradeWnd].Open}) {
+			/notify TradeWnd TRDW_Trade_Button leftmouseup 
+			/delay 5
+			/bct ${Target.CleanName} //notify TradeWnd TRDW_Trade_Button leftmouseup 
+			/delay 1s
+		}
+		/call ClearCursor
+		| Move back to original location
+		/if (${Stick.Active}) /squelch /stick off
+		/if (${Math.Distance[${originalLoc}]}>20) /call MoveToLoc ${originalLoc} 50 20
+	} else /if (!${IsRequestedItemModShard}) {
+		/tell ${ChatSender} Sorry, I don't have a ${RequestedItem} and couldn't summon one for you. The spell/AA may be on cooldown.
+	} 
+	| If the item is a modulation shard, tell everyone to put it in their bag
+	/if (${IsRequestedItemModShard}) {
+		/bcaa //autoinventory
+	}
+/return
+
+|----------------------------------------------------------------------------|
+|- Whenever nothing else is going on will check if the toon has all the items in the gimme list
+|- and request items it doesn't have from the target character
+|- Install Instructions:                                   
+|- Add this SUB to the bottom of e3 Includes/e3_Basics.inc 
+|- Add subroutine check for the appropriate classes in e3 Macro Inis/Advanced Settings.ini                  
+|-  ex:   ENC Function#10=check_Gimme                     
+|- Add the below setting to your character.ini                       
+|-  [Gimme]                                                 
+|-  Gimme=CharacterName|ItemName|RetryTime
+|-  Gimme=CharacterName|ItemName|RetryTime
+|- Where the item is the item you want, the CharacterName is your supplier
+|- and retry time is how long to wait before asking that character for
+|- that item again (items must be acquired in order)
+|- Example Config:
+|- [Gimme]
+|- Gimme=Element|Lava Orb|30s
+|- Gimme=Focus|Sanguine Mind Crystal III|300s
+|- Gimme=Focus|Azure Mind Crystal|300s
+|----------------------------------------------------------------------------|
+SUB check_Gimme
+	/if (${Debug}) /echo |- check_Gimme ==>
+	/declare DebugCheckGimme local false
+	/if (!${Defined[GimmeEnabled]}) /declare GimmeEnabled bool outer ${Bool[${Ini[${Character_Ini},Gimme]}]}
+    /if (${GimmeEnabled} && !${Bool[${Cursor.ID}]} && !${medBreak} && !${Me.CombatState.Equal[DEBUFFED]} && !${Me.Invis} && ${Me.PctHPs} == 100 && ${Me.PctAggro} < 1 && !${Me.CombatState.Equal[COMBAT]} && !${Assisting} && !${Me.Moving} && !${Me.Combat}) {   
+		/if (!${Defined[Gimmies]}) /call IniToArrayV "${Character_Ini},Gimme,Gimme#" Gimmies
+		/if (!${Defined[gimmeCharacter]}) /declare gimmeCharacter string local NULL
+		/if (!${Defined[gimmeItem]}) /declare gimmeItem string local NULL
+		/if (!${Defined[gimmeTimeout]}) /declare gimmeTimeout timer local NULL
+		| Loop through the string, then loop through each of the items on that key		
+		/declare i int local
+		/declare IsTargetMyBot bool local false
+		/for i 1 to ${Gimmies.Size}
+			/varset gimmeCharacter ${Gimmies[${i}].Arg[1,|]}
+			/varset gimmeItem ${Gimmies[${i}].Arg[2,|]}
+			/varset gimmeTimeout ${Gimmies[${i}].Arg[3,|]}
+			
+			| If it's my bot, check if the target bot is available to gimme
+			/varset IsTargetMyBot ${Bool[${Select[${gimmeCharacter}, ${NetBots.Client}]}]}			
+			/if (${DebugCheckGimme}) /echo ${gimmeCharacter} IsTargetMyBot=${IsTargetMyBot}
+			/if (${IsTargetMyBot} && (!${Spawn[${gimmeCharacter}].LineOfSight} || ${Bool[${NetBots[${gimmeCharacter}].Casting}]} || ${NetBots[${gimmeCharacter}].Attacking} || ${NetBots[${gimmeCharacter}].Moving} || !${NetBots[${gimmeCharacter}].InZone})) {
+				/if (${DebugCheckGimme}) /echo ${gimmeCharacter} is busy
+				/if (${DebugCheckGimme}) /echo ${gimmeCharacter} Netbots = 	${NetBots[${gimmeCharacter}].PctHPs}
+				/if (${DebugCheckGimme}) /echo ${gimmeCharacter} is Casting ${NetBots[${gimmeCharacter}].Casting}
+				/if (${DebugCheckGimme}) /echo ${gimmeCharacter} is Attacking ${NetBots[${gimmeCharacter}].Attacking}
+				/if (${DebugCheckGimme}) /echo ${gimmeCharacter} PctMana ${NetBots[${gimmeCharacter}].PctMana}
+				/if (${DebugCheckGimme}) /echo ${gimmeCharacter} PctHPs ${NetBots[${gimmeCharacter}].PctHPs}
+			} else {
+				/if (!${Defined[GimmeTimer${i}]}) /declare GimmeTimer${i} timer outer 0
+				/if (!${Bool[${FindItem[=${gimmeItem}]}]} && ${GimmeTimer${i}} == 0 && ${Bool[${Spawn[${gimmeCharacter}]}]}) {
+					/if (${Bool[${Spawn[pc ${gimmeCharacter}]}]}) {
+						/echo ==> Gimme: Hey ${gimmeCharacter} Gimme a ${gimmeItem}
+						/delay 1
+						/tell ${Gimmies[${i}].Arg[1,|]} Gimme ${gimmeItem}
+					}
+					/varset GimmeTimer${i} ${gimmeTimeout}
+					| Minimum of 10s delay between requests
+					/delay 10s
+					/return
+				}
+			}
+		/next i
+	}
+	/if (${Debug}) /echo <== check_Gimme -|
+/RETURN
+
+|----------------------------------------------------------------------------|
+|- Whenever nothing else is going on will check if the toon has all the items in the supply list
+|- if it doesn't, will cast the spell to create the item
+|- Install Instructions:                                   
+|- Add this SUB to the bottom of e3 Includes/e3_Basics.inc 
+|- Add subroutine check for the appropriate classes in e3 Macro Inis/Advanced Settings.ini                  
+|-  ex:   MAG Function#10=check_Supply
+|- Add the below setting to your character.ini
+|-  [Supply]                                                 
+|-  Supply=ItemName|SpellName|RetryTime
+|-  Supply=ItemName|SpellName|RetryTime
+|- Where the item is the item you want and spell name is the spell to cast to
+|- create that item (for AAs, use the alt id)
+|- and retry time is how long to wait before trying to create 
+|- that item again if you don't have it
+|----------------------------------------------------------------------------|
+SUB check_Supply
+	/if (${Debug}) /echo |- check_Supply ==>
+	/if (!${Defined[SupplyEnabled]}) /declare SupplyEnabled bool outer ${Bool[${Ini[${Character_Ini},Supply]}]}
+    /if (${SupplyEnabled} && !${Bool[${Cursor.ID}]} && !${medBreak} && !${Me.CombatState.Equal[DEBUFFED]} && !${Me.Invis} && ${Me.PctMana} == 100 && ${Me.PctHPs} == 100 && ${Me.PctAggro} < 1 && !${Me.CombatState.Equal[COMBAT]} && !${Assisting} && !${Me.Moving} && !${Me.Combat}) {   
+		/if (!${Defined[Supply]}) /call IniToArrayV "${Character_Ini},Supply,Supply#" Supply
+		/declare i int local
+		/if (!${Defined[supplyItem]}) /declare supplyItem string local NULL
+		/if (!${Defined[supplySpell]}) /declare supplySpell string local NULL
+		/if (!${Defined[supplyTimeout]}) /declare supplyTimeout timer local NULL
+		| Loop through the string, then loop through each of the items on that key		
+		/for i 1 to ${Supply.Size}
+			/varset supplyItem ${Supply[${i}].Arg[1,|]}
+			/varset supplySpell ${Supply[${i}].Arg[2,|]}
+			/varset supplyTimeout ${Supply[${i}].Arg[3,|]}
+			/if (!${Defined[SupplyTimer${i}]}) /declare SupplyTimer${i} timer outer 0
+			/if (!${Bool[${FindItem[=${supplyItem}]}]} && ${SupplyTimer${i}} == 0) {
+				/echo ==> Supply: Creating a ${supplyItem} using ${supplySpell}
+				/delay 1
+				/tar ${Me}
+				/delay 1
+				/casting "${supplySpell}"
+				/delay 12s ${Cursor.ID}
+				/while (${Cursor.ID}) {
+					/autoinv
+					/delay 1s
+				}
+				| If the item is a modulation shard, tell everyone to put it in their bag
+				/if (${supplyItem.Find[Modulation Shard]}) {
+					/bcaa //autoinventory
+				}
+				/varset SupplyTimer${i} ${supplyTimeout}
+				/return
+			}
+		/next i
+	}
+	/if (${Debug}) /echo <== check_Supply -|
+/RETURN
+
+
+
+
+|------------------------------------------------------------------------|
+|- LinkLoot event 
+|- Written by Psychosis of Project Lazarus								
+|- Additional help from Grok and Kreegoth								
+|- e3 integration by Sirhopsalot
+|- Install Instructions:   
+|- Place this function in e3_Basics.inc
+|- add /doevents LinkLoot to basics_Background_Events in e3_Basics.inc
+|- Usage:
+|- /bc LinkLoot bag channel
+|- /bc LinkLoot 1 2 // this would link all contents of bag 1 to Raid
+|- Alias Shortcut:
+|- /alias /LinkLoot /bc LinkLoot 
+|- Alias Usage: /LinkLoot 1 1
+|------------------------------------------------------------------------|
+#EVENT LinkLoot "<#1#> LinkLoot #2# #3#"
+SUB EVENT_LinkLoot(line, chatSender, bag, channel)
+	/declare DebugLinkLoot bool local false
+
+	/if (${chatSender.Equal[${Me.Name}]} == FALSE) {
+		/if (${DebugLinkLoot}) /echo {chatSender.Equal[${Me.Name}]} = ${chatSender.Equal[${Me.Name}]}
+		/return
+	}
+
+	/if (!${bag}) {
+		/Echo Example Usage: /mac lootlink 1 2 -- This would link all contents of bag 1, to RAID
+		/Echo Example Usage: The first is your bag number, the second is your channel output number
+		/Echo Channel List: 1=Group, 2=Raid, 3=Guild
+		/return
+	}
+
+	/if (${DebugLinkLoot}) /echo {bag} = ${bag}
+	/if (${DebugLinkLoot}) /echo {channel} = ${channel}
+
+	/declare Bag int ${bag}
+	/declare Channel string ${channel}
+	/declare varname int local
+	/declare itemlist string local
+	/declare itemlist_stack string local
+	/for varname 1 to ${InvSlot[pack${Bag}].Item.Container}
+		/if (${InvSlot[pack${Bag}].Item.Item[${varname}].ID}) {
+			/varset itemlist ${itemlist}${LinkDB[${InvSlot[pack${Bag}].Item.Item[${varname}]}]}|
+			/varset itemlist_stack ${itemlist_stack}${InvSlot[pack${Bag}].Item.Item[${varname}].Stack}|
+		}
+	/next varname
+	/declare a int 1
+	/declare b ${itemlist.Count[|]}	
+	/if (${DebugLinkLoot}) /echo {itemlist.Count[|]} = ${itemlist.Count[|]}
+
+	/if (${Channel} == 1) {
+		/if (${b} == 10) {
+			/bc Linking Bag [#${Bag}] to Group
+			/g -- ITEMS IN BAG [#${Bag}] --
+			/g	${itemlist_stack.Token[1,"|"]}x ${itemlist.Token[1,"|"]} - ${itemlist_stack.Token[2,"|"]}x ${itemlist.Token[2,"|"]} - ${itemlist_stack.Token[3,"|"]}x ${itemlist.Token[3,"|"]}
+			/g ${itemlist_stack.Token[4,"|"]}x ${itemlist.Token[4,"|"]} - ${itemlist_stack.Token[5,"|"]}x ${itemlist.Token[5,"|"]} - ${itemlist_stack.Token[6,"|"]}x ${itemlist.Token[6,"|"]}
+			/g ${itemlist_stack.Token[7,"|"]}x ${itemlist.Token[7,"|"]} - ${itemlist_stack.Token[8,"|"]}x ${itemlist.Token[8,"|"]} - ${itemlist_stack.Token[9,"|"]}x ${itemlist.Token[9,"|"]}
+			/g ${itemlist_stack.Token[10,"|"]}x ${itemlist.Token[10,"|"]}
+			/g ----
+		} else /if (${b} == 9) {
+			/bc Linking Bag [#${Bag}] to Group
+			/g -- ITEMS IN BAG [#${Bag}] --
+			/g	${itemlist_stack.Token[1,"|"]}x ${itemlist.Token[1,"|"]} - ${itemlist_stack.Token[2,"|"]}x ${itemlist.Token[2,"|"]} - ${itemlist_stack.Token[3,"|"]}x ${itemlist.Token[3,"|"]}
+			/g ${itemlist_stack.Token[4,"|"]}x ${itemlist.Token[4,"|"]} - ${itemlist_stack.Token[5,"|"]}x ${itemlist.Token[5,"|"]} - ${itemlist_stack.Token[6,"|"]}x ${itemlist.Token[6,"|"]}
+			/g ${itemlist_stack.Token[7,"|"]}x ${itemlist.Token[7,"|"]} - ${itemlist_stack.Token[8,"|"]}x ${itemlist.Token[8,"|"]} - ${itemlist_stack.Token[9,"|"]}x ${itemlist.Token[9,"|"]}
+			/g ----
+		} else /if (${b} == 8) {
+			/bc Linking Bag [#${Bag}] to Group
+			/g -- ITEMS IN BAG [#${Bag}] --
+			/g	${itemlist_stack.Token[1,"|"]}x ${itemlist.Token[1,"|"]} - ${itemlist_stack.Token[2,"|"]}x ${itemlist.Token[2,"|"]} - ${itemlist_stack.Token[3,"|"]}x ${itemlist.Token[3,"|"]}
+			/g ${itemlist_stack.Token[4,"|"]}x ${itemlist.Token[4,"|"]} - ${itemlist_stack.Token[5,"|"]}x ${itemlist.Token[5,"|"]} - ${itemlist_stack.Token[6,"|"]}x ${itemlist.Token[6,"|"]}
+			/g ${itemlist_stack.Token[7,"|"]}x ${itemlist.Token[7,"|"]} - ${itemlist_stack.Token[8,"|"]}x ${itemlist.Token[8,"|"]}
+			/g ----
+		} else /if (${b} == 7) {
+			/bc Linking Bag [#${Bag}] to Group
+			/g -- ITEMS IN BAG [#${Bag}] --
+			/g	${itemlist_stack.Token[1,"|"]}x ${itemlist.Token[1,"|"]} - ${itemlist_stack.Token[2,"|"]}x ${itemlist.Token[2,"|"]} - ${itemlist_stack.Token[3,"|"]}x ${itemlist.Token[3,"|"]}
+			/g ${itemlist_stack.Token[4,"|"]}x ${itemlist.Token[4,"|"]} - ${itemlist_stack.Token[5,"|"]}x ${itemlist.Token[5,"|"]} - ${itemlist_stack.Token[6,"|"]}x ${itemlist.Token[6,"|"]}
+			/g ${itemlist_stack.Token[7,"|"]}x ${itemlist.Token[7,"|"]}
+			/g ----
+		} else /if (${b} == 6) {
+			/bc Linking Bag [#${Bag}] to Group
+			/g -- ITEMS IN BAG [#${Bag}] --
+			/g	${itemlist_stack.Token[1,"|"]}x ${itemlist.Token[1,"|"]} - ${itemlist_stack.Token[2,"|"]}x ${itemlist.Token[2,"|"]} - ${itemlist_stack.Token[3,"|"]}x ${itemlist.Token[3,"|"]}
+			/g ${itemlist_stack.Token[4,"|"]}x ${itemlist.Token[4,"|"]} - ${itemlist_stack.Token[5,"|"]}x ${itemlist.Token[5,"|"]} - ${itemlist_stack.Token[6,"|"]}x ${itemlist.Token[6,"|"]}
+			/g ----
+		} else /if (${b} == 5) {
+			/bc Linking Bag [#${Bag}] to Group
+			/g -- ITEMS IN BAG [#${Bag}] --
+			/g	${itemlist_stack.Token[1,"|"]}x ${itemlist.Token[1,"|"]} - ${itemlist_stack.Token[2,"|"]}x ${itemlist.Token[2,"|"]} - ${itemlist_stack.Token[3,"|"]}x ${itemlist.Token[3,"|"]}
+			/g ${itemlist_stack.Token[4,"|"]}x ${itemlist.Token[4,"|"]} - ${itemlist_stack.Token[5,"|"]}x ${itemlist.Token[5,"|"]}
+			/g ----
+		} else /if (${b} == 4) {
+			/bc Linking Bag [#${Bag}] to Group
+			/g -- ITEMS IN BAG [#${Bag}] --
+			/g	${itemlist_stack.Token[1,"|"]}x ${itemlist.Token[1,"|"]} - ${itemlist_stack.Token[2,"|"]}x ${itemlist.Token[2,"|"]} - ${itemlist_stack.Token[3,"|"]}x ${itemlist.Token[3,"|"]}
+			/g ${itemlist_stack.Token[4,"|"]}x ${itemlist.Token[4,"|"]}
+			/g ----
+		} else /if (${b} == 3) {
+			/bc Linking Bag [#${Bag}] to Group
+			/g -- ITEMS IN BAG [#${Bag}] --
+			/g	${itemlist_stack.Token[1,"|"]}x ${itemlist.Token[1,"|"]} - ${itemlist_stack.Token[2,"|"]}x ${itemlist.Token[2,"|"]} - ${itemlist_stack.Token[3,"|"]}x ${itemlist.Token[3,"|"]}
+			/g ----
+		} else /if (${b} == 2) {
+			/bc Linking Bag [#${Bag}] to Group
+			/g -- ITEMS IN BAG [#${Bag}] --
+			/g	${itemlist_stack.Token[1,"|"]}x ${itemlist.Token[1,"|"]} - ${itemlist_stack.Token[2,"|"]}x ${itemlist.Token[2,"|"]}
+			/g ----
+		} else /if (${b} == 1) {
+			/bc Linking Bag [#${Bag}] to Group
+			/g -- ITEMS IN BAG [#${Bag}] --
+			/g	${itemlist_stack.Token[1,"|"]}x ${itemlist.Token[1,"|"]}
+			/g ----
+		}
+	}
+	/if (${Channel} == 2) {
+		/if (${b} == 10) {
+			/bc Linking Bag [#${Bag}] to Raid
+			/rs -- ITEMS IN BAG [#${Bag}] --
+			/rs	${itemlist_stack.Token[1,"|"]}x ${itemlist.Token[1,"|"]} - ${itemlist_stack.Token[2,"|"]}x ${itemlist.Token[2,"|"]} - ${itemlist_stack.Token[3,"|"]}x ${itemlist.Token[3,"|"]}
+			/rs ${itemlist_stack.Token[4,"|"]}x ${itemlist.Token[4,"|"]} - ${itemlist_stack.Token[5,"|"]}x ${itemlist.Token[5,"|"]} - ${itemlist_stack.Token[6,"|"]}x ${itemlist.Token[6,"|"]}
+			/rs ${itemlist_stack.Token[7,"|"]}x ${itemlist.Token[7,"|"]} - ${itemlist_stack.Token[8,"|"]}x ${itemlist.Token[8,"|"]} - ${itemlist_stack.Token[9,"|"]}x ${itemlist.Token[9,"|"]}
+			/rs ${itemlist_stack.Token[10,"|"]}x ${itemlist.Token[10,"|"]}
+			/rs ----
+		} else /if (${b} == 9) {
+			/bc Linking Bag [#${Bag}] to Raid
+			/rs -- ITEMS IN BAG [#${Bag}] --
+			/rs	${itemlist_stack.Token[1,"|"]}x ${itemlist.Token[1,"|"]} - ${itemlist_stack.Token[2,"|"]}x ${itemlist.Token[2,"|"]} - ${itemlist_stack.Token[3,"|"]}x ${itemlist.Token[3,"|"]}
+			/rs ${itemlist_stack.Token[4,"|"]}x ${itemlist.Token[4,"|"]} - ${itemlist_stack.Token[5,"|"]}x ${itemlist.Token[5,"|"]} - ${itemlist_stack.Token[6,"|"]}x ${itemlist.Token[6,"|"]}
+			/rs ${itemlist_stack.Token[7,"|"]}x ${itemlist.Token[7,"|"]} - ${itemlist_stack.Token[8,"|"]}x ${itemlist.Token[8,"|"]} - ${itemlist_stack.Token[9,"|"]}x ${itemlist.Token[9,"|"]}
+			/rs ----
+		} else /if (${b} == 8) {
+			/bc Linking Bag [#${Bag}] to Raid
+			/rs -- ITEMS IN BAG [#${Bag}] --
+			/rs	${itemlist_stack.Token[1,"|"]}x ${itemlist.Token[1,"|"]} - ${itemlist_stack.Token[2,"|"]}x ${itemlist.Token[2,"|"]} - ${itemlist_stack.Token[3,"|"]}x ${itemlist.Token[3,"|"]}
+			/rs ${itemlist_stack.Token[4,"|"]}x ${itemlist.Token[4,"|"]} - ${itemlist_stack.Token[5,"|"]}x ${itemlist.Token[5,"|"]} - ${itemlist_stack.Token[6,"|"]}x ${itemlist.Token[6,"|"]}
+			/rs ${itemlist_stack.Token[7,"|"]}x ${itemlist.Token[7,"|"]} - ${itemlist_stack.Token[8,"|"]}x ${itemlist.Token[8,"|"]}
+			/rs ----
+		} else /if (${b} == 7) {
+			/bc Linking Bag [#${Bag}] to Raid
+			/rs -- ITEMS IN BAG [#${Bag}] --
+			/rs	${itemlist_stack.Token[1,"|"]}x ${itemlist.Token[1,"|"]} - ${itemlist_stack.Token[2,"|"]}x ${itemlist.Token[2,"|"]} - ${itemlist_stack.Token[3,"|"]}x ${itemlist.Token[3,"|"]}
+			/rs ${itemlist_stack.Token[4,"|"]}x ${itemlist.Token[4,"|"]} - ${itemlist_stack.Token[5,"|"]}x ${itemlist.Token[5,"|"]} - ${itemlist_stack.Token[6,"|"]}x ${itemlist.Token[6,"|"]}
+			/rs ${itemlist_stack.Token[7,"|"]}x ${itemlist.Token[7,"|"]}
+			/rs ----
+		} else /if (${b} == 6) {
+			/bc Linking Bag [#${Bag}] to Raid
+			/rs -- ITEMS IN BAG [#${Bag}] --
+			/rs	${itemlist_stack.Token[1,"|"]}x ${itemlist.Token[1,"|"]} - ${itemlist_stack.Token[2,"|"]}x ${itemlist.Token[2,"|"]} - ${itemlist_stack.Token[3,"|"]}x ${itemlist.Token[3,"|"]}
+			/rs ${itemlist_stack.Token[4,"|"]}x ${itemlist.Token[4,"|"]} - ${itemlist_stack.Token[5,"|"]}x ${itemlist.Token[5,"|"]} - ${itemlist_stack.Token[6,"|"]}x ${itemlist.Token[6,"|"]}
+			/rs ----
+		} else /if (${b} == 5) {
+			/bc Linking Bag [#${Bag}] to Raid
+			/rs -- ITEMS IN BAG [#${Bag}] --
+			/rs	${itemlist_stack.Token[1,"|"]}x ${itemlist.Token[1,"|"]} - ${itemlist_stack.Token[2,"|"]}x ${itemlist.Token[2,"|"]} - ${itemlist_stack.Token[3,"|"]}x ${itemlist.Token[3,"|"]}
+			/rs ${itemlist_stack.Token[4,"|"]}x ${itemlist.Token[4,"|"]} - ${itemlist_stack.Token[5,"|"]}x ${itemlist.Token[5,"|"]}
+			/rs ----
+		} else /if (${b} == 4) {
+			/bc Linking Bag [#${Bag}] to Raid
+			/rs -- ITEMS IN BAG [#${Bag}] --
+			/rs	${itemlist_stack.Token[1,"|"]}x ${itemlist.Token[1,"|"]} - ${itemlist_stack.Token[2,"|"]}x ${itemlist.Token[2,"|"]} - ${itemlist_stack.Token[3,"|"]}x ${itemlist.Token[3,"|"]}
+			/rs ${itemlist_stack.Token[4,"|"]}x ${itemlist.Token[4,"|"]}
+			/rs ----
+		} else /if (${b} == 3) {
+			/bc Linking Bag [#${Bag}] to Raid
+			/rs -- ITEMS IN BAG [#${Bag}] --
+			/rs	${itemlist_stack.Token[1,"|"]}x ${itemlist.Token[1,"|"]} - ${itemlist_stack.Token[2,"|"]}x ${itemlist.Token[2,"|"]} - ${itemlist_stack.Token[3,"|"]}x ${itemlist.Token[3,"|"]}
+			/rs ----
+		} else /if (${b} == 2) {
+			/bc Linking Bag [#${Bag}] to Raid
+			/rs -- ITEMS IN BAG [#${Bag}] --
+			/rs	${itemlist_stack.Token[1,"|"]}x ${itemlist.Token[1,"|"]} - ${itemlist_stack.Token[2,"|"]}x ${itemlist.Token[2,"|"]}
+			/rs ----
+		} else /if (${b} == 1) {
+			/bc Linking Bag [#${Bag}] to Raid
+			/rs -- ITEMS IN BAG [#${Bag}] --
+			/rs	${itemlist_stack.Token[1,"|"]}x ${itemlist.Token[1,"|"]}
+			/rs ----
+		}
+	}
+	/if (${Channel} == 3) {
+		/if (${b} == 10) {	
+			/bc Linking Bag [#${Bag}] to Guild
+			/gu -- ITEMS IN BAG [#${Bag}] --
+			/gu	${itemlist_stack.Token[1,"|"]}x ${itemlist.Token[1,"|"]} - ${itemlist_stack.Token[2,"|"]}x ${itemlist.Token[2,"|"]} - ${itemlist_stack.Token[3,"|"]}x ${itemlist.Token[3,"|"]}
+			/gu ${itemlist_stack.Token[4,"|"]}x ${itemlist.Token[4,"|"]} - ${itemlist_stack.Token[5,"|"]}x ${itemlist.Token[5,"|"]} - ${itemlist_stack.Token[6,"|"]}x ${itemlist.Token[6,"|"]}
+			/gu ${itemlist_stack.Token[7,"|"]}x ${itemlist.Token[7,"|"]} - ${itemlist_stack.Token[8,"|"]}x ${itemlist.Token[8,"|"]} - ${itemlist_stack.Token[9,"|"]}x ${itemlist.Token[9,"|"]}
+			/gu ${itemlist_stack.Token[10,"|"]}x ${itemlist.Token[10,"|"]}
+			/gu ----
+		} else /if (${b} == 9) {
+			/bc Linking Bag [#${Bag}] to Guild
+			/gu -- ITEMS IN BAG [#${Bag}] --
+			/gu	${itemlist_stack.Token[1,"|"]}x ${itemlist.Token[1,"|"]} - ${itemlist_stack.Token[2,"|"]}x ${itemlist.Token[2,"|"]} - ${itemlist_stack.Token[3,"|"]}x ${itemlist.Token[3,"|"]}
+			/gu ${itemlist_stack.Token[4,"|"]}x ${itemlist.Token[4,"|"]} - ${itemlist_stack.Token[5,"|"]}x ${itemlist.Token[5,"|"]} - ${itemlist_stack.Token[6,"|"]}x ${itemlist.Token[6,"|"]}
+			/gu ${itemlist_stack.Token[7,"|"]}x ${itemlist.Token[7,"|"]} - ${itemlist_stack.Token[8,"|"]}x ${itemlist.Token[8,"|"]} - ${itemlist_stack.Token[9,"|"]}x ${itemlist.Token[9,"|"]}
+			/gu ----
+		} else /if (${b} == 8) {
+			/bc Linking Bag [#${Bag}] to Guild
+			/gu -- ITEMS IN BAG [#${Bag}] --
+			/gu	${itemlist_stack.Token[1,"|"]}x ${itemlist.Token[1,"|"]} - ${itemlist_stack.Token[2,"|"]}x ${itemlist.Token[2,"|"]} - ${itemlist_stack.Token[3,"|"]}x ${itemlist.Token[3,"|"]}
+			/gu ${itemlist_stack.Token[4,"|"]}x ${itemlist.Token[4,"|"]} - ${itemlist_stack.Token[5,"|"]}x ${itemlist.Token[5,"|"]} - ${itemlist_stack.Token[6,"|"]}x ${itemlist.Token[6,"|"]}
+			/gu ${itemlist_stack.Token[7,"|"]}x ${itemlist.Token[7,"|"]} - ${itemlist_stack.Token[8,"|"]}x ${itemlist.Token[8,"|"]}
+			/gu ----
+		} else /if (${b} == 7) {
+			/bc Linking Bag [#${Bag}] to Guild
+			/gu -- ITEMS IN BAG [#${Bag}] --
+			/gu	${itemlist_stack.Token[1,"|"]}x ${itemlist.Token[1,"|"]} - ${itemlist_stack.Token[2,"|"]}x ${itemlist.Token[2,"|"]} - ${itemlist_stack.Token[3,"|"]}x ${itemlist.Token[3,"|"]}
+			/gu ${itemlist_stack.Token[4,"|"]}x ${itemlist.Token[4,"|"]} - ${itemlist_stack.Token[5,"|"]}x ${itemlist.Token[5,"|"]} - ${itemlist_stack.Token[6,"|"]}x ${itemlist.Token[6,"|"]}
+			/gu ${itemlist_stack.Token[7,"|"]}x ${itemlist.Token[7,"|"]}
+			/gu ----
+		} else /if (${b} == 6) {
+			/bc Linking Bag [#${Bag}] to Guild
+			/gu -- ITEMS IN BAG [#${Bag}] --
+			/gu	${itemlist_stack.Token[1,"|"]}x ${itemlist.Token[1,"|"]} - ${itemlist_stack.Token[2,"|"]}x ${itemlist.Token[2,"|"]} - ${itemlist_stack.Token[3,"|"]}x ${itemlist.Token[3,"|"]}
+			/gu ${itemlist_stack.Token[4,"|"]}x ${itemlist.Token[4,"|"]} - ${itemlist_stack.Token[5,"|"]}x ${itemlist.Token[5,"|"]} - ${itemlist_stack.Token[6,"|"]}x ${itemlist.Token[6,"|"]}
+			/gu ----
+		} else /if (${b} == 5) {
+			/bc Linking Bag [#${Bag}] to Guild
+			/gu -- ITEMS IN BAG [#${Bag}] --
+			/gu	${itemlist_stack.Token[1,"|"]}x ${itemlist.Token[1,"|"]} - ${itemlist_stack.Token[2,"|"]}x ${itemlist.Token[2,"|"]} - ${itemlist_stack.Token[3,"|"]}x ${itemlist.Token[3,"|"]}
+			/gu ${itemlist_stack.Token[4,"|"]}x ${itemlist.Token[4,"|"]} - ${itemlist_stack.Token[5,"|"]}x ${itemlist.Token[5,"|"]}
+			/gu ----
+		} else /if (${b} == 4) {
+			/bc Linking Bag [#${Bag}] to Guild
+			/gu -- ITEMS IN BAG [#${Bag}] --
+			/gu	${itemlist_stack.Token[1,"|"]}x ${itemlist.Token[1,"|"]} - ${itemlist_stack.Token[2,"|"]}x ${itemlist.Token[2,"|"]} - ${itemlist_stack.Token[3,"|"]}x ${itemlist.Token[3,"|"]}
+			/gu ${itemlist_stack.Token[4,"|"]}x ${itemlist.Token[4,"|"]}
+			/gu ----
+		} else /if (${b} == 3) {
+			/bc Linking Bag [#${Bag}] to Guild
+			/gu -- ITEMS IN BAG [#${Bag}] --
+			/gu	${itemlist_stack.Token[1,"|"]}x ${itemlist.Token[1,"|"]} - ${itemlist_stack.Token[2,"|"]}x ${itemlist.Token[2,"|"]} - ${itemlist_stack.Token[3,"|"]}x ${itemlist.Token[3,"|"]}
+			/gu ----
+		} else /if (${b} == 2) {
+			/bc Linking Bag [#${Bag}] to Guild
+			/gu -- ITEMS IN BAG [#${Bag}] --
+			/gu	${itemlist_stack.Token[1,"|"]}x ${itemlist.Token[1,"|"]} - ${itemlist_stack.Token[2,"|"]}x ${itemlist.Token[2,"|"]}
+			/gu ----
+		} else /if (${b} == 1) {
+			/bc Linking Bag [#${Bag}] to Guild
+			/gu -- ITEMS IN BAG [#${Bag}] --
+			/gu	${itemlist_stack.Token[1,"|"]}x ${itemlist.Token[1,"|"]}
+			/gu ----
+		}
+	}
+/RETURN
