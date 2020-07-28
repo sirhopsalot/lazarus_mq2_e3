@@ -261,6 +261,8 @@ SUB MAG_Setup
   /declare coh_dist int outer 150
 	/call iniToVarV "${Character_Ini},Magician,Auto-Pet Weapons (On/Off)" autoWeapons bool outer
 	/call IniToArrayV "${Character_Ini},Magician,Summoned Pet Item#" petItems
+  /call iniToVarV "${Character_Ini},Magician,Auto-Summon Orb of Mastery (On/Off)" autoOrbOfMastery bool outer
+
 	/declare mageRangedSwap bool outer FALSE
 	/if (${Defined[petItems]}) /call BuildSpellArray "petItems"	"petItems2D"
 
@@ -273,6 +275,14 @@ SUB MAG_Setup
     /declare moltenOrb[1] string outer Summon: Molten Orb
     /call BuildSpellArray "moltenOrb" "moltenOrb2D"
   }
+
+  | Orb of Mastery must be enabled and the toon must have the spell
+  /if (${autoOrbOfMastery} && ${Bool[${Me.Book[Summon Orb]}]}) {
+    /varset autoOrbOfMastery TRUE
+  } else {
+    /varset autoOrbOfMastery FALSE
+  }
+
 /if (${Debug} || ${Debug_MAG}) /echo <== MAG_Setup -|
 /RETURN
 |----------------------------------------------------------------------------|
@@ -286,12 +296,14 @@ SUB MAG_MacroSettings
 	/call WriteToIni "${advSettings_Ini},MAG Functions,MAG Function#6" "check_Ae" 1
 	/call WriteToIni "${advSettings_Ini},MAG Functions,MAG Function#7" "check_Nukes" 1
 	/call WriteToIni "${advSettings_Ini},MAG Functions,MAG Function#8" "check_SummonItems" 1
+  /call WriteToIni "${advSettings_Ini},MAG Functions,MAG Function#9" "check_OrbOfMasteryCharges" 1
 /if (${Debug}) /echo <== MAG_MacroSettings -|
 /RETURN
 |----------------------------------------------------------------------------|
 SUB MAG_CharacterSettings
 /if (${Debug}) /echo |- MAG_CharacterSettings ==>
 	/call WriteToIni "${Character_Ini},Magician,Auto-Pet Weapons (On/Off)"
+  /call WriteToIni "${Character_Ini},Magician,Auto-Summon Orb of Mastery (On/Off)"
 	/call WriteToIni "${Character_Ini},Magician,Summoned Pet Item"
 /if (${Debug}) /echo <== MAG_CharacterSettings -|
 /RETURN
@@ -316,4 +328,37 @@ SUB MAG_Background_Events
 **|
   /doevents auto_coh
   /doevents petWeapons
+/RETURN
+
+|----------------------------------------------------------------------------|
+| Destroy Orb of Mastery when it's out of charges and immediately summon a new one
+| To enable:
+| Add to MAG's Advanced Settings.ini
+| [Magician]
+| Auto-Summon Orb of Mastery (On/Off)=On
+|----------------------------------------------------------------------------|
+SUB check_OrbOfMasteryCharges 
+  /if (!${autoOrbOfMastery}) /return 
+  | Nothing on the cursor
+  /if (!${Assisting} && !${Me.CombatState.Equal[Combat]} && !${Bool[${Cursor.ID}]}) {
+    | if orb of mastery has 0 charges
+    /if (${Bool[${FindItem[=Orb of Mastery]}]} && ${FindItem[=Orb of Mastery].Charges} == 0 ) {
+      /docommand ${ChatToggle} Orb of Mastery is out of charges, destroying it
+      /call SwapItem "Orb of Mastery" "Cursor"
+      | double check that the item on the cursor is the Orb of Mastery
+      /if (${Cursor.Name.Equal[Orb of Mastery]}) {
+        /destroy
+      }
+    }
+    | if toon has no orb of mastery
+    /if (!${Bool[${FindItem[=Orb of Mastery]}]}) {
+      /docommand ${ChatToggle} No Orb of Mastery in inventory, summoning an Orb of Mastery
+      /casting "Summon Orb"
+      /delay 12s ${Cursor.ID}
+      /while (${Cursor.ID}) {
+        /autoinv
+        /delay 1s
+      }
+    }    
+  }  
 /RETURN
