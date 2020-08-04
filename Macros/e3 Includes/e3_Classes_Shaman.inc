@@ -93,8 +93,9 @@ SUB Event_Idol(line, ChatSender)
 	}
 	/declare s int local
 	/for s 1 to ${idolSpells2D.Size[1]}{
-		/call check_Ready "idolSpells2D" ${s}
-		/if (${c_Ready}) /call e3_Cast ${Me.ID} "idolSpells2D" ${s}				
+		| make sure current spell is done casting
+		/while (${Me.Casting}) /delay 5
+		/call e3_Cast ${Me.ID} "idolSpells2D" ${s}				
 	}	
 |----------------------------------------------------------------------------|
 Sub SHM_Background_Events
