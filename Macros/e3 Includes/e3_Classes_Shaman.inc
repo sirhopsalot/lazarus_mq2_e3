@@ -30,7 +30,9 @@ Sub SHM_Setup
 /if (${Debug}) /echo |- SHM_Setup ==>
 	/call iniToVarV "${Character_Ini},Shaman,Auto-Canni (On/Off)" AutoCanni bool outer
 	/call IniToArrayV "${Character_Ini},Shaman,Canni#" canniSpells
-  /if (${canniSpells.Size}) /call BuildSpellArray "canniSpells"	"canniSpells2D"
+	/call IniToArrayV "${Character_Ini},Shaman,Idol#" idolSpells
+  	/if (${canniSpells.Size}) /call BuildSpellArray "canniSpells"	"canniSpells2D"
+  	/if (${idolSpells.Size}) /call BuildSpellArray "idolSpells"	"idolSpells2D"	
 /if (${Debug}) /echo <== SHM_Setup -|
 /return
 |----------------------------------------------------------------------------|
@@ -40,7 +42,7 @@ SUB SHM_MacroSettings
 	/call WriteToIni "${advSettings_Ini},SHM Functions,SHM Function#2" "check_Burns" 1
 	/call WriteToIni "${advSettings_Ini},SHM Functions,SHM Function#3" "check_Heals" 1
 	/call WriteToIni "${advSettings_Ini},SHM Functions,SHM Function#4" "check_Cures" 1
-  /call WriteToIni "${advSettings_Ini},SHM Functions,SHM Function#5" "check_Buffs" 1
+  	/call WriteToIni "${advSettings_Ini},SHM Functions,SHM Function#5" "check_Buffs" 1
 	/call WriteToIni "${advSettings_Ini},SHM Functions,SHM Function#6" "check_DoTs" 1
 	/call WriteToIni "${advSettings_Ini},SHM Functions,SHM Function#7" "check_AE" 1
 	/call WriteToIni "${advSettings_Ini},SHM Functions,SHM Function#8" "check_Nukes" 1
@@ -53,10 +55,12 @@ SUB SHM_CharacterSettings
 /if (${Debug}) /echo |- SHM_CharacterSettings ==>
 	/call WriteToIni "${Character_Ini},Shaman,Auto-Canni (On/Off)"
 	/call WriteToIni "${Character_Ini},Shaman,Canni"
+	/call WriteToIni "${Character_Ini},Shaman,Idol"
 /if (${Debug}) /echo <== SHM_CharacterSettings -|
 /RETURN
 |----------------------------------------------------------------------------|
 Sub SHM_Aliases
+  /squelch /alias /Idol /echo Idol
 /return
 |----------------------------------------------------------------------------|
 #event AE_AA "#*# tells you, 'AEAA'"
@@ -77,6 +81,25 @@ sub Event_AE_AA(string line)
 	}
 /return
 |----------------------------------------------------------------------------|
+| Summons and maintains the malo idol that's configured in the shaman's ini file. Idol= |
+#event Idol "[MQ2] Idol"
+#event Idol "#1# tells you, 'Idol'"
+#event Idol "Soul Idol has expired."
+SUB Event_Idol(line, ChatSender)
+	/tar Soul Idol
+	/delay 5
+	/if (${Target.ID} != NULL) { 
+		/g Unable to summon idol. One is already active
+		/return
+	}
+	/declare s int local
+	/for s 1 to ${idolSpells2D.Size[1]}{
+		/call check_Ready "idolSpells2D" ${s}
+		/if (${c_Ready}) /call e3_Cast ${Me.ID} "idolSpells2D" ${s}				
+	}			
+/return
+|----------------------------------------------------------------------------|
 Sub SHM_Background_Events
 	/doevents AE_AA
+	/doevents Idol
 /return
