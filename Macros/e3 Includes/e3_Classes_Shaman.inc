@@ -81,14 +81,13 @@ sub Event_AE_AA(string line)
 	}
 /return
 |----------------------------------------------------------------------------|
-| Summons and maintains the malo idol that's configured in the shaman's ini file. Idol= |
 #event Idol "[MQ2] Idol"
 #event Idol "#1# tells you, 'Idol'"
 #event Idol "Soul Idol has expired."
 SUB Event_Idol(line, ChatSender)
 	/tar Soul Idol
-	/delay 5
-	/if (${Target.ID} != NULL) { 
+	/delay 1s
+	/if (${Target.CleanName.Equal[Soul Idol]}) { 
 		/g Unable to summon idol. One is already active
 		/return
 	}
@@ -96,8 +95,7 @@ SUB Event_Idol(line, ChatSender)
 	/for s 1 to ${idolSpells2D.Size[1]}{
 		/call check_Ready "idolSpells2D" ${s}
 		/if (${c_Ready}) /call e3_Cast ${Me.ID} "idolSpells2D" ${s}				
-	}			
-/return
+	}	
 |----------------------------------------------------------------------------|
 Sub SHM_Background_Events
 	/doevents AE_AA
