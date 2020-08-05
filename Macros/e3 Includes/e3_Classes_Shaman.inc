@@ -85,9 +85,7 @@ sub Event_AE_AA(string line)
 #event Idol "#1# tells you, 'Idol'"
 #event Idol "Soul Idol has expired."
 SUB Event_Idol(line, ChatSender)
-	/tar Soul Idol
-	/delay 1s
-	/if (${Target.CleanName.Equal[Soul Idol]}) { 
+	/if (!${Bool[${Spawn[Soul Idol]}]}) { 
 		/g Unable to summon idol. One is already active
 		/return
 	}
