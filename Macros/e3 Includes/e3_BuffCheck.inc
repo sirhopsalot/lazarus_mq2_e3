@@ -226,6 +226,7 @@ SUB checkAuras
       /if (${c_Ready}) {
         /if (${check_Mana["auraSpells2D",1]}) {
           /call e3_Cast ${Me.ID} "auraSpells2D" "1"
+          /delay 7s !${Me.Casting.ID}
         }
       }
     }
