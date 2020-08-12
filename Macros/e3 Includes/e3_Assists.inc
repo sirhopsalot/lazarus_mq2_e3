@@ -315,7 +315,7 @@ SUB CombatAbilities
     |/echo car ${Me.CombatAbilityReady[${abilityName}]} ${Me.CombatAbility[${abilityName}]} ${abilityName} ${Me.CombatAbilityReady[${abilityName}]} ${Me.CombatAbilityReady[Backstab]}
       /if (${Me.CombatAbilityReady[${Abilities2D[${i},${iCastName}]}]}) {
         |/echo ${Abilities2D[${i},${iCastName}]} myend ${Me.PctEndurance} >= minend ${Abilities2D[${i},${iMinEnd}]} and endcost ${Spell[${Abilities2D[${i},${iCastName}]}].EnduranceCost} <= ${Me.Endurance}
-        /if (${Me.PctEndurance} >= ${Abilities2D[${i},${iMinEnd}]} && ${Spell[${Abilities2D[${i},${iCastName}]}].EnduranceCost} <= ${Me.Endurance}) {
+        /if (${Me.PctEndurance} >= ${Abilities2D[${i},${iMinEnd}]} && ${Spell[${Abilities2D[${i},${iCastName}]}].EnduranceCost} <= ${Me.Endurance} && ${Abilities2D[${i},${iIfs}]}) {
           |/echo ready ${abilityName} ${Me.CombatAbilityReady[${abilityName}]}
           /disc ${Abilities2D[${i},${iCastName}]}
           /delay 3 !${Me.CombatAbilityReady[${Abilities2D[${i},${iCastName}]}]}
