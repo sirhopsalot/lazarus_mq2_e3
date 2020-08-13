@@ -30,9 +30,7 @@ Sub SHM_Setup
 /if (${Debug}) /echo |- SHM_Setup ==>
 	/call iniToVarV "${Character_Ini},Shaman,Auto-Canni (On/Off)" AutoCanni bool outer
 	/call IniToArrayV "${Character_Ini},Shaman,Canni#" canniSpells
-	/call IniToArrayV "${Character_Ini},Shaman,Idol#" idolSpells
-  	/if (${canniSpells.Size}) /call BuildSpellArray "canniSpells"	"canniSpells2D"
-  	/if (${idolSpells.Size}) /call BuildSpellArray "idolSpells"	"idolSpells2D"	
+  	/if (${canniSpells.Size}) /call BuildSpellArray "canniSpells"	"canniSpells2D"	
 /if (${Debug}) /echo <== SHM_Setup -|
 /return
 |----------------------------------------------------------------------------|
@@ -55,7 +53,6 @@ SUB SHM_CharacterSettings
 /if (${Debug}) /echo |- SHM_CharacterSettings ==>
 	/call WriteToIni "${Character_Ini},Shaman,Auto-Canni (On/Off)"
 	/call WriteToIni "${Character_Ini},Shaman,Canni"
-	/call WriteToIni "${Character_Ini},Shaman,Idol"
 /if (${Debug}) /echo <== SHM_CharacterSettings -|
 /RETURN
 |----------------------------------------------------------------------------|
@@ -81,22 +78,6 @@ sub Event_AE_AA(string line)
 	}
 /return
 |----------------------------------------------------------------------------|
-#event Idol "[MQ2] Idol"
-#event Idol "#1# tells you, 'Idol'"
-#event Idol "Soul Idol has expired."
-SUB Event_Idol(line, ChatSender)
-	/if (!${Bool[${Spawn[Soul Idol]}]}) { 
-		/g Unable to summon idol. One is already active
-		/return
-	}
-	/declare s int local
-	/for s 1 to ${idolSpells2D.Size[1]}{
-		| make sure current spell is done casting
-		/while (${Me.Casting}) /delay 5
-		/call e3_Cast ${Me.ID} "idolSpells2D" ${s}				
-	}	
-|----------------------------------------------------------------------------|
 Sub SHM_Background_Events
 	/doevents AE_AA
-	/doevents Idol
 /return
