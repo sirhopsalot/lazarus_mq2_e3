@@ -57,7 +57,6 @@ SUB SHM_CharacterSettings
 /RETURN
 |----------------------------------------------------------------------------|
 Sub SHM_Aliases
-  /squelch /alias /Idol /echo Idol
 /return
 |----------------------------------------------------------------------------|
 #event AE_AA "#*# tells you, 'AEAA'"
