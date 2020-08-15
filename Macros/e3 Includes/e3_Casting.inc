@@ -64,7 +64,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex)
     }
   }
 	|- Check the Immune List
-	/if (${Select[${pendingCastID}_${castTargetName},${immuneList}]}) {
+	/if (${Select[${pendingCastID}_${castTargetName},${immuneList}]} && !${pendingCast.Equal[Mesmerize]}) {
 		/varset castReturn CAST_IMMUNE
     /if (${Debug} || ${Debug_Casting}) /echo SkipCast-Immune ${pendingCast} ${pendingCastID} ${Spawn[id ${targetID}].Name} ${targetID}
 		/goto :skipCast 		
