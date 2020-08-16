@@ -537,8 +537,11 @@ SUB cast_longTermSpells(int spellTarget, string ArrayName)
   /declare spellTimer string local
   /declare spellRecast int local 0
   /declare s int local
+  /declare checkForName string local
 
 	/for s 1 to ${${ArrayName}.Size[1]}
+    /varset checkForName	${${ArrayName}[${s},${iCheckFor}]}
+
 	  |this check lets you use OOW debuff BP in debuff section
 	  /if (${${ArrayName}[${s},${iSpellType}].Find[Beneficial]}) {
 	    /varset spellTarg ${Me.ID}
@@ -568,6 +571,14 @@ SUB cast_longTermSpells(int spellTarget, string ArrayName)
         /echo \ag ${Target.CleanName} already debuffed ${${ArrayName}[${s},${iSpellName}]} recast ${spellRecast}
         /goto :skipCast
       }
+
+      /if (${Target.BuffDuration[${checkForName}]}/1000 > ${longTermRecastTime}) {
+        /varcalc spellRecast ${Target.BuffDuration[${checkForName}]}/1000 - ${longTermRecastTime}
+        /call createTimer ${spellTimer} ${spellRecast}s
+        /echo \ag ${Target.CleanName} already debuffed ${checkForName} recast ${spellRecast}
+        /goto :skipCast
+      }
+      
     }
     :attemptCast
     /if (!${${ArrayName}[${s},${iIfs}]}) {
@@ -1407,7 +1418,7 @@ SUB assist_SpellArrays
   /if (${Defined[LONGBurns]})	        /call BuildSpellArray "LONGBurns" 	      "LONGBurns2D"
   /if (${Defined[FULLBurns]})	        /call BuildSpellArray "FULLBurns" 	      "FULLBurns2D"
   /if (${Defined[swarmPets]})	        /call BuildSpellArray "swarmPets" 	      "swarmPets2D"
-
+  
 /RETURN
 
 |--------------------------------------------------------------------------------|
