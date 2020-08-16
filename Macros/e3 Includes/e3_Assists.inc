@@ -467,18 +467,18 @@ SUB check_Nukes
       }
 
       | fix for using Ifs in Nukes, retarget to the AssistTarget before checking Ifs
-      /if (${Target.ID} != ${AssistTarget}) /call TrueTarget ${AssistTarget}
+  	  /if (${Target.ID} != ${AssistTarget}) /call TrueTarget ${AssistTarget}
 	  
       /call check_Ready "Nukes2D" ${castIndex}
 	  
-      /if (${Debug} || ${Debug_Assists}) {
-        /echo Checking Nuke ${Nukes2D[${castIndex},${iIfs}]}
-        /echo Mana ${check_Mana["Nukes2D",${castIndex}]}
-        /echo Target  ${AssistTarget}
-        /echo Cast index ${castIndex}
-        /echo Check Distance ${check_Distance[${AssistTarget},${Nukes2D[${s},${iMyRange}]}]}
-        /echo Range ${Nukes2D[${s},${iMyRange}]}
-      }
+	  /if (${Debug} || ${Debug_Assists}) {
+		/echo Checking Nuke ${Nukes2D[${castIndex},${iIfs}]}
+		/echo Mana ${check_Mana["Nukes2D",${castIndex}]}
+		/echo Target  ${AssistTarget}
+		/echo Cast index ${castIndex}
+		/echo Check Distance ${check_Distance[${AssistTarget},${Nukes2D[${s},${iMyRange}]}]}
+		/echo Range ${Nukes2D[${s},${iMyRange}]}
+	  }
 	  
       /if (${c_Ready} && ${Nukes2D[${castIndex},${iIfs}]}) {
         /if (${check_Mana["Nukes2D",${castIndex}]}) {
@@ -573,7 +573,7 @@ SUB cast_longTermSpells(int spellTarget, string ArrayName)
     /if (!${${ArrayName}[${s},${iIfs}]}) {
         | need to have some sort of timer ... this will skip most encounters but raids will probably allow rechecking if conditions change
         /call createTimer "${spellTimer}" "30s"
-        /echo \gy Skipping ${${ArrayName}[${s},${iSpellName}]} due to Ifs on ${Target.CleanName}
+        /if (${Debug} || ${Debug_Assists}) /echo \gy Skipping ${${ArrayName}[${s},${iSpellName}]} due to Ifs on ${Target.CleanName}
         /goto :skipCast
     }
     /call check_Ready "${ArrayName}" ${s}
@@ -608,13 +608,13 @@ SUB cast_longTermSpells(int spellTarget, string ArrayName)
         }
       }
     | If the spell did not take hold.
-    } else /if (${Cast.Stored.Name.Equal[${${ArrayName}[${s},${iSpellName}]}]} && ${castReturn.Equal[CAST_TAKEHOLD]} && !${Cast.Stored.Name.Equal[Mesmerize]}) {
+    } else /if (${Cast.Stored.Name.Equal[${${ArrayName}[${s},${iSpellName}]}]} && ${castReturn.Equal[CAST_TAKEHOLD]} && !${Cast.Stored.Name.Equal[${spammableSpell}]}) {
       /if (${Defined[${resistCount}]}) {
         /deletevar ${resistCount}
       }
       /call createTimer "${spellTimer}" "3m"
       | If the target was immune.
-    } else /if (${Cast.Stored.Name.Equal[${${ArrayName}[${s},${iSpellName}]}]} && ${castReturn.Equal[CAST_IMMUNE]} && !${Cast.Stored.Name.Equal[Mesmerize]}) {
+    } else /if (${Cast.Stored.Name.Equal[${${ArrayName}[${s},${iSpellName}]}]} && ${castReturn.Equal[CAST_IMMUNE]} && !${Cast.Stored.Name.Equal[${spammableSpell}]}) {
       /if (${Defined[${resistCount}]}) {
         /deletevar ${resistCount}
       }
@@ -744,16 +744,16 @@ SUB Event_DoTsOn(line, ChatSender, MobID)
 /if (${Debug} || ${Debug_Assists}) /echo |- event_DoTsOn ==>
   /if (${Defined[Command_DoTs2D]}) {
     /if (!${checkEventArgs[${ChatSender},${line},UZR,${MobID}]}) {
-      /echo event args failed
-      /return
-    }
+		/echo event args failed
+		/return
+	}
       /varset MobID ${c_eventArgData}
       /if (${Spawn[id ${MobID}].Type.Equal[Corpse]} || !${Select[${Spawn[id ${MobID}].Type},${AcceptableTargetTypes}]}) {
         /echo Unacceptable Target ${Spawn[id ${MobID}].Type}
       } else {
         | Check range to the DoTs target.
         /if (${Spawn[id ${MobID}].Distance} > ${MaxAssistDistance}) {
-			    /echo ${Spawn[${MobID}].CleanName} is too far away
+			/echo ${Spawn[${MobID}].CleanName} is too far away
           /docommand ${ChatToggle} ${Spawn[${MobID}].CleanName} is too far away.
         } else {
           | Check if the DoT_Targets array is already defined
@@ -964,7 +964,7 @@ SUB event_SwarmPets(line, ChatSender, int swarmTarget)
         /if (${c_Ready} && ${swarmPets2D[${i},${iIfs}]}) {
           /if (${check_Distance[${swarmTarget},${swarmPets2D[1,${iMyRange}]}]}) {
 				    /call e3_Cast ${swarmTarget} "swarmPets2D" "${i}"
-					  /delay 2s
+					/delay 2s
           }
         }
 			/next i
@@ -1329,6 +1329,14 @@ Sub assist_Setup
   |/echo ---------Assist calling spellarrays ----------
   /call assist_SpellArrays
 
+  | Setup a spammable spell for spell procs such as deep sleep and languid bite
+  /if (!${Defined[spammableSpell]}) {
+    /call iniToVarV "${Character_Ini},Misc,Spammable Spell" spammableSpell string outer
+    /if (${Bool[${spammableSpell}]}) {
+      /echo I can now spam ${spammableSpell}, please use a /CheckFor to stop once the proc spell is on
+    }
+  }
+
   /if (${Debug} || ${Debug_Assists}) /echo <== assist_Setup -|
 /return
 
@@ -1431,7 +1439,7 @@ SUB assist_CharacterSettings
 	/call WriteToIni "${Character_Ini},Assist Settings,Ranged Distance" 100
   /call WriteToIni "${Character_Ini},Assist Settings,Auto-Assist Engage Percent" 98
 	| If I'm a melee class, add Melee Abilities entries.
-	/if (${Select[${Me.Class.ShortName},BRD,BER,BST,MNK,PAL,RNG,ROG,SHD,WAR]}) {
+	/if (${Select[${Me.Class.ShortName},BRD,BER,BST,MNK,PAL,RNG,ROG,SHD,WAR,CLR]}) {
 		/if (!${Ini[${Character_Ini},Melee Abilities].Length}) /call WriteToIni "${Character_Ini},Melee Abilities,Ability"
 	}
 	| If I'm a casting class, add Nuke entries.

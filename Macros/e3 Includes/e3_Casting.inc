@@ -64,7 +64,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex)
     }
   }
 	|- Check the Immune List
-	/if (${Select[${pendingCastID}_${castTargetName},${immuneList}]} && !${pendingCast.Equal[Mesmerize]}) {
+	/if (${Select[${pendingCastID}_${castTargetName},${immuneList}]} && !${pendingCast.Equal[${spammableSpell}]}) {
 		/varset castReturn CAST_IMMUNE
     /if (${Debug} || ${Debug_Casting}) /echo SkipCast-Immune ${pendingCast} ${pendingCastID} ${Spawn[id ${targetID}].Name} ${targetID}
 		/goto :skipCast 		
@@ -338,6 +338,15 @@ Sub check_Ready(ArrayName, int ArrayIndex)
   } else /if (${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Ability]}) {
     /if (${Me.AbilityReady[${${ArrayName}[${ArrayIndex},${iCastName}]}]}) /varset c_Ready TRUE
   }
+
+  /if (${c_Ready} && (${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Spell]} || ${${ArrayName}[${ArrayIndex},${iCastType}].Equal[AA]})) {
+	  	| These types can be MBGed
+	  	/if (!${Defined[targetTypes]}) /declare targetTypes string outer "AE PC v1, AE PC v2, Group v1, Group v2" 
+		/if (${Me.AltAbilityReady[Tranquil Blessings]} && ${targetTypes.Find[${Spell[${${ArrayName}[${ArrayIndex},${iCastName}]}].TargetType}]}) {
+			/casting "Tranquil Blessings"
+		}
+  }
+
   /if (${Debug} || ${Debug_Casting}) /echo |- check_Ready <= ${c_Ready}
 /RETURN ${c_Ready}
 
