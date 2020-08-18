@@ -565,7 +565,7 @@ SUB cast_longTermSpells(int spellTarget, string ArrayName)
       /delay 5 ${Target.BuffsPopulated}
     }
     /if (${Bool[${Select[${ArrayName},Command_Debuffs2D,Assist_Debuffs2D]}]}) {
-      /if (${Target.BuffDuration[${${ArrayName}[${s},${iSpellName}]}]}/1000 > ${longTermRecastTime}) {
+      /if (${Target.BuffDuration[${${ArrayName}[${s},${iSpellName}]}]}/1000 > ${longTermRecastTime} && !${${ArrayName}[${s},${iSpellName}].Equal[${spammableSpell}]}) {
         /varcalc spellRecast ${Target.BuffDuration[${${ArrayName}[${s},${iSpellName}]}]}/1000 - ${longTermRecastTime}
         /call createTimer ${spellTimer} ${spellRecast}s
         /echo \ag ${Target.CleanName} already debuffed ${${ArrayName}[${s},${iSpellName}]} recast ${spellRecast}
@@ -573,12 +573,11 @@ SUB cast_longTermSpells(int spellTarget, string ArrayName)
       }
 
       /if (${Target.BuffDuration[${checkForName}]}/1000 > ${longTermRecastTime}) {
-        /varcalc spellRecast ${Target.BuffDuration[${checkForName}]}/1000 - ${longTermRecastTime}
+        /varcalc spellRecast ${Target.BuffDuration[${checkForName}]}/1000 - 10
         /call createTimer ${spellTimer} ${spellRecast}s
         /echo \ag ${Target.CleanName} already debuffed ${checkForName} recast ${spellRecast}
         /goto :skipCast
-      }
-      
+      }      
     }
     :attemptCast
     /if (!${${ArrayName}[${s},${iIfs}]}) {
@@ -631,7 +630,7 @@ SUB cast_longTermSpells(int spellTarget, string ArrayName)
       }
       /call createTimer "${spellTimer}" "30m"
     | If the cast was successful.
-    } else /if (${Cast.Stored.Name.Equal[${${ArrayName}[${s},${iSpellName}]}]} && ${castReturn.Equal[CAST_SUCCESS]}) {
+    } else /if (${Cast.Stored.Name.Equal[${${ArrayName}[${s},${iSpellName}]}]} && ${castReturn.Equal[CAST_SUCCESS]} && !${Cast.Stored.Name.Equal[${spammableSpell}]}) {
       /if (${Defined[${resistCount}]}) {
         /deletevar ${resistCount}
       }
@@ -1418,7 +1417,7 @@ SUB assist_SpellArrays
   /if (${Defined[LONGBurns]})	        /call BuildSpellArray "LONGBurns" 	      "LONGBurns2D"
   /if (${Defined[FULLBurns]})	        /call BuildSpellArray "FULLBurns" 	      "FULLBurns2D"
   /if (${Defined[swarmPets]})	        /call BuildSpellArray "swarmPets" 	      "swarmPets2D"
-  
+
 /RETURN
 
 |--------------------------------------------------------------------------------|
