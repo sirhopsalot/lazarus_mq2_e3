@@ -16,6 +16,7 @@ SUB check_Heals
 	/if (!${ActionTaken} && ${healTanks}) 		/call heal_tanks
 	/if (!${ActionTaken} && ${healImportant}) /call heal_importantBots
 	/if (!${ActionTaken} && ${healAll}) 			/call heal_allbots
+	/if (!${ActionTaken} && ${healXTargets}) 			/call heal_xtargets
 	/if (!${ActionTaken} && ${hotTanks}) 			/call hot_tanks
 	/if (!${ActionTaken} && ${hotImportant}) 	/call hot_importantBots
 	/if (!${ActionTaken} && ${hotAll}) 				/call hot_allbots
@@ -160,6 +161,50 @@ SUB heal_Allbots
 |		/call set_RecentHealTimer "${allHeals2D[${s},${iCastType}]}"
 	}	
 /if (${Debug} || ${Debug_Heals}) /echo <== heal_Allbots -|
+/RETURN
+
+|------------------------------------------------|
+|- Find the lowest hp XTarget to heal			-|
+|------------------------------------------------|
+SUB heal_xtargets
+/if (${Debug} || ${Debug_Heals}) /echo |- heal_xtargets ==>
+	/declare currentBot int local NULL
+	/declare xtargetIndex int local NULL
+	/declare currentSpellIndx int local
+	/declare s int local 1
+	/declare numXTargets int local 13
+	
+	|Randomly Iterate forward or backwards to reduce overheal
+	/if (${Math.Rand[2]}==0) {
+		/for xtargetIndex 1 to ${numXTargets}
+	} else {
+		/for xtargetIndex ${numXTargets} downto 1
+	}
+
+		/if (${Me.XTarget[${xtargetIndex}].TargetType.Equal[Specific PC]} ) {
+			/for s 1 to ${xtargetHeals2D.Size[1]}
+				/if (${Me.XTarget[${xtargetIndex}].PctHPs} < ${xtargetHeals2D[${s},${iHealPct}]}) {
+					/call check_Ready "xtargetHeals2D" ${s}
+					/if (${c_Ready} && ${xtargetHeals2D[${s},${iIfs}]}) {
+						/if (${check_Distance[${Me.XTarget[${xtargetIndex}].ID},${xtargetHeals2D[${s},${iMyRange}]}]}) {
+							/if (${check_Mana["xtargetHeals2D",${s}]}) {
+								/if (!${Bool[${currentBot}]} || ${Me.XTarget[${xtargetIndex}].PctHPs} < ${Me.XTarget[${currentBot}].PctHPs}) {
+									/echo Setting xtarget to heal ${Me.XTarget[${xtargetIndex}].Name}
+									/varset currentBot ${xtargetIndex}
+									/varset currentSpellIndx ${s}
+								}
+							}
+						}
+					}
+				}
+			/next s
+		}
+	/next xtargetIndex
+
+	/if (${Bool[${currentBot}]}) {
+		/call e3_Cast ${Me.XTarget[${currentBot}].ID} "xtargetHeals2D" ${currentSpellIndx}	
+	}
+/if (${Debug} || ${Debug_Heals}) /echo <== heal_xtargets -|
 /RETURN
 
 |------------------------------------------------|
@@ -462,7 +507,14 @@ SUB check_HealAllCasting
 	/if (${castEndTime} > ${interruptAllCastSec} || ${Spawn[id ${Target.ID}].PctHPs} < ${interruptHealPct}) /varset c_SubToRun TRUE
 /RETURN
 |----------------------------------------|
-|- Checks while casting all heals		-|
+|- Checks while casting xtarget heals	-|
+|----------------------------------------|
+SUB check_HealXTargetCasting
+	/varset c_SubToRun FALSE
+	/if (${castEndTime} > ${interruptXTargetCastSec} || ${Spawn[id ${Target.ID}].PctHPs} < ${interruptHealPct}) /varset c_SubToRun TRUE
+/RETURN
+|----------------------------------------|
+|- Checks while casting pet heals		-|
 |----------------------------------------|
 SUB check_HealPetCasting
 	/varset c_SubToRun FALSE
@@ -547,9 +599,13 @@ SUB heal_Setup
 	| 8493 Elixir of Divinity	- 900/tick
 	| 5416 Spiritual Serenity	- 820/tick
 	| 8503 Ghost of Renewal		- 630/tick	
-	/declare hotTankNoStackStr		string outer 5259,8493
-	/declare hotImportantNoStackStr	string outer 5259,8493,5416,8503
-	/declare hotAllNoStackStr		string outer 5259,8493,5416,8503
+	| 32493 Convergence of Spirits
+	| 21818 Peaceful Convergence of Spirits
+	| 38061 Union of Spirits
+	| 16200 Focused Celestial Regeneration
+	/declare hotTankNoStackStr		string outer 32493,21818,38061,16200
+	/declare hotImportantNoStackStr	string outer 32493,21818,38061,16200
+	/declare hotAllNoStackStr		string outer 32493,21818,38061,16200
 	|~~~~~~~~~~~~~~~~~~~ PCTHps Interrupt	~~~~~~~~~~~~~~~~~~~~~~~~|
 	|~~~~~~~~~~~~ Interrupt heal if target >= this PCTHps ~~~~~~~~~~|
 	/declare interruptHealPct			int outer 95
@@ -557,11 +613,13 @@ SUB heal_Setup
 	/declare interruptTankCastSec		int outer 3
 	/declare interruptImportantCastSec	int outer 18
 	/declare interruptAllCastSec		float outer 25
-
+	/declare interruptXTargetCastSec	int outer 18
+	
   /declare do_GroupHeals bool outer FALSE
   /declare healTanks bool outer FALSE
   /declare healImportant bool outer FALSE
   /declare healAll bool outer FALSE
+  /declare healXTargets bool outer FALSE
   /declare healPets bool outer FALSE
   /declare hotTanks bool outer FALSE
   /declare hotImportant bool outer FALSE
@@ -593,6 +651,7 @@ SUB heal_SpellArrays
     /call IniToArrayV "${Character_Ini},Heals,Tank Heal#"             tankHeals
     /call IniToArrayV "${Character_Ini},Heals,Important Heal#"        importantHeals
     /call IniToArrayV "${Character_Ini},Heals,All Heal#"              allHeals
+	/call IniToArrayV "${Character_Ini},Heals,XTarget Heal#"              xtargetHeals
     /call IniToArrayV "${Character_Ini},Heals,Pet Heal#"              petHeals
     /call IniToArrayV "${Character_Ini},Heals,Heal Over Time Spell#"  hotSpells
     /call IniToArrayV "${Character_Ini},Heals,Group Heal#"            groupHeals
@@ -609,6 +668,7 @@ SUB heal_SpellArrays
     /if (${WhoToHeal.Find[Tanks]} && ${Defined[tanks]} && ${Defined[tankHeals]})		                  /varset healTanks			TRUE
     /if (${WhoToHeal.Find[ImportantBots]} && ${Defined[importantBots]} && ${Defined[importantHeals]}) /varset healImportant	TRUE
     /if (${WhoToHeal.Find[All]} && ${Defined[allHeals]})										                          /varset healAll			  TRUE
+	/if (${WhoToHeal.Find[XTarget]} && ${Defined[healXTargets]})										                          /varset healXTargets			  TRUE
     /if (${WhoToHeal.Find[Pets]} && ${Defined[petOwners]} && ${Defined[petHeals]}) 		                /varset healPets			TRUE
   }
   /if (${Defined[WhoToHoT]}) {
@@ -623,6 +683,7 @@ SUB heal_SpellArrays
   /if (${healTanks})				    /call BuildSpellArray "tankHeals" 		  "tankHeals2D"
   /if (${healImportant})			  /call BuildSpellArray "importantHeals"	"importantHeals2D"
   /if (${healAll})				      /call BuildSpellArray "allHeals" 		    "allHeals2D"
+  /if (${healXTargets})				  /call BuildSpellArray "xtargetHeals" 		    "xtargetHeals2D"
   /if (${healPets})				      /call BuildSpellArray "petHeals" 		    "petHeals2D"
   /if (${Defined[hotSpells]})		/call BuildSpellArray "hotSpells" 		  "hotSpells2D"
   /if (${Defined[lifeSupport]})	/call BuildSpellArray "lifeSupport" 	  "lifeSupport2D"
@@ -653,6 +714,13 @@ SUB heal_SpellArrays
     /varset allHeals2D[${i},${iCastInvis}] ${castAllHealWhileInvis}
     /next i
   }
+  /if (${healXTargets}) {
+    /for i 1 to ${xtargetHeals2D.Size[1]}
+		/varset xtargetHeals2D[${i},${iSubToRun}] check_HealXTargetCasting
+		| Don't heal while invis
+		/varset xtargetHeals2D[${i},${iCastInvis}] FALSE
+    /next i
+  }
   /if (${healPets}) {
     /for i 1 to ${petHeals2D.Size[1]}
     /varset petHeals2D[${i},${iSubToRun}] check_HealPetCasting
@@ -676,6 +744,7 @@ SUB heal_CharacterSettings
 		/call WriteToIni "${Character_Ini},Heals,Tank Heal"
 		/call WriteToIni "${Character_Ini},Heals,Important Heal"
 		/call WriteToIni "${Character_Ini},Heals,All Heal"
+		/call WriteToIni "${Character_Ini},Heals,XTarget Heal"
 		/call WriteToIni "${Character_Ini},Heals,Pet Heal"
     /if (${Select[${Me.Class.ShortName},CLR,DRU,PAL,SHM]}) /call WriteToIni "${Character_Ini},Heals,Heal Over Time Spell"
     /if (${Select[${Me.Class.ShortName},CLR,DRU,PAL]})	/call WriteToIni "${Character_Ini},Heals,Group Heal"
