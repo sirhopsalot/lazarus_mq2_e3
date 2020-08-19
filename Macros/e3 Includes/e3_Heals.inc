@@ -603,9 +603,9 @@ SUB heal_Setup
 	| 21818 Peaceful Convergence of Spirits
 	| 38061 Union of Spirits
 	| 16200 Focused Celestial Regeneration
-	/declare hotTankNoStackStr		string outer 32493,21818,38061,16200
-	/declare hotImportantNoStackStr	string outer 32493,21818,38061,16200
-	/declare hotAllNoStackStr		string outer 32493,21818,38061,16200
+	/declare hotTankNoStackStr		string outer 32493,21818,38061,16200,16201,16202,16514,16515,16516
+	/declare hotImportantNoStackStr	string outer 32493,21818,38061,16200,16201,16202,16514,16515,16516
+	/declare hotAllNoStackStr		string outer 32493,21818,38061,16200,16201,16202,16514,16515,16516
 	|~~~~~~~~~~~~~~~~~~~ PCTHps Interrupt	~~~~~~~~~~~~~~~~~~~~~~~~|
 	|~~~~~~~~~~~~ Interrupt heal if target >= this PCTHps ~~~~~~~~~~|
 	/declare interruptHealPct			int outer 95
