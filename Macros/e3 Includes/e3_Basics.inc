@@ -1586,6 +1586,7 @@ Sub basics_Background_Events
   /doevents campdesktop
   /doevents gimme
   /doevents LinkLoot
+  /doevents collectDC
 |		/varset event_counter 1
 |	} else {
 |		/varcalc event_counter ${event_counter}+1
@@ -1945,8 +1946,16 @@ SUB check_Supply
 	/if (${Debug}) /echo <== check_Supply -|
 /RETURN
 
-
-
+#event collectDC "<#1#> Collect DC"
+SUB event_collectDC(line, ChatSender)
+  /if (${Me.Name.Equal[${ChatSender}]}) {
+    /declare i int local
+    /for i 1 to ${Group.Members}
+      /t ${Group.Member[${i}]} gimme DC
+      /delay 4s
+    /next i 
+  }
+/RETURN
 
 |------------------------------------------------------------------------|
 |- LinkLoot event 
