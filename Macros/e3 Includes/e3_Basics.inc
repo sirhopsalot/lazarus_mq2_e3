@@ -1586,7 +1586,7 @@ Sub basics_Background_Events
   /doevents campdesktop
   /doevents gimme
   /doevents LinkLoot
-  /doevents collectDC
+  /doevents collect
 |		/varset event_counter 1
 |	} else {
 |		/varcalc event_counter ${event_counter}+1
@@ -1946,12 +1946,27 @@ SUB check_Supply
 	/if (${Debug}) /echo <== check_Supply -|
 /RETURN
 
-#event collectDC "<#1#> Collect DC"
-SUB event_collectDC(line, ChatSender)
+|----------------------------------------------------------------------------|
+|- Author: Sirhopsalot
+|- Collects the items from all the members of your group, use /bc Collect RequestedItem
+|- This feature uses Gimme Supply and supports the same item name short versions
+|- Examples:
+|- Collect diamond coins, use /bc Collect DC
+|- Collect plat, use /bc Collect pp
+|- Collect Habanero Peppers, use /bc Collect Habanero Pepper
+|- Install Instructions:                                   
+|- 1) Add this SUB to the bottom of e3 Includes/e3_Basics.inc 
+|- 2) Add /doevents collect to Sub basics_Background_Events
+|- Add Alias (optional):
+|- /alias /collect /bc Collect
+|- Allows skipping the /bc, e.g. /Collect DC
+|----------------------------------------------------------------------------|
+#event collect "<#1#> Collect #2#"
+SUB event_collect(line, ChatSender, RequestedItem)
   /if (${Me.Name.Equal[${ChatSender}]}) {
     /declare i int local
     /for i 1 to ${Group.Members}
-      /t ${Group.Member[${i}]} gimme DC
+      /t ${Group.Member[${i}]} Gimme ${RequestedItem}
       /delay 4s
     /next i 
   }
