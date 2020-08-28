@@ -1588,6 +1588,7 @@ Sub basics_Background_Events
   /doevents LinkLoot
   /doevents collect
   /doevents manastoneToggle
+  /call check_StoneOn
 |		/varset event_counter 1
 |	} else {
 |		/varcalc event_counter ${event_counter}+1
