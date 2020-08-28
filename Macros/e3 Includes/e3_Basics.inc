@@ -2235,7 +2235,7 @@ SUB EVENT_LinkLoot(line, chatSender, bag, channel)
   Install Instructions:                                   
   1) Add this SUB and check_StoneOn to the bottom of e3 Includes/e3_Basics.inc 
   2) Add /doevents manastoneToggle to Sub basics_Background_Events
-  3) Put check_StoneOn in Advanced Settings.ini for the characters with a manastone (be sure to increment the number)
+  3) Add /call check_StoneOn to Sub basics_Background_Events
   Add Alias (optional):
   /alias /stoneToggle /bc stone toggle
 **|
