@@ -1587,6 +1587,8 @@ Sub basics_Background_Events
   /doevents gimme
   /doevents LinkLoot
   /doevents collect
+  /doevents manastoneToggle
+  /call check_StoneOn
 |		/varset event_counter 1
 |	} else {
 |		/varcalc event_counter ${event_counter}+1
@@ -2216,4 +2218,68 @@ SUB EVENT_LinkLoot(line, chatSender, bag, channel)
 			/gu ----
 		}
 	}
+/RETURN
+
+|**
+  Author: Sirhopsalot
+
+  Toggles manastone on/off
+  Will automatically toggle back off when mana is 100%
+  Can be toggled off while manastone is active
+
+  Usage:
+  Enable/disable manastone for one character: /t characterName stone toggle
+  Enable/disable manastone for all characters: /bc stone toggle
+  Enable/disable manastone for the group: /g stone toggle
+  
+  Install Instructions:                                   
+  1) Add this SUB and check_StoneOn to the bottom of e3 Includes/e3_Basics.inc 
+  2) Add /doevents manastoneToggle to Sub basics_Background_Events
+  3) Add /call check_StoneOn to Sub basics_Background_Events
+  Add Alias (optional):
+  /alias /stoneToggle /bc stone toggle
+**|
+#event manastoneToggle "#1# tells you, 'stone toggle'"
+#event manastoneToggle "<#1#> stone toggle"
+#event manastoneToggle "#1# tells the group, 'stone toggle'"
+SUB event_manastoneToggle(line, ChatSender)
+  /if (!${Defined[stoneOn]}) {
+    /declare stoneOn bool outer TRUE
+  } else /if (${stoneOn}) {
+    /varset stoneOn FALSE
+  } else {
+    /varset stoneOn TRUE
+  }
+
+  /if (!${Bool[${FindItem[=Manastone]}]} && ${stoneOn}) {
+    /varset stoneOn FALSE
+  } else /if (${stoneOn}) {
+    /docommand ${ChatToggle} Manastone on
+  } else {
+    /docommand ${ChatToggle} Manastone off
+  }
+/RETURN
+
+|**
+  Checks if the stoneOn variable is TRUE and clicks the manastone 10 times
+  Sets stoneOn to false when the toon's mana reaches 100%
+**|
+SUB check_StoneOn
+  /if (!${Defined[stoneOn]}) {
+    /declare stoneOn bool outer FALSE
+  }
+
+  /if (${stoneOn} && ${Me.PctMana} < 100 && ${Me.PctHPs} > 70) {
+    /declare i int local
+    | hit the stone 10 times
+    /for i 1 to 10
+      /casting "Manastone"
+      /delay 1
+    /next i
+  }
+
+  /if (${stoneOn} && ${Me.PctMana} >= 100) {
+    /varset stoneOn FALSE
+    /docommand ${ChatToggle} Manastone off, mana 100%
+  }
 /RETURN
