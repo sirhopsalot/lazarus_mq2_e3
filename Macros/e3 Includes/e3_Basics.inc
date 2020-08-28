@@ -1795,7 +1795,7 @@ sub event_gimme(line, ChatSender, RequestedItem)
 		/if (${SummoningItem}) /delay 10s ${Cursor.ID}
 		/if (${DebugGimme}) /echo Summoned ${RequestedItem} ${SummoningItem}
 	}
-	/if (${Cursor.ID} || ${platOnCursor}) {
+	/if ((${Cursor.ID} || ${platOnCursor}) && !${IsRequestedItemModShard}) {
 		/declare originalLoc string local ${Me.Loc}
 		/if (${DebugGimme}) /echo IsClose = ${Bool[${Math.Distance[${senderLoc}]}<20]}
 		/stick 12
