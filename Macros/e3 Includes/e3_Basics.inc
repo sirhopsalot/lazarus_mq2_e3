@@ -2261,7 +2261,8 @@ SUB event_manastoneToggle(line, ChatSender)
 /RETURN
 
 |**
-  Put this in Advanced Settings.ini for the characters with a manastone
+  Checks if the stoneOn variable is TRUE and clicks the manastone 10 times
+  Sets stoneOn to false when the toon's mana reaches 100%
 **|
 SUB check_StoneOn
   /if (!${Defined[stoneOn]}) {
