@@ -91,15 +91,19 @@ SUB event_nextTarget(line, ChatSender)
 | Face the target if you can't see it
 #event faceTargetClearXTargets "You cannot see your target."
 SUB event_faceTargetClearXTargets
-    /echo ClearXTargets: Changing face direction to target ${Spawn[id ${AssistTarget}].CleanName}
-    /face fast id ${AssistTarget}    
+	/if (${Bool[${AssistTarget}]}) {
+		/echo ClearXTargets: Changing face direction to target ${Spawn[id ${AssistTarget}].CleanName}
+		/face fast id ${AssistTarget}    
+	}
 /RETURN
 
 | Re-stick if too far away msg   	            
 #event getCloserClearXTargets "Your target is too far away, get closer!"
 SUB event_getCloserClearXTargets
-  /echo ClearXTargets: Re-sticking to target ${Spawn[id ${AssistTarget}].CleanName}
-  /stick id ${AssistTarget} 5 uw
+	/if (${Bool[${AssistTarget}]}) {
+		/echo ClearXTargets: Re-sticking to target ${Spawn[id ${AssistTarget}].CleanName}
+		/stick id ${AssistTarget} 5 uw
+	}
 /RETURN
 
 | Triggers the Next Target or disable Clear XTarget as appropriate
