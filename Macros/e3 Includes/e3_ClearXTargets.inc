@@ -35,8 +35,8 @@ Sub clearXTargets_Setup
 | Call background events and other subs required for checking the macros
 |--------------------------------------------------------------------------------|
 Sub clearXTargets_Background_Events
-	/doevents nextTarget
 	/doevents clearXTargets
+	/doevents nextTarget
 	/call check_clearXTargets
 /return
 
@@ -73,15 +73,19 @@ SUB event_nextTarget(line, ChatSender)
     }
   /next i
 
-  /echo Assisting on Next Target ${Spawn[${mobId}].CleanName} TargetID=${mobId}
-  /call TrueTarget ${mobId}
-  /stick id ${mobId} 5 uw
-  /delay 1
-  /attack on
-  /delay 1
-  /assistme
-  /varset AllowControl TRUE
-  /varset AssistStickDistance 5
+  /if (${Bool[${mobId}]} && ${Bool[${Spawn[${mobId}]}]}) {
+    /echo Assisting on Next Target ${Spawn[${mobId}].CleanName} TargetID=${mobId}
+    /call TrueTarget ${mobId}
+    /stick id ${mobId} 5 uw
+    /delay 1
+    /attack on
+    /delay 1
+    /assistme
+    /varset AllowControl TRUE
+    /varset AssistStickDistance 5
+  } else {
+    /echo No mobs on XTarget to assist on
+  }
 /RETURN
 
 | Face the target if you can't see it
@@ -106,13 +110,13 @@ SUB check_clearXTargets
   /doevent faceTargetClearXTargets
   /doevent getCloserClearXTargets
 
-  /if (!${Assisting}) {
+  /if (!${Assisting} || ${Target.ID} == ${Me.ID}) {
     | Go through the xtargets, if there are any to kill call Next Target
     | If there are none, disable Clear XTargets
     /declare i int local 1
     /for i 1 to 13
       /if (${Me.XTarget[${i}].TargetType.Equal[Auto Hater]} && ${Me.XTarget[${i}].Aggressive}) {
-		| found a target
+		    | found a target
         /bc Next Target
         /return
       }
@@ -121,5 +125,6 @@ SUB check_clearXTargets
 	| No target found, disable clearing
     /varset clearXTargetsOn FALSE    
     /echo ClearXTargets: XTargets Cleared, disabled Clear XTarget
+    /attack off
   }
 /RETURN
