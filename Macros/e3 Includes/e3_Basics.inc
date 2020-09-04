@@ -2272,8 +2272,8 @@ SUB check_StoneOn
 
   /if (${stoneOn} && ${Me.PctMana} < 100 && ${Me.PctHPs} > 70) {
     /declare i int local
-    | hit the stone 10 times
-    /for i 1 to 10
+    | hit the stone 30 times then take a short break
+    /for i 1 to 30
       /casting "Manastone"
       /delay 1
     /next i
