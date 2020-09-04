@@ -8,6 +8,8 @@
 | This will cause the toon to stick to the current target, face the mob if looking the wrong way, and re-stick if the mob is too far away
 | Calling Clear XTargets again while still clearing toggles it back off
 |
+| WARNING: This macro is not for AFK grinding. AFK grinding using this or any other macro is against the rules for Lazarus. Please don't do it.
+|
 | Selects the next target from the XTarget list using the following criteria:
 | 1) Lowest aggro on the list
 | 2) Highest health on the list
