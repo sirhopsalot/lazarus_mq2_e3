@@ -2237,7 +2237,8 @@ SUB EVENT_LinkLoot(line, chatSender, bag, channel)
   2) Add /doevents manastoneToggle to Sub basics_Background_Events
   3) Add /call check_StoneOn to Sub basics_Background_Events
   Add Alias (optional):
-  /alias /stoneToggle /bc stone toggle
+      In a chat box, submit this to allow you to use the shortcut /stoneToggle
+      /alias /stoneToggle /bc stone toggle
 **|
 #event manastoneToggle "#1# tells you, 'stone toggle'"
 #event manastoneToggle "<#1#> stone toggle"
