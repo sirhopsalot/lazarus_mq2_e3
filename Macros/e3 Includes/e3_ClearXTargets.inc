@@ -31,6 +31,7 @@
 |--------------------------------------------------------------------------------|
 Sub clearXTargets_Setup
 	/declare clearXTargetsOn bool outer FALSE
+	/declare ClearXTargetsDebug bool outer FALSE
 /RETURN
 
 |--------------------------------------------------------------------------------|
@@ -76,7 +77,7 @@ SUB event_nextTarget(line, ChatSender)
   /next i
 
   /if (${Bool[${mobId}]} && ${Bool[${Spawn[${mobId}]}]}) {
-    /echo Assisting on Next Target ${Spawn[${mobId}].CleanName} TargetID=${mobId}
+    /if (${ClearXTargetsDebug}) /echo Assisting on Next Target ${Spawn[${mobId}].CleanName} TargetID=${mobId}
     /call TrueTarget ${mobId}
     /stick id ${mobId} 5 uw
     /delay 1
@@ -86,15 +87,18 @@ SUB event_nextTarget(line, ChatSender)
     /varset AllowControl TRUE
     /varset AssistStickDistance 5
   } else {
-    /echo No mobs on XTarget to assist on
+    /if (${ClearXTargetsDebug}) /echo No mobs on XTarget to assist on
   }
+
+  /doevent flush event_nextTarget
 /RETURN
 
 | Face the target if you can't see it
 #event faceTargetClearXTargets "You cannot see your target."
 SUB event_faceTargetClearXTargets
 	/if (${Bool[${AssistTarget}]}) {
-		/echo ClearXTargets: Changing face direction to target ${Spawn[id ${AssistTarget}].CleanName}
+		/doevent flush event_faceTargetClearXTargets
+		/if (${ClearXTargetsDebug}) /echo ClearXTargets: Changing face direction to target ${Spawn[id ${AssistTarget}].CleanName}
 		/face fast id ${AssistTarget}    
 	}
 /RETURN
@@ -103,7 +107,8 @@ SUB event_faceTargetClearXTargets
 #event getCloserClearXTargets "Your target is too far away, get closer!"
 SUB event_getCloserClearXTargets
 	/if (${Bool[${AssistTarget}]}) {
-		/echo ClearXTargets: Re-sticking to target ${Spawn[id ${AssistTarget}].CleanName}
+		/doevent flush event_getCloserClearXTargets
+		/if (${ClearXTargetsDebug}) /echo ClearXTargets: Re-sticking to target ${Spawn[id ${AssistTarget}].CleanName}
 		/stick id ${AssistTarget} 5 uw
 	}
 /RETURN
@@ -122,7 +127,7 @@ SUB check_clearXTargets
     /declare i int local 1
     /for i 1 to 13
       /if (${Me.XTarget[${i}].TargetType.Equal[Auto Hater]} && ${Me.XTarget[${i}].Aggressive}) {
-		    | found a target
+		| found a target
         /bc Next Target
         /return
       }
