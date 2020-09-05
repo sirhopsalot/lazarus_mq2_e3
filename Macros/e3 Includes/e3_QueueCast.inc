@@ -28,6 +28,7 @@
 Sub queueCast_Setup
 	/declare mySpellQueue string outer
 	/declare queuedSpellTimer timer outer 0s
+	/declare DebugQueueCast bool outer FALSE
 /RETURN
 
 |--------------------------------------------------------------------------------|
@@ -42,12 +43,14 @@ Sub queueCast_Background_Events
 | Casts the spell at the front of the queue
 SUB castQueuedSpells	
 	/if (${Defined[mySpellQueue]} && ${mySpellQueue.Length} > 1 && !${Bool[${queuedSpellTimer}]}) {
-		/call PeekStrQueue mySpellQueue
+		/if (${DebugQueueCast}) /echo Found spell to cast in queue
+		/call PeekStrQueue mySpellQueue		
 		/declare spellArgs string local ${Macro.Return}
 		/declare spellName string local ${spellArgs.Arg[1,,]}
-		/declare spellTargetID int local ${spellArgs.Arg[2,,]}
+		/declare spellTargetID int local ${spellArgs.Arg[2,,]}	
 		| Check if SpellReady/AltAbilityReady
 		/if (${Me.SpellReady[${spellName}]} || ${Me.AltAbilityReady[${spellName}]}) {
+			/if (${DebugQueueCast}) /echo /call castQueuedSpell "${spellName}" ${spellTargetID}
 			/call castQueuedSpell "${spellName}" ${spellTargetID}
 			/if (${ActionTaken} && ${castReturn.Equal[CAST_SUCCESS]}) {
 				/call PopStrQueue mySpellQueue
@@ -79,21 +82,22 @@ SUB castQueuedSpells
 
 | Calls e3_Cast for the given spell at the given target
 SUB castQueuedSpell(spellName, targetID)
-	/if (!${Defined[DebugQueueCast]}) /declare DebugQueueCast bool local FALSE
 	/if (${DebugQueueCast}) /echo Casting queued ${spellName} on ${Spawn[id ${targetID}].Name} TargetID=${targetID}
 
 	/declare whatToCast string local
-
-	/if (${Me.Book[${spellName}]} || ${Me.AltAbility[${spellName}]}) {
+	/if (${spellName.Find[:]}) {
+		/echo Found ":" in spell name ${spellName}, queue cast does not support spire AAs
+		/return
+	} /if (${Me.Book[${spellName}]} || ${Me.AltAbility[${spellName}]}) {
 		/varset whatToCast ${Spell[${spellName}]}
 	} else /if (${FindItemCount[=${spellName}]}) {
 		/varset whatToCast ${FindItem[=${spellName}]}
-	}
-
+	}	
+	
 	/if (${Bool[${whatToCast}]}) {
 		/if (${DebugQueueCast}) /echo whatToCast = ${whatToCast}
 		/if (${Defined[queuecastArray]}) /deletevar queuecastArray
-		/if (${Defined[queuecastArray2D]}) /deletevar queuecastArray2D
+		/if (${Defined[queuecastArray2D]}) /deletevar queuecastArray2D		
 		/declare queuecastArray[1] string outer ${whatToCast}
 		/varset queuecastArray[1] ${whatToCast}
 		/call BuildSpellArray "queuecastArray" "queuecastArray2D"
