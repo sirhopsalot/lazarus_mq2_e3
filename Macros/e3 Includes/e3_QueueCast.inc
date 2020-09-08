@@ -49,7 +49,7 @@ SUB castQueuedSpells
 		/declare spellName string local ${spellArgs.Arg[1,,]}
 		/declare spellTargetID int local ${spellArgs.Arg[2,,]}	
 		| Check if SpellReady/AltAbilityReady
-		/if (${Me.SpellReady[${spellName}]} || ${Me.AltAbilityReady[${spellName}]}) {
+		/if (${Me.SpellReady[${spellName}]} || ${Me.AltAbilityReady[${spellName}]} || ${Me.ItemReady[${spellName}]}) {
 			/if (${DebugQueueCast}) /echo /call castQueuedSpell "${spellName}" ${spellTargetID}
 			/call castQueuedSpell "${spellName}" ${spellTargetID}
 			/if (${ActionTaken} && ${castReturn.Equal[CAST_SUCCESS]}) {
@@ -58,7 +58,7 @@ SUB castQueuedSpells
 				/echo QueueCast: Failed to cast ${spellName} due to ${castReturn}
 			}
 		} 
-		/if (!${castReturn.Equal[CAST_SUCCESS]}) {
+		/if (!${Bool[${castReturn}]} || !${castReturn.Equal[CAST_SUCCESS]}) {
 			/if (${queuedSpellTimer.OriginalValue} >= 80) {
 				/docommand ${ChatToggle} Failed to cast ${spellName} after retries
 				/call PopStrQueue mySpellQueue
@@ -88,14 +88,17 @@ SUB castQueuedSpell(spellName, targetID)
 	/if (${spellName.Find[:]}) {
 		/echo Found ":" in spell name ${spellName}, queue cast does not support spire AAs
 		/return
-	} /if (${Me.Book[${spellName}]} || ${Me.AltAbility[${spellName}]}) {
+	} else /if (${Bool[${Me.Book[${spellName}]}]} || ${Bool[${Me.AltAbility[${spellName}]}]}) {
+		/if (${DebugQueueCast}) /echo Found spell or alt ability '${spellName}'
 		/varset whatToCast ${Spell[${spellName}]}
-	} else /if (${FindItemCount[=${spellName}]}) {
+	} else /if (${Bool[${FindItemCount[=${spellName}]}]}) {
+		/if (${DebugQueueCast}) /echo Found item '${spellName}'
 		/varset whatToCast ${FindItem[=${spellName}]}
 	}	
+
+	/if (${DebugQueueCast}) /echo whatToCast = ${whatToCast}
 	
 	/if (${Bool[${whatToCast}]}) {
-		/if (${DebugQueueCast}) /echo whatToCast = ${whatToCast}
 		/if (${Defined[queuecastArray]}) /deletevar queuecastArray
 		/if (${Defined[queuecastArray2D]}) /deletevar queuecastArray2D		
 		/declare queuecastArray[1] string outer ${whatToCast}
