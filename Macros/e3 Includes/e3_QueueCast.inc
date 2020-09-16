@@ -40,11 +40,20 @@ Sub queueCast_Background_Events
 	/call castQueuedSpells
 /return
 
+SUB queueCast_MacroSettings
+/RETURN
+
+SUB queueCast_CharacterSettings
+/RETURN
+
+SUB queueCast_Aliases
+/RETURN
+
 | Casts the spell at the front of the queue
 SUB castQueuedSpells	
 	/if (${Defined[mySpellQueue]} && ${mySpellQueue.Length} > 1 && !${Bool[${queuedSpellTimer}]}) {
-		/if (${DebugQueueCast}) /echo Found spell to cast in queue
 		/call PeekStrQueue mySpellQueue		
+		/if (${DebugQueueCast}) /echo Found spell '${Macro.Return}' to cast in queue
 		/declare spellArgs string local ${Macro.Return}
 		/declare spellName string local ${spellArgs.Arg[1,,]}
 		/declare spellTargetID int local ${spellArgs.Arg[2,,]}	

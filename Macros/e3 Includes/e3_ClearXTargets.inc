@@ -29,7 +29,7 @@
 |--------------------------------------------------------------------------------|
 | Declare variables used in the macros
 |--------------------------------------------------------------------------------|
-Sub clearXTargets_Setup
+SUB clearXTargets_Setup
 	/declare clearXTargetsOn bool outer FALSE
 	/declare ClearXTargetsDebug bool outer FALSE
 /RETURN
@@ -37,11 +37,23 @@ Sub clearXTargets_Setup
 |--------------------------------------------------------------------------------|
 | Call background events and other subs required for checking the macros
 |--------------------------------------------------------------------------------|
-Sub clearXTargets_Background_Events
+SUB clearXTargets_Background_Events
 	/doevents clearXTargets
 	/doevents nextTarget
 	/call check_clearXTargets
-/return
+/RETURN
+
+SUB clearXTargets_MacroSettings
+/RETURN
+
+SUB clearXTargets_CharacterSettings
+/RETURN
+
+SUB clearXTargets_Aliases
+  /squelch /alias /ClearXTargets /bc Clear XTargets
+  /squelch /alias /NextTarget /bc Next Target
+/RETURN
+
 
 | Toggles clearing on/off
 #event clearXTargets "<#1#> Clear XTarget#*#"
@@ -68,7 +80,7 @@ SUB event_nextTarget(line, ChatSender)
   /declare mobClass string local Warrior
   /declare mobHealth int local
   /for i 1 to 13
-    /if (${Me.XTarget[${i}].TargetType.Equal[Auto Hater]} && (${Me.XTarget[${i}].PctAggro} < ${worstAggro} || (${Me.XTarget[${i}].PctAggro} == ${worstAggro} && ${mobClass.Equal[Warrior]} && ${Me.XTarget[${i}].PctHPs} >= ${mobHealth})) && !${Bool[${Me.XTarget[${i}].Name.Find[Corpse]}]} && !${Bool[${Me.XTarget[${i}].Name.Find[wooden box]}]} && !${Bool[${Me.XTarget[${i}].Name.Find[Chest]}]} && !${Bool[${Me.XTarget[${i}].Name.Find[crate]}]} && !${Bool[${Me.XTarget[${i}].Name.Find[hollow_tree]}]} && ${Me.XTarget[${i}].LineOfSight} && ${Me.XTarget[${i}].Distance} < 75) {
+    /if (${Me.XTarget[${i}].TargetType.Equal[Auto Hater]} && (${Me.XTarget[${i}].PctAggro} < ${worstAggro} || (${Me.XTarget[${i}].PctAggro} == ${worstAggro} && ${mobClass.Equal[Warrior]} && ${Me.XTarget[${i}].PctHPs} >= ${mobHealth})) && !${Bool[${Me.XTarget[${i}].Name.Find[Corpse]}]} && !${Bool[${Me.XTarget[${i}].Name.Find[wooden box]}]} && !${Bool[${Me.XTarget[${i}].Name.Find[Chest]}]} && !${Bool[${Me.XTarget[${i}].Name.Find[a barrel]}]} && !${Bool[${Me.XTarget[${i}].Name.Find[a box]}]} && !${Bool[${Me.XTarget[${i}].Name.Find[crate]}]} && !${Bool[${Me.XTarget[${i}].Name.Find[hollow_tree]}]} && ${Me.XTarget[${i}].LineOfSight} && ${Me.XTarget[${i}].Distance} < 75) {
       /varset worstAggro ${Me.XTarget[${i}].PctAggro}
       /varset mobId ${Me.XTarget[${i}].ID}
       /varset mobClass ${Me.XTarget[${i}].Class}
