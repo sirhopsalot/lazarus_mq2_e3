@@ -1393,6 +1393,8 @@ SUB assist_SpellArrays
     }
   } else /if (${Me.Class.ShortName.Equal[PAL]}) {
     /if (${Bool[${Me.AltAbility[Projection of Piety]}]}) /call BuildArray "swarmPets" "Projection of Piety"
+  } else /if (${Me.Class.ShortName.Equal[SHD]}) {
+    /if (${Bool[${Me.AltAbility[Chattering Bones]}]}) /call BuildArray "swarmPets" "Chattering Bones"
   } else /if (${Me.Class.ShortName.Equal[DRU]}) {
     /if (${Bool[${Me.AltAbility[Spirits of Nature]}]}) {
       /echo Loading Spirits of Nature
