@@ -97,6 +97,7 @@ SUB EVENT_startMelody(line, ChatSender, melodyName)
         /varset returnTwist FALSE
         /varset songSet ${songList}
         /docommand ${ChatToggle} Playing [${melodyName}].
+        /varset currentMelody ${melodyName}
         /twist ${songSet}
       }
     }
@@ -222,12 +223,38 @@ sub check_bard_mez
   /if (${Debug}) /echo <== check_Mez -|
 /return
 |--------------------------------------------------------------|
+
+| Change melodies based on MelodyIf statements
+SUB melodyIfs
+  /if (!${Defined[melodyIfs]}) /return
+  /declare i int local
+  /declare newIfMelody string local 
+  /for i 1 to ${melodyIfs.Size[1]}
+    /varset newIfMelody ${melodyIfs[${i},1]}
+    /if (!${currentMelody.Equal[${newIfMelody}]} && ${melodyIfs[${i},2]}) {
+      /call EVENT_startMelody "<${Me}> melody ${newIfMelody}" "${Me}" "${newIfMelody}"
+    }
+  /next i
+/RETURN
+
+|--------------------------------------------------------------|
+
+| Automatically cast Selo's Sonata whenever the buff is missing on the Bard
+SUB autoSonata
+  /if (${autoSonataOn} && !${Me.Buff[Selo's Sonata].ID} && ${Me.AltAbilityReady[Selo's Sonata]}) {
+    /alt act 3704
+  }
+/RETURN
+
+|--------------------------------------------------------------|
 Sub BRD_Setup
 /if (${Debug}) /echo |- BRD_Setup ==>
 	/call iniToVarV "${Character_Ini},Bard,Auto-Melody" autoMelody string outer
   /call iniToVarV "${Character_Ini},Bard,AutoMez (On/Off)" autoMez bool outer
   /call IniToArrayV "${Character_Ini},Bard,Mez#"	  mezArray
   /call IniToArrayV "${Character_Ini},Bard,Charm#"	charmArray
+  /call IniToArrayV "${Character_Ini},Bard,MelodyIf#"	melodyIfArray
+  /call iniToVarV "${Character_Ini},Bard,Auto-Sonata (On/Off)" autoSonataOn bool outer
   /declare returnTwist		bool outer FALSE
   /declare playingMelody	bool outer TRUE
   /declare songSet string outer
@@ -247,6 +274,19 @@ Sub BRD_Setup
   } else {
     /declare doCharm bool outer FALSE
   }
+
+  | Setup MelodyIf configuration
+  /declare currentMelody string outer ${autoMelody}
+  /if (${Defined[melodyIfArray]}) {
+    /declare melodyIfs[${melodyIfArray.Size},2] string outer 0
+    /declare i int local
+    /for i 1 to ${melodyIfArray.Size[1]}
+      /varset melodyIfs[${i},1] ${melodyIfArray[${i}].Arg[1,/]}
+      /call argueString Ifs| "${melodyIfArray[${i}]}"
+      /varset melodyIfs[${i},2] ${Ini[${Character_Ini},Ifs,${c_argueString},NULL,noparse]}
+    /next i
+  }
+
 /if (${Debug}) /echo <== BRD_Setup -|
 /return
 |--------------------------------------------------------------|
@@ -258,6 +298,8 @@ Sub BRD_Background_Events
   /doevents toggleMez
   /doevents charmOn
   /doevents charmOff
+  /call melodyIfs
+  /call autoSonata
 /return
 |--------------------------------------------------------------|
 SUB BRD_MacroSettings
@@ -271,6 +313,8 @@ SUB BRD_CharacterSettings
   /call WriteToIni "${Character_Ini},Bard,AutoMez (On/Off)" Off
   /call WriteToIni "${Character_Ini},Bard,Mez"
   /call WriteToIni "${Character_Ini},Bard,Charm"
+  /call WriteToIni "${Character_Ini},Bard,Auto-Sonata (On/Off)" Off
+  /call WriteToIni "${Character_Ini},Bard,MelodyIf"
 /RETURN
 |--------------------------------------------------------------|
 Sub BRD_Aliases
