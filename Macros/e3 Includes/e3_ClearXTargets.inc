@@ -91,13 +91,15 @@ SUB event_nextTarget(line, ChatSender)
   /if (${Bool[${mobId}]} && ${Bool[${Spawn[${mobId}]}]}) {
     /if (${ClearXTargetsDebug}) /echo Assisting on Next Target ${Spawn[${mobId}].CleanName} TargetID=${mobId}
     /call TrueTarget ${mobId}
-    /stick id ${mobId} 5 uw
+    /stick id ${mobId} 8 uw
     /delay 1
     /attack on
     /delay 1
+    /bcga //pet attack
+    /delay 1
     /assistme
     /varset AllowControl TRUE
-    /varset AssistStickDistance 5
+    /varset AssistStickDistance 8
   } else {
     /if (${ClearXTargetsDebug}) /echo No mobs on XTarget to assist on
   }
