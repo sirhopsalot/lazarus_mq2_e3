@@ -241,7 +241,7 @@ SUB melodyIfs
 
 | Automatically cast Selo's Sonata whenever the buff is missing on the Bard
 SUB autoSonata
-  /if (${autoSonataOn} && !${Me.Buff[Selo's Sonata].ID} && !${Me.Buff[Selo's Song of Travel].ID} && ${Me.AltAbilityReady[Selo's Sonata]}) {
+  /if (${autoSonataOn} && !${Me.Buff[Selo's Sonata].ID} && !${Me.Invis} && ${Me.AltAbilityReady[Selo's Sonata]}) {
     /alt act 3704
   }
 /RETURN
