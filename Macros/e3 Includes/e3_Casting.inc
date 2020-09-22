@@ -399,8 +399,10 @@ Sub check_Mana(ArrayName, int ArrayIndex)
 |- Interrupt a spell when appropriate		    -|
 |------------------------------------------------|
 Sub interrupt
-	/varset interruptFlag TRUE
-	/interrupt
+    /varset interruptFlag TRUE
+    /if (!${NetBots[${Me.Name}].Mounted}) {
+        /interrupt
+    } 
 /return
 
 |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -486,7 +488,6 @@ Sub casting_Setup
   /varset vetArray[${iExpedient}] "Expedient Recovery"
   /varset vetArray[${iJester}]    "Chaotic Jester"
   /call BuildSpellArray "vetArray" "vetArray2D"
-
 /if (${Debug} || ${Debug_Casting}) /echo <== casting_Setup -|
 /return
 
