@@ -49,7 +49,7 @@ SUB Main(modeSelect)
         /if (!${Me.Moving} && !${Following} && !${Me.Casting.ID}) {
           /if ((${Me.PctMana} < ${autoMedPctMana} && ${Me.MaxMana} > 1) || (${Me.PctEndurance} < ${autoMedPctMana}) && ${autoMedChar}) {
             /varset medBreak TRUE
-			/if (${Defined[AssistType]}) (${Select[${Me.Class.ShortName},CLR,DRU,ENC,MAG,NEC,SHM,WIZ]}) /varset AssistType Off else /declare AssistType string Off
+			/if ((${Defined[AssistType]}) && (${Select[${Me.Class.ShortName},CLR,DRU,ENC,MAG,NEC,SHM,WIZ]})) /varset AssistType Off else /declare AssistType string Off
           }
         }
       }
