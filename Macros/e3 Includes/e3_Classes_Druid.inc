@@ -20,6 +20,8 @@ SUB DRU_MacroSettings
 |----------------------------------------------------------------------------|
 SUB DRU_CharacterSettings
 	/call WriteToIni "${Character_Ini},Druid,Evac Spell"
+	/call WriteToIni "${Character_Ini},Misc,End MedBreak in Combat(On/Off)" Off
+	/call WriteToIni "${Character_Ini},Misc,AutoMedBreak (On/Off)" Off
 /RETURN
 |----------------------------------------------------------------------------|
 Sub DRU_Aliases
