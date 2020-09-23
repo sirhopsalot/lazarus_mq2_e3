@@ -25,7 +25,8 @@ SUB PAL_CharacterSettings
 /if (${Debug}) /echo |- PAL_CharacterSettings ==>
 	/call WriteToIni "${Character_Ini},Paladin,Auto-Yaulp (On/Off)" Off
 	/call WriteToIni "${Character_Ini},Paladin,Yaulp Spell"
-
+	/call WriteToIni "${Character_Ini},Misc,End MedBreak in Combat(On/Off)" On
+	/call WriteToIni "${Character_Ini},Misc,AutoMedBreak (On/Off)" Off
 /if (${Debug}) /echo <== PAL_CharacterSettings -|
 /RETURN
 |----------------------------------------------------------------------------|
