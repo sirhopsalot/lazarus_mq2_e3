@@ -53,8 +53,6 @@ SUB SHM_CharacterSettings
 /if (${Debug}) /echo |- SHM_CharacterSettings ==>
 	/call WriteToIni "${Character_Ini},Shaman,Auto-Canni (On/Off)"
 	/call WriteToIni "${Character_Ini},Shaman,Canni"
-	/call WriteToIni "${Character_Ini},Misc,End MedBreak in Combat(On/Off)" Off
-	/call WriteToIni "${Character_Ini},Misc,AutoMedBreak (On/Off)" Off
 /if (${Debug}) /echo <== SHM_CharacterSettings -|
 /RETURN
 |----------------------------------------------------------------------------|

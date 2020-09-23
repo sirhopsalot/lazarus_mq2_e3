@@ -307,8 +307,6 @@ SUB ENC_CharacterSettings
   /call WriteToIni "${Character_Ini},Enchanter,Mez"
 	/call WriteToIni "${Character_Ini},Enchanter,Charm"
   /call WriteToIni "${Character_Ini},Enchanter,GatherMana Pct" 10
-  /call WriteToIni "${Character_Ini},Misc,End MedBreak in Combat(On/Off)" Off
-  /call WriteToIni "${Character_Ini},Misc,AutoMedBreak (On/Off)" Off
 /RETURN
 |----------------------------------------------------------------------------|
 Sub ENC_Aliases

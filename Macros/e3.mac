@@ -47,9 +47,13 @@ SUB Main(modeSelect)
       /if (${Me.CombatState.NotEqual[COMBAT]}) {
         /if ((!${Me.Casting.ID} || ${Me.Class.ShortName.Equal[BRD]}) && !${use_TargetAE}) /call completePendingExchange
         /if (!${Me.Moving} && !${Following} && !${Me.Casting.ID}) {
-          /if ((${Me.PctMana} < ${autoMedPctMana} && ${Me.MaxMana} > 1 && ${autoMedChar}) || (${Me.PctEndurance} < ${autoMedPctMana})) {
+          /if ((${Me.PctMana} < ${autoMedPctMana} && ${Me.MaxMana} > 1 && ${autoMedChar}) || (${Me.PctEndurance} < ${autoMedPctMana} && ${autoMedChar})) {
             /varset medBreak TRUE
-			/if (${Select[${Me.Class.ShortName},CLR,DRU,ENC,MAG,NEC,SHM,WIZ]}) /varset AssistType Off
+			/if ((${Defined[AssistType]}) && (${Select[${Me.Class.ShortName},CLR,DRU,ENC,MAG,NEC,SHM,WIZ]})) {
+			  /varset AssistType Off 
+			} else {
+			  /declare AssistType string Off
+			}
           }
         }
       }
