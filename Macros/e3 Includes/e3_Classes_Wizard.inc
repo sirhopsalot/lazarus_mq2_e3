@@ -43,8 +43,6 @@ SUB WIZ_CharacterSettings
 	/call WriteToIni "${Character_Ini},Wizard,Evac Spell"
 	/call WriteToIni "${Character_Ini},Wizard,Auto-Harvest (On/Off)" Off
 	/call WriteToIni "${Character_Ini},Wizard,Harvest"
-	/call WriteToIni "${Character_Ini},Misc,End MedBreak in Combat(On/Off)" Off
-	/call WriteToIni "${Character_Ini},Misc,AutoMedBreak (On/Off)" Off
 /if (${Debug}) /echo <== WIZ_CharacterSettings -|
 /RETURN
 |----------------------------------------------------------------------------|

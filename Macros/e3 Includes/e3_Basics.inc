@@ -1620,6 +1620,9 @@ SUB basics_MacroSettings
 /RETURN
 
 SUB basics_CharacterSettings
+/if ((${Select[${Me.Class.ShortName},CLR,DRU,ENC,MAG,NEC,SHM,WIZ]})) /call WriteToIni "${Character_Ini},Misc,End MedBreak in Combat(On/Off)" Off else /if (${Me.Class.ShortName.NotEqual[BRD]}) /call WriteToIni "${Character_Ini},Misc,End MedBreak in Combat(On/Off)" On
+
+/if (${Me.Class.ShortName.NotEqual[BRD]}) /call WriteToIni "${Character_Ini},Misc,AutoMedBreak (On/Off)" Off
 /RETURN
 
 Sub basics_Aliases

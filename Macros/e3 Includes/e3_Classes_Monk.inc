@@ -27,8 +27,6 @@ SUB MNK_MacroSettings
 /RETURN
 |----------------------------------------------------------------------------|
 SUB MNK_CharacterSettings
-/call WriteToIni "${Character_Ini},Misc,End MedBreak in Combat(On/Off)" On
-/call WriteToIni "${Character_Ini},Misc,AutoMedBreak (On/Off)" Off
 /RETURN
 |----------------------------------------------------------------------------|
 Sub MNK_Aliases
