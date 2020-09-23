@@ -92,6 +92,17 @@ SUB event_Chat(ChatChannel, ChatSender, ChatText)
       }
       /return
     }
+
+	| Check if caster is invisible
+    /if (${Me.Invis}) {
+		/if (${ChatChannel.Equal[TELL]}) {
+			/tell ${ChatSender} I'm sorry, I'm invisible and cannot cast buffs right now.
+		} else {
+			/g I am Invis!
+		}
+    	/return
+    } 
+
     :retryCast
     | Check Mana
     |/echo cs ${ChatSender} csID ${Spawn[pc =${ChatSender}].ID} spell ${begBuffArray2D[1,${iSpellName}]}
@@ -167,6 +178,13 @@ SUB event_buffRequestRelay(line, ChatSender, eventParams)
     /tell ${ChatSender} You're out of range!
     /return
   }
+
+	| Check if caster is invisible
+	/if (${Me.Invis}) {
+		/tell ${ChatSender} I'm sorry, I'm invisible and cannot cast buffs right now.
+		/return
+	} 
+
   | -------------------Find buffTarget------------------- |
   /declare buffTarget string local ${line.Right[-${Math.Calc[${line.Find[buff]}+4]}].Left[-1]}
   /varset buffTarget ${buffTarget.Replace[please,]}
