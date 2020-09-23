@@ -50,9 +50,9 @@ SUB Main(modeSelect)
           /if ((${Me.PctMana} < ${autoMedPctMana} && ${Me.MaxMana} > 1 && ${autoMedChar}) || (${Me.PctEndurance} < ${autoMedPctMana} && ${autoMedChar})) {
             /varset medBreak TRUE
 			/if ((${Defined[AssistType]}) && (${Select[${Me.Class.ShortName},CLR,DRU,ENC,MAG,NEC,SHM,WIZ]})) {
-			/varset AssistType Off 
+			  /varset AssistType Off 
 			} else {
-			/declare AssistType string Off
+			  /declare AssistType string Off
 			}
           }
         }
