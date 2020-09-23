@@ -305,6 +305,8 @@ SUB MAG_CharacterSettings
 	/call WriteToIni "${Character_Ini},Magician,Auto-Pet Weapons (On/Off)"
   /call WriteToIni "${Character_Ini},Magician,Auto-Summon Orb of Mastery (On/Off)"
 	/call WriteToIni "${Character_Ini},Magician,Summoned Pet Item"
+	/call WriteToIni "${Character_Ini},Misc,End MedBreak in Combat(On/Off)" Off
+	/call WriteToIni "${Character_Ini},Misc,AutoMedBreak (On/Off)" Off
 /if (${Debug}) /echo <== MAG_CharacterSettings -|
 /RETURN
 |----------------------------------------------------------------------------|

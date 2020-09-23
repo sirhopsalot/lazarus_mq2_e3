@@ -22,6 +22,8 @@ SUB SHD_MacroSettings
 SUB SHD_CharacterSettings
 /if (${Debug}) /echo |- SHD_CharacterSettings ==>
 	/call WriteToIni "${Character_Ini},${Me.Class},LifeTap"
+	/call WriteToIni "${Character_Ini},Misc,End MedBreak in Combat(On/Off)" On
+	/call WriteToIni "${Character_Ini},Misc,AutoMedBreak (On/Off)" Off
 /if (${Debug}) /echo <== SHD_CharacterSettings -|
 /RETURN
 |----------------------------------------------------------------------------|

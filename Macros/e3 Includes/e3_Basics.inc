@@ -1013,6 +1013,7 @@ SUB EVENT_medOn(line, ChatSender)
   /if (${Me.Class.ShortName.NotEqual[BRD]}) {
       /docommand ${ChatToggle} Meditating...
       /varset medBreak TRUE
+	  /if (${Select[${Me.Class.ShortName},CLR,DRU,ENC,MAG,NEC,SHM,WIZ]}) /varset AssistType Off
       /if (${line.Find[ Hold]}) {
         /varset medBreak_Hold TRUE
       } else {
@@ -1033,6 +1034,7 @@ SUB EVENT_medOff(line, ChatSender)
     /docommand ${ChatToggle} Ending Medbreak.
     /varset medBreak FALSE
     /varset medBreak_Hold FALSE
+	/if (${Ini[${Character_Ini},Assist Settings,Assist Type (Melee/Ranged/Off)].Length}) /call iniToVarV "${Character_Ini},Assist Settings,Assist Type (Melee/Ranged/Off)" AssistType string outer
     /if (${Me.Sitting}) /stand
   }
 /if (${Debug} || ${Debug_Basics}) /echo <== EVENT_medOff -|
@@ -1044,11 +1046,12 @@ SUB EVENT_medOff(line, ChatSender)
 |--------------------------------------------------------------------------------|
 SUB check_MedBreak
 /if (${Debug} || ${Debug_Basics}) /echo |- check_MedBreak ==>
-	| If End MedBreak in Combat (On/Off)=On, and a netbot is in combat, call medOff
-	/if (${medOn_combatBreak} && ${Me.CombatState.Equal[COMBAT]}) {
-    /docommand ${ChatToggle} Ending Medbreak.
+	| If End MedBreak in Combat (On/Off)=On in General and Character, and a netbot is in combat, call medOff
+	/if (${medOn_combatBreak} && ${medOn_combatBreakChar} && ${Me.CombatState.Equal[COMBAT]}) {
+    /docommand ${ChatToggle} Ending Medbreak early due to combat.
     /varset medBreak FALSE
     /varset medBreak_Hold FALSE
+	/if (${Ini[${Character_Ini},Assist Settings,Assist Type (Melee/Ranged/Off)].Length}) /call iniToVarV "${Character_Ini},Assist Settings,Assist Type (Melee/Ranged/Off)" AssistType string outer
     /if (${Me.Sitting}) /stand
 	}
 	/if (!${Me.Feigning}) {
@@ -1061,7 +1064,8 @@ SUB check_MedBreak
 			/docommand ${ChatToggle} Full Mana/Endurance, ending MedBreak.
 			/if (${Me.Sitting}) /stand
 			/varset medBreak FALSE
-			/varset medBreak_Hold FALSE				
+			/varset medBreak_Hold FALSE	
+			/if (${Ini[${Character_Ini},Assist Settings,Assist Type (Melee/Ranged/Off)].Length}) /call iniToVarV "${Character_Ini},Assist Settings,Assist Type (Melee/Ranged/Off)" AssistType string outer			
 		} else {
       /if (!${Me.Sitting} && !${Me.Casting.ID} && !${Me.Moving}) /sit
 		}
@@ -1514,6 +1518,8 @@ Sub basics_Setup
 
 	/declare medBreak bool outer FALSE
 	/declare medBreak_Hold bool outer FALSE
+	/declare medOn_combatBreak bool outer FALSE
+	/declare autoMedChar bool outer FALSE
 	/declare medbreak_Popup_Timer timer outer
 	/declare clickitRandomDelay int outer 7
 
@@ -1528,7 +1534,9 @@ Sub basics_Setup
 	/declare LeashLength int outer 100
 	/if (${Ini[${genSettings_Ini},General,Leash Length].Length} && ${Int[${Ini[${genSettings_Ini},General,Leash Length]}]}) /call iniToVarV "${genSettings_Ini},General,Leash Length" LeashLength int outer
 	/if (${Ini[${genSettings_Ini},General,End MedBreak in Combat(On/Off)].Length}) /call iniToVarV "${genSettings_Ini},General,End MedBreak in Combat(On/Off)" medOn_combatBreak bool outer
-  /if (${Ini[${genSettings_Ini},General,AutoMedBreak PctMana].Length}) /call iniToVarV "${genSettings_Ini},General,AutoMedBreak PctMana" autoMedPctMana int outer
+	/if (${Ini[${genSettings_Ini},General,AutoMedBreak PctMana].Length}) /call iniToVarV "${genSettings_Ini},General,AutoMedBreak PctMana" autoMedPctMana int outer
+  	/if (${Ini[${Character_Ini},Misc,End MedBreak in Combat(On/Off)].Length}) /call iniToVarV "${Character_Ini},Misc,End MedBreak in Combat(On/Off)" medOn_combatBreakChar bool outer
+	/if (${Ini[${Character_Ini},Misc,AutoMedBreak (On/Off)].Length}) /call iniToVarV "${Character_Ini},Misc,AutoMedBreak (On/Off)" autoMedChar bool outer
 	| -Add Groups_Ini file path
 	/if (!${Ini[${MacroData_Ini},File Paths,Saved Groups].Length}) /call WriteToIni "${MacroData_Ini},File Paths,Saved Groups" "e3 Macro Inis\Saved Groups.ini" 1
 	| -Import Groups_Ini.

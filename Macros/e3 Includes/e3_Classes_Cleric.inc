@@ -378,6 +378,8 @@ SUB CLR_CharacterSettings
   /call WriteToIni "${Character_Ini},Cleric,Yaulp Spell"
   /call WriteToIni "${Character_Ini},Cleric,Auto-Pet Weapons (On/Off)"
   /call WriteToIni "${Character_Ini},Cleric,Summoned Pet Hammer"
+  /call WriteToIni "${Character_Ini},Misc,End MedBreak in Combat(On/Off)" Off
+  /call WriteToIni "${Character_Ini},Misc,AutoMedBreak (On/Off)" Off
 /if (${Debug}) /echo <== CLR_CharacterSettings -|
 /RETURN
 |----------------------------------------------------------------------------|

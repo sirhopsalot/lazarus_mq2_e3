@@ -117,6 +117,8 @@ SUB NEC_CharacterSettings
   |/call WriteToIni "${Character_Ini},${Me.Class},Mana Dump Engage Pct" 70
 	/call WriteToIni "${Character_Ini},${Me.Class},Who to Mana Dump"
 	/call WriteToIni "${Character_Ini},${Me.Class},Mana Dump"
+	/call WriteToIni "${Character_Ini},Misc,End MedBreak in Combat(On/Off)" Off
+	/call WriteToIni "${Character_Ini},Misc,AutoMedBreak (On/Off)" Off
 /if (${Debug}) /echo <== NEC_CharacterSettings -|
 /return
 |----------------------------------------------------------------------------|
