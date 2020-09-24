@@ -43,6 +43,7 @@ SUB EVENT_startMelody(line, ChatSender, melodyName)
 /if (${Debug}) /echo |- EVENT_startMelody ==>
   /if (${Me.Class.ShortName.Equal[BRD]}) {
     /if (!${checkEventArgs[${ChatSender},${line},UZR,${melodyName}]}) /return
+    /varset currentMelody ${melodyName}
     /declare memGem int local
     /varset melodyName ${c_eventArgData}
     | If I don't have the melodyName listed in my ini.
@@ -54,7 +55,6 @@ SUB EVENT_startMelody(line, ChatSender, melodyName)
         /varset songSet
         /docommand ${ChatToggle} Ending melody.
         /twist end
-        /varset currentMelody ${melodyName}
         /varset fixedMelody ${melodyName}
       } else {
         /docommand ${ChatToggle} [${melodyName}] is not a known melody.
@@ -99,7 +99,6 @@ SUB EVENT_startMelody(line, ChatSender, melodyName)
         /varset returnTwist FALSE
         /varset songSet ${songList}
         /docommand ${ChatToggle} Playing [${melodyName}].
-        /varset currentMelody ${melodyName}
         /if (${fixedMelody.Equal[stop]}) {
           /varset fixedMelody off
         }
