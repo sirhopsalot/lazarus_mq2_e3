@@ -54,6 +54,8 @@ SUB EVENT_startMelody(line, ChatSender, melodyName)
         /varset songSet
         /docommand ${ChatToggle} Ending melody.
         /twist end
+                /varset currentMelody ${melodyName}
+        /varset fixedMelody ${melodyName}
       } else {
         /docommand ${ChatToggle} [${melodyName}] is not a known melody.
       }
@@ -98,6 +100,9 @@ SUB EVENT_startMelody(line, ChatSender, melodyName)
         /varset songSet ${songList}
         /docommand ${ChatToggle} Playing [${melodyName}].
         /varset currentMelody ${melodyName}
+        /if (${fixedMelody.Equal[stop]}) {
+          /varset fixedMelody off
+        }
         /twist ${songSet}
       }
     }
@@ -109,7 +114,7 @@ SUB pauseTwist
 /if (${Debug} || ${Debug_Casting}) /echo |- pauseTwist ==>
 	/varset	returnTwist TRUE
 	/squelch /twist stop
-	/delay 20 !${Me.Casting.ID}
+	/delay 2 !${Me.Casting.ID}
 /if (${Debug} || ${Debug_Casting}) /echo <== pauseTwist -|
 /return
 |--------------------------------------------------------------|
@@ -118,6 +123,24 @@ SUB unpauseTwist
 	/varset 	returnTwist FALSE
 	/squelch 	/twist ${songSet}
 	/delay 2 ${Me.Casting.ID}
+/return
+|--------------------------------------------------------------|
+#event toggleMez "<#1#> Mez #2#"
+#event toggleMez "#1# tells you, 'Mez #2#'"
+sub event_toggleMez(line, ChatSender, mezToggle)
+  /if (${Me.Class.ShortName.Equal[ENC]} || ${Me.Class.ShortName.Equal[BRD]}) {
+    /if (${Debug} || ${Debug_Ench}) /echo |- remove_RuneTarget ==>
+      /if (${mezToggle.Equal[on]}) {
+        /varset autoMez TRUE
+        /varset fixedMelody ${currentMelody}
+        /docommand ${ChatToggle} << Mezzing Enabled >>
+      } else {
+        /varset autoMez FALSE
+        /varset fixedMelody off
+        /docommand ${ChatToggle} << Mezzing Disabled >>
+    }
+    /if (${Debug}) /echo <== remove_RuneTarget -|
+  }
 /return
 |--------------------------------------------------------------|
 Sub check_bard_charm
@@ -203,7 +226,7 @@ sub check_bard_mez
       /if (${Spawn[id ${mezTarget}].CleanName.Find[' pet]}) /next i
       /call TrueTarget ${mezTarg}
       /delay 1s ${Target.BuffsPopulated}
-      /if (${Select[${AssistTarget},${mezTarg}]}==0 && (!${Bool[${Target.Mezzed}]} || ${Target.Mezzed.Duration.TotalSeconds} < 5)) {
+            /if (${Select[${AssistTarget},${mezTarg}]}==0 && (!${Bool[${Target.Mezzed}]} || ${Target.Mezzed.Duration.TotalSeconds} < 7)) {
         /for s 1 to ${mezArray2D.Size[1]}
           /if (${check_Distance[${mezTarg},${mezArray2D[${s},${iMyRange}]}]}) {
             /if (${mezArray2D[${s},${iCastType}].Equal[Spell]} && !${Bool[${Me.Gem[${mezArray2D[${s},${iCastName}]}]}]}) /call memorize_spell "${mezArray2D[${s},${iCastName}]}" ${mezArray2D[${s},${iSpellGem}]}
@@ -211,7 +234,7 @@ sub check_bard_mez
               /if (${Twist.Twisting}) /call pauseTwist
               |:retryMez
               /twist once ${mezArray2D[${s},${iSpellGem}]}
-              /delay 3s !${Me.Casting.ID}
+              /delay 3s 
               /delay 1s ${Target.BuffsPopulated}
 
               /if (${returnTwist}) /call unpauseTwist
@@ -226,6 +249,16 @@ sub check_bard_mez
 
 | Change melodies based on MelodyIf statements
 SUB melodyIfs
+  | when fixedMelody is stop, stop all melodies and don't let them start
+  | when fixedMelody is off/null, start up MelodyIf again
+  /if (!${Bool[${fixedMelody.Equal[off]}]} && !${currentMelody.Equal[${fixedMelody}]}) {
+    /call EVENT_startMelody "<${Me}> melody ${fixedMelody}" "${Me}" "${fixedMelody}"
+    /return
+  } else /if (${currentMelody.Equal[${fixedMelody}]}) {
+    | already set to one of the fixed melodies
+    /return
+  }
+
   /if (!${Defined[melodyIfs]}) /return
   /declare i int local
   /declare newIfMelody string local 
@@ -235,6 +268,14 @@ SUB melodyIfs
       /call EVENT_startMelody "<${Me}> melody ${newIfMelody}" "${Me}" "${newIfMelody}"
     }
   /next i
+/RETURN
+
+|--------------------------------------------------------------|
+
+#event setFixedMelody "<#1#> Set Melody #2#"
+SUB event_setFixedMelody(line, ChatSender, melodyName)
+  | Set to a fixed melody
+  /varset fixedMelody ${melodyName}
 /RETURN
 
 |--------------------------------------------------------------|
@@ -249,6 +290,7 @@ SUB autoSonata
 |--------------------------------------------------------------|
 Sub BRD_Setup
 /if (${Debug}) /echo |- BRD_Setup ==>
+/declare autoMez bool outer FALSE
 	/call iniToVarV "${Character_Ini},Bard,Auto-Melody" autoMelody string outer
   /call iniToVarV "${Character_Ini},Bard,AutoMez (On/Off)" autoMez bool outer
   /call IniToArrayV "${Character_Ini},Bard,Mez#"	  mezArray
@@ -263,7 +305,7 @@ Sub BRD_Setup
   /if (${Defined[mezArray]}) {
     /call BuildSpellArray "mezArray"	"mezArray2D"
   } else {
-    /varset autoMez FALSE
+    /if (${Defined[autoMez]}) /varset autoMez FALSE
   }
 
   /declare charmTarget int outer
@@ -277,6 +319,7 @@ Sub BRD_Setup
 
   | Setup MelodyIf configuration
   /declare currentMelody string outer ${autoMelody}
+    /declare fixedMelody string outer off
   /if (${Defined[melodyIfArray]}) {
     /declare melodyIfs[${melodyIfArray.Size},2] string outer 0
     /declare i int local
@@ -298,6 +341,7 @@ Sub BRD_Background_Events
   /doevents toggleMez
   /doevents charmOn
   /doevents charmOff
+  /doevents setFixedMelody
   /call melodyIfs
   /call autoSonata
 /return
@@ -306,6 +350,7 @@ SUB BRD_MacroSettings
 	| Adv Settings
 	/call WriteToIni "${advSettings_Ini},BRD Functions,BRD Function#1" "check_Burns" 1
 	/call WriteToIni "${advSettings_Ini},BRD Functions,BRD Function#2" "check_Buffs" 1
+	/call WriteToIni "${advSettings_Ini},BRD Functions,BRD Function#3" "check_bard_mez" 1
 /RETURN
 |--------------------------------------------------------------|
 SUB BRD_CharacterSettings
@@ -320,4 +365,6 @@ SUB BRD_CharacterSettings
 Sub BRD_Aliases
 	/squelch /alias /SaveMelody /echo Save Melody
 	/squelch /alias /PlayMelody /bc Melody
+  /squelch /alias /mezon /bc Mez on
+  /squelch /alias /mezoff /bc Mez off
 /return
