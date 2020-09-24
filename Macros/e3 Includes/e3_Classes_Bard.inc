@@ -220,7 +220,10 @@ sub check_bard_mez
     /declare i int local
     /declare s int local
     /declare mezTarg int local
-    /if (!${SpawnCount[playerstate 4 npc targetable radius ${AE_Radius}]}) /return
+    /if (!${SpawnCount[playerstate 4 npc targetable radius ${AE_Radius}]}) {
+      /varset returnTwist TRUE
+      /return
+    }
     /for i 1 to ${SpawnCount[playerstate 4 npc targetable radius ${AE_Radius}]}
       /varset mezTarg ${NearestSpawn[${i},playerstate 4 npc targetable radius ${AE_Radius}].ID}
       /if (${Spawn[id ${mezTarget}].CleanName.Find[' pet]}) /next i
