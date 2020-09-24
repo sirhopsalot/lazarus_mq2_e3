@@ -235,6 +235,7 @@ sub check_bard_mez
             /if (${mezArray2D[${s},${iCastType}].Equal[Spell]} && !${Bool[${Me.Gem[${mezArray2D[${s},${iCastName}]}]}]}) /call memorize_spell "${mezArray2D[${s},${iCastName}]}" ${mezArray2D[${s},${iSpellGem}]}
               /docommand ${ChatToggle} << Mezzing ${mezTarg} with ${mezArray2D[${s},${iCastName}]} >>
               /if (${Twist.Twisting}) /call pauseTwist
+              /attack off
               |:retryMez
               /twist once ${mezArray2D[${s},${iSpellGem}]}
               /delay 3s 
