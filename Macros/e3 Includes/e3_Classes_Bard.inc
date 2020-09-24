@@ -54,7 +54,7 @@ SUB EVENT_startMelody(line, ChatSender, melodyName)
         /varset songSet
         /docommand ${ChatToggle} Ending melody.
         /twist end
-                /varset currentMelody ${melodyName}
+        /varset currentMelody ${melodyName}
         /varset fixedMelody ${melodyName}
       } else {
         /docommand ${ChatToggle} [${melodyName}] is not a known melody.
