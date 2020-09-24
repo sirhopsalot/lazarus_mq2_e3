@@ -54,6 +54,8 @@ SUB EVENT_startMelody(line, ChatSender, melodyName)
         /varset songSet
         /docommand ${ChatToggle} Ending melody.
         /twist end
+        /varset currentMelody ${melodyName}
+        /varset fixedMelody ${melodyName}
       } else {
         /docommand ${ChatToggle} [${melodyName}] is not a known melody.
       }
@@ -98,6 +100,9 @@ SUB EVENT_startMelody(line, ChatSender, melodyName)
         /varset songSet ${songList}
         /docommand ${ChatToggle} Playing [${melodyName}].
         /varset currentMelody ${melodyName}
+        /if (${fixedMelody.Equal[stop]}) {
+          /varset fixedMelody off
+        }
         /twist ${songSet}
       }
     }
@@ -226,6 +231,16 @@ sub check_bard_mez
 
 | Change melodies based on MelodyIf statements
 SUB melodyIfs
+  | when fixedMelody is stop, stop all melodies and don't let them start
+  | when fixedMelody is off/null, start up MelodyIf again
+  /if (!${Bool[${fixedMelody.Equal[off]}]} && !${currentMelody.Equal[${fixedMelody}]}) {
+    /call EVENT_startMelody "<${Me}> melody ${fixedMelody}" "${Me}" "${fixedMelody}"
+    /return
+  } else /if (${currentMelody.Equal[${fixedMelody}]}) {
+    | already set to one of the fixed melodies
+    /return
+  }
+
   /if (!${Defined[melodyIfs]}) /return
   /declare i int local
   /declare newIfMelody string local 
@@ -235,6 +250,14 @@ SUB melodyIfs
       /call EVENT_startMelody "<${Me}> melody ${newIfMelody}" "${Me}" "${newIfMelody}"
     }
   /next i
+/RETURN
+
+|--------------------------------------------------------------|
+
+#event setFixedMelody "<#1#> Set Melody #2#"
+SUB event_setFixedMelody(line, ChatSender, melodyName)
+  | Set to a fixed melody
+  /varset fixedMelody ${melodyName}
 /RETURN
 
 |--------------------------------------------------------------|
@@ -277,6 +300,7 @@ Sub BRD_Setup
 
   | Setup MelodyIf configuration
   /declare currentMelody string outer ${autoMelody}
+  /declare fixedMelody string outer off
   /if (${Defined[melodyIfArray]}) {
     /declare melodyIfs[${melodyIfArray.Size},2] string outer 0
     /declare i int local
@@ -298,6 +322,7 @@ Sub BRD_Background_Events
   /doevents toggleMez
   /doevents charmOn
   /doevents charmOff
+  /doevents setFixedMelody
   /call melodyIfs
   /call autoSonata
 /return
