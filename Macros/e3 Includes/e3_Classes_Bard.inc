@@ -229,7 +229,7 @@ sub check_bard_mez
       /if (${Spawn[id ${mezTarget}].CleanName.Find[' pet]}) /next i
       /call TrueTarget ${mezTarg}
       /delay 1s ${Target.BuffsPopulated}
-            /if (${Select[${AssistTarget},${mezTarg}]}==0 && (!${Bool[${Target.Mezzed}]} || ${Target.Mezzed.Duration.TotalSeconds} < 7)) {
+      /if (${Select[${AssistTarget},${mezTarg}]}==0 && (!${Bool[${Target.Mezzed}]} || ${Target.Mezzed.Duration.TotalSeconds} < 7)) {
         /for s 1 to ${mezArray2D.Size[1]}
           /if (${check_Distance[${mezTarg},${mezArray2D[${s},${iMyRange}]}]}) {
             /if (${mezArray2D[${s},${iCastType}].Equal[Spell]} && !${Bool[${Me.Gem[${mezArray2D[${s},${iCastName}]}]}]}) /call memorize_spell "${mezArray2D[${s},${iCastName}]}" ${mezArray2D[${s},${iSpellGem}]}
@@ -322,7 +322,7 @@ Sub BRD_Setup
 
   | Setup MelodyIf configuration
   /declare currentMelody string outer ${autoMelody}
-    /declare fixedMelody string outer off
+  /declare fixedMelody string outer off
   /if (${Defined[melodyIfArray]}) {
     /declare melodyIfs[${melodyIfArray.Size},2] string outer 0
     /declare i int local
