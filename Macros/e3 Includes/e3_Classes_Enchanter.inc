@@ -290,13 +290,14 @@ SUB ENC_MacroSettings
 	/call WriteToIni "${advSettings_Ini},ENC Functions,ENC Function#1" "check_Charm" 1
 	/call WriteToIni "${advSettings_Ini},ENC Functions,ENC Function#2" "check_Mez" 1
 	/call WriteToIni "${advSettings_Ini},ENC Functions,ENC Function#3" "check_Rune" 1
-	/call WriteToIni "${advSettings_Ini},ENC Functions,ENC Function#4" "check_Burns" 1
-	/call WriteToIni "${advSettings_Ini},ENC Functions,ENC Function#5" "check_Debuffs" 1
-  /call WriteToIni "${advSettings_Ini},ENC Functions,ENC Function#6" "check_Buffs" 1
+  /call WriteToIni "${advSettings_Ini},ENC Functions,ENC Function#4" "check_Debuffs" 1
+  /call WriteToIni "${advSettings_Ini},ENC Functions,ENC Function#5" "check_Buffs" 1
+	/call WriteToIni "${advSettings_Ini},ENC Functions,ENC Function#6" "check_Burns" 1
 	/call WriteToIni "${advSettings_Ini},ENC Functions,ENC Function#7" "check_DoTs" 1
 	/call WriteToIni "${advSettings_Ini},ENC Functions,ENC Function#8" "check_AE" 1
 	/call WriteToIni "${advSettings_Ini},ENC Functions,ENC Function#9" "check_Nukes" 1
 	/call WriteToIni "${advSettings_Ini},ENC Functions,ENC Function#10" "check_Pets" 1
+  /call WriteToIni "${advSettings_Ini},ENC Functions,ENC Function#11" "check_Food" 1
 /RETURN
 |----------------------------------------------------------------------------|
 SUB ENC_CharacterSettings

@@ -356,17 +356,18 @@ Sub CLR_Setup
 SUB CLR_MacroSettings
 /if (${Debug}) /echo |- CLR_MacroSettings ==>
   /call WriteToIni "${advSettings_Ini},CLR Functions,CLR Function#1" "check_DivineArb" 1
-  /call WriteToIni "${advSettings_Ini},CLR Functions,CLR Function#2" "check_Burns" 1
-  /call WriteToIni "${advSettings_Ini},CLR Functions,CLR Function#3" "check_Yaulp" 1
-  /call WriteToIni "${advSettings_Ini},CLR Functions,CLR Function#4" "check_celestialRegen" 1
-  /call WriteToIni "${advSettings_Ini},CLR Functions,CLR Function#5" "check_healChain" 1
-  /call WriteToIni "${advSettings_Ini},CLR Functions,CLR Function#6" "check_Heals" 1
-  /call WriteToIni "${advSettings_Ini},CLR Functions,CLR Function#7" "check_Cures" 1
-  /call WriteToIni "${advSettings_Ini},CLR Functions,CLR Function#8" "check_Buffs" 1
+  /call WriteToIni "${advSettings_Ini},CLR Functions,CLR Function#2" "check_healChain" 1
+  /call WriteToIni "${advSettings_Ini},CLR Functions,CLR Function#3" "check_Heals" 1
+  /call WriteToIni "${advSettings_Ini},CLR Functions,CLR Function#4" "check_Cures" 1
+  /call WriteToIni "${advSettings_Ini},CLR Functions,CLR Function#5" "check_celestialRegen" 1
+  /call WriteToIni "${advSettings_Ini},CLR Functions,CLR Function#6" "check_Buffs" 1
+  /call WriteToIni "${advSettings_Ini},CLR Functions,CLR Function#7" "check_Burns" 1
+  /call WriteToIni "${advSettings_Ini},CLR Functions,CLR Function#8" "check_Yaulp" 1
   /call WriteToIni "${advSettings_Ini},CLR Functions,CLR Function#9" "check_Debuffs" 1
   /call WriteToIni "${advSettings_Ini},CLR Functions,CLR Function#10" "check_Nukes" 1
-  /call WriteToIni "${advSettings_Ini},CLR Functions,CLR Function#4" "check_Pets" 1
-  /call WriteToIni "${advSettings_Ini},CLR Functions,CLR Function#8" "check_SummonItems" 1
+  /call WriteToIni "${advSettings_Ini},CLR Functions,CLR Function#11" "check_Pets" 1
+  /call WriteToIni "${advSettings_Ini},CLR Functions,CLR Function#12" "check_SummonItems" 1
+  /call WriteToIni "${advSettings_Ini},CLR Functions,CLR Function#13" "check_Food" 1
 /if (${Debug}) /echo <== CLR_MacroSettings -|
 /RETURN
 |----------------------------------------------------------------------------|

@@ -14,6 +14,7 @@ SUB BST_MacroSettings
 	/call WriteToIni "${advSettings_Ini},BST Functions,BST Function#6" "check_Nukes" 1
 	/call WriteToIni "${advSettings_Ini},BST Functions,BST Function#7" "check_Pets" 1
   /call WriteToIni "${advSettings_Ini},BST Functions,BST Function#8" "check_DoTs" 1
+  /call WriteToIni "${advSettings_Ini},BST Functions,BST Function#9" "check_Food" 1
 /if (${Debug}) /echo <== BST_MacroSettings -|
 /RETURN
 |----------------------------------------------------------------------------|

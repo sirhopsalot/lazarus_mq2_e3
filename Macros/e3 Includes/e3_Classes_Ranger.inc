@@ -18,6 +18,7 @@ SUB RNG_MacroSettings
 	/call WriteToIni "${advSettings_Ini},RNG Functions,RNG Function#5" "check_DoTs" 1
 	/call WriteToIni "${advSettings_Ini},RNG Functions,RNG Function#6" "check_Nukes" 1
 	/call WriteToIni "${advSettings_Ini},RNG Functions,RNG Function#7" "check_Buffs" 1
+  /call WriteToIni "${advSettings_Ini},RNG Functions,RNG Function#8" "check_Food" 1
 /if (${Debug}) /echo <== RNG_MacroSettings -|
 /return
 |----------------------------------------------------------------------------|
