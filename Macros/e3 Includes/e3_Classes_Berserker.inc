@@ -35,6 +35,7 @@ SUB BER_MacroSettings
 /if (${Debug}) /echo |- BER_MacroSettings ==>
 	/call WriteToIni "${advSettings_Ini},BER Functions,BER Function#1" "check_Burns" 1
 	/call WriteToIni "${advSettings_Ini},BER Functions,BER Function#2" "check_Buffs" 1
+  /call WriteToIni "${advSettings_Ini},BER Functions,BER Function#3" "check_Food" 1
 /if (${Debug}) /echo <== BER_MacroSettings -|
 /RETURN
 |----------------------------------------------------------------------------|

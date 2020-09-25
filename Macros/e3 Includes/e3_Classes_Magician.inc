@@ -297,6 +297,7 @@ SUB MAG_MacroSettings
 	/call WriteToIni "${advSettings_Ini},MAG Functions,MAG Function#7" "check_Nukes" 1
 	/call WriteToIni "${advSettings_Ini},MAG Functions,MAG Function#8" "check_SummonItems" 1
   /call WriteToIni "${advSettings_Ini},MAG Functions,MAG Function#9" "check_OrbOfMasteryCharges" 1
+  /call WriteToIni "${advSettings_Ini},MAG Functions,MAG Function#10" "check_Food" 1
 /if (${Debug}) /echo <== MAG_MacroSettings -|
 /RETURN
 |----------------------------------------------------------------------------|

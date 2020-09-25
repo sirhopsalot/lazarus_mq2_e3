@@ -17,6 +17,7 @@ SUB PAL_MacroSettings
 	/call WriteToIni "${advSettings_Ini},PAL Functions,PAL Function#5" "check_Cures" 1
 	/call WriteToIni "${advSettings_Ini},PAL Functions,PAL Function#6" "check_Buffs" 1
 	/call WriteToIni "${advSettings_Ini},PAL Functions,PAL Function#7" "check_Nukes" 1
+	/call WriteToIni "${advSettings_Ini},PAL Functions,PAL Function#8" "check_Food" 1
 
 /if (${Debug}) /echo <== PAL_MacroSettings -|
 /RETURN

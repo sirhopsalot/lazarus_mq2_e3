@@ -35,6 +35,7 @@ SUB WIZ_MacroSettings
 	/call WriteToIni "${advSettings_Ini},WIZ Functions,WIZ Function#3" "check_AE" 1
 	/call WriteToIni "${advSettings_Ini},WIZ Functions,WIZ Function#4" "check_Nukes" 1
 	/call WriteToIni "${advSettings_Ini},WIZ Functions,WIZ Function#5" "check_Harvest" 1
+	/call WriteToIni "${advSettings_Ini},WIZ Functions,WIZ Function#6" "check_Food" 1
 /if (${Debug}) /echo <== WIZ_MacroSettings -|
 /RETURN
 |----------------------------------------------------------------------------|

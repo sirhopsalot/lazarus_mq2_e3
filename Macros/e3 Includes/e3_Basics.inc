@@ -1620,6 +1620,9 @@ SUB basics_MacroSettings
 /RETURN
 
 SUB basics_CharacterSettings
+/call WriteToIni "${Character_Ini},Misc,AutoFood" Off
+/call WriteToIni "${Character_Ini},Misc,Food"
+/call WriteToIni "${Character_Ini},Misc,Drink"
 /if (${Select[${Me.Class.ShortName},CLR,DRU,ENC,MAG,NEC,SHM,WIZ]}) {
 	/call WriteToIni "${Character_Ini},Misc,End MedBreak in Combat(On/Off)" Off
 } else /if (${Me.Class.ShortName.NotEqual[BRD]}) {
@@ -2297,4 +2300,36 @@ SUB check_StoneOn
     /varset stoneOn FALSE
     /docommand ${ChatToggle} Manastone off, mana 100%
   }
+/RETURN
+|-----------------------------------------------------------|
+|- Eat and Drink items in order to keep your hunger/thirst -|
+|- level below a certain level and not eat stat food       -|
+|- Install Instructions:                                   -|
+|- Add this SUB to the bottom of e3 Includes/e3_Basics.inc -|
+|- Add subroutine check for the appropriate classes        -|
+|- in e3 Macro Inis/Advanced Settings.ini                  -|
+|-  ex:   DRU Function#12=check_Food                       -|
+|- Add setting to your character.ini                       -|
+|-  [Misc]                                                 -|
+|-  AutoFood=On                                            -|
+|-  Food=Loaf of Bread                                     -|
+|-  Drink=Bottle of Milk                                   -|
+|-----------------------------------------------------------|
+SUB check_Food
+/if (${Debug}) /echo |-check_Food ==>
+  /if (!${Defined[FoodOn]}) {
+    /call iniToVarV "${Character_Ini},Misc,AutoFood" FoodOn bool outer
+    /call iniToVarV "${Character_Ini},Misc,Food" cheapFood string outer
+    /call iniToVarV "${Character_Ini},Misc,Drink" cheapDrink string outer
+  }
+  /if (${FoodOn} && !${Assisting}) {
+    /if (${FindItem[${cheapFood}].ID} && (${Me.Hunger} < 4500)) {
+      /useitem ${cheapFood}
+      /delay 3
+    }
+    /if (${FindItem[${cheapDrink}].ID} && (${Me.Thirst} < 4500)) {
+      /useitem ${cheapDrink}
+    }
+  }
+/if (${Debug}) /echo <== check_Food -|
 /RETURN

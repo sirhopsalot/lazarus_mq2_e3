@@ -106,6 +106,7 @@ SUB NEC_MacroSettings
 	/call WriteToIni "${advSettings_Ini},NEC Functions,NEC Function#8" "check_Nukes" 1
 	/call WriteToIni "${advSettings_Ini},NEC Functions,NEC Function#9" "check_Buffs" 1
 	/call WriteToIni "${advSettings_Ini},NEC Functions,NEC Function#10" "check_Pets" 1
+  /call WriteToIni "${advSettings_Ini},NEC Functions,NEC Function#11" "check_Food" 1
 /if (${Debug}) /echo <== NEC_MacroSettings -|
 /return
 |----------------------------------------------------------------------------|
