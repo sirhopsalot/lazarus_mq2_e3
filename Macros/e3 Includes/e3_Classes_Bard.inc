@@ -267,7 +267,7 @@ SUB melodyIfs
   /declare newIfMelody string local 
   /for i 1 to ${melodyIfs.Size[1]}
     /varset newIfMelody ${melodyIfs[${i},1]}
-    /if (!${currentMelody.Equal[${newIfMelody}]} && ${melodyIfs[${i},2]}) {
+    /if (!${currentMelody.Equal[${newIfMelody}]} && (${melodyIfs[${i},2]})) {
       /call EVENT_startMelody "<${Me}> melody ${newIfMelody}" "${Me}" "${newIfMelody}"
     }
   /next i
