@@ -131,11 +131,9 @@ sub event_toggleMez(line, ChatSender, mezToggle)
     /if (${Debug} || ${Debug_Ench}) /echo |- remove_RuneTarget ==>
       /if (${mezToggle.Equal[on]}) {
         /varset autoMez TRUE
-        /varset fixedMelody ${currentMelody}
         /docommand ${ChatToggle} << Mezzing Enabled >>
       } else {
         /varset autoMez FALSE
-        /varset fixedMelody off
         /docommand ${ChatToggle} << Mezzing Disabled >>
     }
     /if (${Debug}) /echo <== remove_RuneTarget -|
