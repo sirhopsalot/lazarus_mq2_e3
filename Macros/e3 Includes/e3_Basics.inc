@@ -1181,7 +1181,7 @@ SUB EVENT_gate(line, ChatSender)
     /casting "Gate" -maxtries|2
     /delay 3s !${Me.Casting.ID}
   }
-/RETURN
+/RETURN 
 
 |--------------------------------------------------------|
 |- Request evac from bots set to Evac_OnCommand.		-|
