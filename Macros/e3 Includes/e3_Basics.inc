@@ -1168,6 +1168,9 @@ SUB EVENT_gate(line, ChatSender)
     } else /if (${FindItem[Vial of Swirling Smoke].ID}) {
       /docommand ${ChatToggle} Preparing to gate...
       /casting "Vial of Swirling Smoke" -maxtries|2
+    } else /if (${FindItem[Gate Potion].ID}) {
+      /docommand ${ChatToggle} Preparing to gate...
+      /casting "Gate Potion" -maxtries|2
     } else {
       /docommand ${ChatToggle} I am not able to gate at this time.
     }
