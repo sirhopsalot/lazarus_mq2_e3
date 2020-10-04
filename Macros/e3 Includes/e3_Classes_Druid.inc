@@ -3,13 +3,14 @@
 |----------------------------------------------------------------------------|
 Sub DRU_Setup
 	/call iniToVarV "${Character_Ini},Druid,Evac Spell" Evac_Spell string outer
+	/call iniToVarV "${Character_Ini},Druid,Auto-Cheetah (On/Off)" autoCheetahOn bool outer
 /return
 |----------------------------------------------------------------------------|
 SUB DRU_MacroSettings
 /if (${Debug}) /echo |- DRU_MacroSettings ==>
 	/call WriteToIni "${advSettings_Ini},DRU Functions,DRU Function#1" "check_healChain" 1
 	/call WriteToIni "${advSettings_Ini},DRU Functions,DRU Function#2" "check_Heals" 1
-  	/call WriteToIni "${advSettings_Ini},DRU Functions,DRU Function#3" "check_Cures" 1
+  /call WriteToIni "${advSettings_Ini},DRU Functions,DRU Function#3" "check_Cures" 1
 	/call WriteToIni "${advSettings_Ini},DRU Functions,DRU Function#4" "check_Buffs" 1
 	/call WriteToIni "${advSettings_Ini},DRU Functions,DRU Function#5" "check_Burns" 1
 	/call WriteToIni "${advSettings_Ini},DRU Functions,DRU Function#6" "check_Debuffs" 1
@@ -65,4 +66,12 @@ sub Event_AE_FOE(string line)
 Sub DRU_Background_Events
 	/doevents AE_SOW
 	/doevents AE_FOE
+	/call autoCheetah
 /return
+
+| Automatically cast group AA Communion of the Cheetah whenever the buff is missing on the Druid and the druid doesn't have Selo's Sonata
+SUB autoCheetah
+  /if (${autoCheetahOn} && !${Me.Buff[Selo's Sonata].ID} && (!${Me.Buff[Spirit of Cheetah].ID} || ${Me.Buff[Spirit of Cheetah].Duration} < 10000) && !${Me.Invis} && ${Me.AltAbilityReady[Communion of the Cheetah]}) {
+    /alt act 939
+  }
+/RETURN
