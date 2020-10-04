@@ -2336,3 +2336,31 @@ SUB check_Food
   }
 /if (${Debug}) /echo <== check_Food -|
 /RETURN
+
+|-----------------------------------------------------------|
+|- Uses Forage whenever nothing else is going on           -|
+|- Install Instructions:                                   -|
+|- Add this SUB to the bottom of e3 Includes/e3_Basics.inc -|
+|- Add subroutine check for the appropriate classes        -|
+|- in e3 Macro Inis/Advanced Settings.ini                  -|
+|-  ex:   DRU Function#11=check_Forage                     -|
+|- Add setting to your character.ini                       -|
+|-  [Misc]                                                 -|
+|-  AutoForage=On					                       -|
+|-----------------------------------------------------------|
+SUB check_Forage
+/if (${Debug}) /echo |- check_Forage ==>
+	/declare DebugForage false
+	/if (${DebugForage}) /echo Forage On = ${Select[${Ini[${Character_Ini},Misc,AutoForage]}, On]}
+	/if (!${Defined[ForageOn]}) /declare ForageOn string outer ${Select[${Ini[${Character_Ini},Misc,AutoForage]}, On]}
+    /if (${ForageOn} && ${Me.AbilityReady[Forage]} && !${medBreak} && !${Me.CombatState.Equal[DEBUFFED]} && !${Me.Invis} && (${Me.MaxMana} == 0 || ${Me.PctMana} == 100) && ${Me.PctHPs} == 100 && ${Me.PctAggro} < 1 && !${Me.CombatState.Equal[COMBAT]} && !${Assisting}) {   
+		/echo == Foraging ==
+		/doability forage
+		/delay 2s ${Bool[${Cursor.ID}]}
+		/while (${Bool[${Cursor.ID}]}) {
+			/call ClearCursor
+			/delay 1s
+		}
+	}
+/if (${Debug}) /echo <== check_Forage -|
+/RETURN
