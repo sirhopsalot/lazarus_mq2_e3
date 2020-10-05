@@ -5,7 +5,7 @@ SUB check_Lich
   /if (${Debug}) /echo |- check_castLich ==>
   |/echo in checklich  ${lichSpell2D[1,${iMinHP}]}, ${Me.PctHPs} ${Me.Buff[${lichSpell2D[1,${iSpellName}]}]}
   /if (${Defined[lichSpell2D]}) {
-    /if (${Me.PctHPs} <= 10) {
+    /if (${Me.PctHPs} <= 25 || ${lichSpell2D[1,${iMinHP}]} >= ${Me.PctHPs}) {
       /if (${Bool[${Me.Buff[${lichSpell2D[1,${iSpellName}]}]}]}) {
         /echo Removing Lich due to low HP
         /removebuff ${lichSpell2D[1,${iSpellName}]}
