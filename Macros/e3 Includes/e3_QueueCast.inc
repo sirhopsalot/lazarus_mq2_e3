@@ -67,16 +67,17 @@ SUB castQueuedSpells
 				/echo QueueCast: Failed to cast ${spellName} due to ${castReturn}
 			}
 		} 
-		/if (!${Bool[${castReturn}]} || !${castReturn.Equal[CAST_SUCCESS]}) {
+		/if (!${Bool[${Me.Gem[${spellName}]}]} && ${Me.Book[${spellName}]}) {
+			/call memorize_spell "${spellName}" 8
+			/varset queuedSpellTimer 25
+		}
+		/if (!${Defined[castReturn]} || !${Bool[${castReturn}]} || !${castReturn.Equal[CAST_SUCCESS]}) {
 			/if (${queuedSpellTimer.OriginalValue} >= 80) {
 				/docommand ${ChatToggle} Failed to cast ${spellName} after retries
 				/call PopStrQueue mySpellQueue
 			} else /if (${Bool[${Me.Gem[${spellName}]}]} && ${Bool[${Me.GemTimer[${spellName}]}]}) {
 				| Set timer to the the cooldown time
 				/varset queuedSpellTimer ${Math.Calc[${Me.GemTimer[${spellName}]}/100]}
-			} else /if (!${Bool[${Me.Gem[${spellName}]}]} && ${Me.Book[${spellName}]}) {
-				/call memorize_spell "${spellName}" 8
-				/varset queuedSpellTimer 25
 			} else /if (${queuedSpellTimer.OriginalValue} < 80 && ${queuedSpellTimer.OriginalValue} > 0) {
 				/varset queuedSpellTimer ${Math.Calc[${queuedSpellTimer.OriginalValue}*2]}
 			} else {
