@@ -203,10 +203,15 @@ SUB checkAuras
     /declare s int local
     /for s 1 to ${auraSpells2D.Size[1]}
       /if (!${Bool[${Me.Aura[${auraSpells2D[${s},${iSpellName}]}]}]}) {
+        /declare previousSpell string local ${Me.Gem[8]}
         /call check_Ready "auraSpells2D" ${s}
         /if (${c_Ready}) {
           /if (${check_Mana["auraSpells2D",${s}]}) {
             /call e3_Cast ${Me.ID} "auraSpells2D" "${s}"
+            /if (${Bool[${previousSpell}]}) {
+              /echo Re-memorizing ${previousSpell} after aura cast
+              /memorize "${previousSpell}" "8"
+            }
           }
         }
       }
@@ -215,19 +220,29 @@ SUB checkAuras
     /if (${Me.Class.ShortName.Equal[BRD]}) {
       /if (${Twist.Twisting}) /call pauseTwist
       /if (${Me.Casting.ID}) /call interrupt
+      /declare previousSpell string local ${Me.Gem[8]}
       /call check_Ready "auraSpells2D" 1
       /if (${c_Ready}) {
         /cast ${Me.Gem[${auraSpells2D[1,${iCastName}]}]}
         /delay 7s !${Me.Casting.ID}
+        /if (${Bool[${previousSpell}]}) {
+          /echo Re-memorizing ${previousSpell} after aura cast
+          /memorize "${previousSpell}" "8"
+        }
       }
       /call unpauseTwist
     } else {
+      /declare previousSpell string local ${Me.Gem[8]}
       /call check_Ready "auraSpells2D" 1
       /if (${c_Ready}) {
         /if (${check_Mana["auraSpells2D",1]}) {
           /call e3_Cast ${Me.ID} "auraSpells2D" "1"
           /delay 7s !${Me.Casting.ID}
         }
+      }
+      /if (${Bool[${previousSpell}]}) {
+        /echo Re-memorizing ${previousSpell} after aura cast
+        /memorize "${previousSpell}" "8"
       }
     }
   }
@@ -455,9 +470,9 @@ Sub buffCheck_Setup
     /if (${Me.Book[Aura of Divinity]} && ${Me.Book[Aura of the Pious]}) /varset auraSpell2 Aura of the Pious
   }
   /if (${Bool[${Me.AltAbility[Auroria Mastery]}]}) {
-    /if (${Me.Book[Twincast Aura]} && ${Me.Book[Beguiler's Aura]}) /varset auraSpell2 Beguiler's Aura
+    /if (${Me.Book[Beguiler's Aura]} && ${Me.Book[Beguiler's Aura]}) /varset auraSpell2 Beguiler's Aura
     /if (${Me.Book[Twincast Aura]} && ${Me.Book[Illusionist's Aura]}) /varset auraSpell2 Illusionist's Aura
-	/if (${Me.Book[Twincast Aura]} && ${Me.Book[Aura of Endless Glamour]}) /varset auraSpell2 Aura of Endless Glamour
+  	/if (${Me.Book[Aura of Endless Glamour]} && ${Me.Book[Aura of Endless Glamour]}) /varset auraSpell2 Aura of Endless Glamour
   }
 
   /if (${auraSpell.Length}) /call BuildArray "auraSpells" "${auraSpell}"
