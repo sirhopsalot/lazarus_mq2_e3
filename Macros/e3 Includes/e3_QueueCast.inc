@@ -68,7 +68,7 @@ SUB castQueuedSpells
 			}
 		} 
 		/if (!${Bool[${Me.Gem[${spellName}]}]} && ${Me.Book[${spellName}]}) {
-			/call memorize_spell "${spellName}" 8
+			/call memorize_spell "${spellName}" ${DefaultGem}
 			/varset queuedSpellTimer 25
 		}
 		/if (!${Defined[castReturn]} || !${Bool[${castReturn}]} || !${castReturn.Equal[CAST_SUCCESS]}) {
