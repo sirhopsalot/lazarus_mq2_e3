@@ -18,6 +18,7 @@ SUB DRU_MacroSettings
 	/call WriteToIni "${advSettings_Ini},DRU Functions,DRU Function#8" "check_AE" 1
 	/call WriteToIni "${advSettings_Ini},DRU Functions,DRU Function#9" "check_Nukes" 1
 	/call WriteToIni "${advSettings_Ini},DRU Functions,DRU Function#10" "check_Food" 1
+	/call WriteToIni "${advSettings_Ini},DRU Functions,DRU Function#10" "check_Pets" 1
 /RETURN
 |----------------------------------------------------------------------------|
 SUB DRU_CharacterSettings
@@ -72,6 +73,7 @@ Sub DRU_Background_Events
 | Automatically cast group AA Communion of the Cheetah whenever the buff is missing on the Druid and the druid doesn't have Selo's Sonata
 SUB autoCheetah
   /if (${autoCheetahOn} && !${Me.Buff[Selo's Sonata].ID} && (!${Me.Buff[Spirit of Cheetah].ID} || ${Me.Buff[Spirit of Cheetah].Duration} < 10000) && !${Me.Invis} && ${Me.AltAbilityReady[Communion of the Cheetah]}) {
-    /alt act 939
+    /call TrueTarget ${Me.ID}
+	/alt act 939
   }
 /RETURN
