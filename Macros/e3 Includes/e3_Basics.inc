@@ -1915,42 +1915,53 @@ SUB check_Gimme
 /RETURN
 
 |----------------------------------------------------------------------------|
-|- Whenever nothing else is going on will check if the toon has all the items in the supply list
-|- if it doesn't, will cast the spell to create the item
+|- Whenever nothing else is going on it will check to see if the toon has all 
+|- of the items in the supply list. If they don't, it will cast the spell to 
+|- create the item.
 |- Install Instructions:                                   
 |- Add this SUB to the bottom of e3 Includes/e3_Basics.inc 
 |- Add subroutine check for the appropriate classes in e3 Macro Inis/Advanced Settings.ini                  
 |-  ex:   MAG Function#10=check_Supply
 |- Add the below setting to your character.ini
 |-  [Supply]                                                 
-|-  Supply=ItemName|SpellName|RetryTime
-|-  Supply=ItemName|SpellName|RetryTime
-|- Where the item is the item you want and spell name is the spell to cast to
-|- create that item (for AAs, use the alt id)
-|- and retry time is how long to wait before trying to create 
-|- that item again if you don't have it
+|-  Supply=ItemName|SpellName|RetryTime|GemSlot
+|-  Supply=ItemName|SpellName|RetryTime|GemSlot
+|- Where the item is the item you want, the spell name is the spell to cast to
+|- create that item (for AAs, use the alt id), retry time is how long to wait 
+|- before trying to create that item again if you don't have it, and gem slot
+|- is the gem you want to memorize the spell to. If the spell/AA doesn't need
+|- to be memorized, just leave the gem parameter blank.
+|- Example: Supply=Lava Orb|Summon: Lava Orb|10s|8
+|- Example: Supply=Summoned: Large Modulation Shard|Large Modulation Shard|10s
 |----------------------------------------------------------------------------|
 SUB check_Supply
 	/if (${Debug}) /echo |- check_Supply ==>
 	/if (!${Defined[SupplyEnabled]}) /declare SupplyEnabled bool outer ${Bool[${Ini[${Character_Ini},Supply]}]}
-    /if (${SupplyEnabled} && !${Bool[${Cursor.ID}]} && !${medBreak} && !${Me.CombatState.Equal[DEBUFFED]} && !${Me.Invis} && ${Me.PctMana} == 100 && ${Me.PctHPs} == 100 && ${Me.PctAggro} < 1 && !${Me.CombatState.Equal[COMBAT]} && !${Assisting} && !${Me.Moving} && !${Me.Combat}) {   
+    /if (${SupplyEnabled} && !${Bool[${Cursor.ID}]} && !${medBreak} && !${Me.CombatState.Equal[DEBUFFED]} && !${Me.Invis} && ${Me.PctMana} == 100 && ${Me.PctHPs} == 100 && ${Me.PctAggro} < 1 && !${Me.CombatState.Equal[COMBAT]} && !${Assisting} && !${Me.Moving} && !${Me.Combat}) { 
 		/if (!${Defined[Supply]}) /call IniToArrayV "${Character_Ini},Supply,Supply#" Supply
 		/declare i int local
 		/if (!${Defined[supplyItem]}) /declare supplyItem string local NULL
 		/if (!${Defined[supplySpell]}) /declare supplySpell string local NULL
 		/if (!${Defined[supplyTimeout]}) /declare supplyTimeout timer local NULL
-		| Loop through the string, then loop through each of the items on that key		
+		/if (!${Defined[supplyGem]}) /declare supplyGem int local NULL
+		| Loop through the string, then loop through each of the items on that key	
 		/for i 1 to ${Supply.Size}
 			/varset supplyItem ${Supply[${i}].Arg[1,|]}
 			/varset supplySpell ${Supply[${i}].Arg[2,|]}
 			/varset supplyTimeout ${Supply[${i}].Arg[3,|]}
+			/varset supplyGem ${Supply[${i}].Arg[4,|]}
 			/if (!${Defined[SupplyTimer${i}]}) /declare SupplyTimer${i} timer outer 0
 			/if (!${Bool[${FindItem[=${supplyItem}]}]} && ${SupplyTimer${i}} == 0) {
 				/echo ==> Supply: Creating a ${supplyItem} using ${supplySpell}
 				/delay 1
 				/tar ${Me}
 				/delay 1
-				/casting "${supplySpell}"
+				| If no spell gem specified, use default set in casting
+				/if (${supplyGem} == 0 || ${supplyGem} == NULL) { 
+					/casting "${supplySpell}"
+				} else {
+					/casting "${supplySpell}" ${supplyGem}
+				}
 				/delay 12s ${Cursor.ID}
 				/while (${Cursor.ID}) {
 					/autoinv
