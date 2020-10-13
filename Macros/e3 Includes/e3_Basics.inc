@@ -2341,19 +2341,18 @@ SUB check_Food
     /call iniToVarV "${Character_Ini},Misc,DrinkWarningStackSize" cheapDrinkWarningStackSize int outer
   }
   /if (${FoodOn} && !${Assisting}) {
-  
     /if (${FindItem[${cheapFood}].ID} && (${Me.Hunger} < 4500)) {
       /useitem ${cheapFood}
       /delay 3
-      /if (${FindItem[${cheapFood}].StackCount} < ${cheapFoodWarningStackSize}) {
-        /bc Autofood - running low on ${cheapFood}
+      /if (${Defined[cheapFoodWarningStackSize]} && ${FindItem[${cheapFood}].StackCount} < ${cheapFoodWarningStackSize}) {
+        /docommand ${ChatToggle} Autofood - running low on ${cheapFood}
       }
     }
     /if (${FindItem[${cheapDrink}].ID} && (${Me.Thirst} < 4500)) {
       /useitem ${cheapDrink}
       /delay 3
-      /if (${FindItem[${cheapDrink}].StackCount} < ${cheapDrinkWarningStackSize}) {
-        /bc AutoFood - running low on ${cheapDrink}
+      /if (${Defined[cheapDrinkWarningStackSize]} && ${FindItem[${cheapDrink}].StackCount} < ${cheapDrinkWarningStackSize}) {
+        /docommand ${ChatToggle} AutoFood - running low on ${cheapDrink}
       }
     }
   }
