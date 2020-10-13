@@ -2327,22 +2327,34 @@ SUB check_StoneOn
 |-  [Misc]                                                 -|
 |-  AutoFood=On                                            -|
 |-  Food=Loaf of Bread                                     -|
+|-  FoodWarningStackSize=100                               -|
 |-  Drink=Bottle of Milk                                   -|
+|-  DrinkWarningStackSize=100                              -|
 |-----------------------------------------------------------|
 SUB check_Food
 /if (${Debug}) /echo |-check_Food ==>
   /if (!${Defined[FoodOn]}) {
     /call iniToVarV "${Character_Ini},Misc,AutoFood" FoodOn bool outer
     /call iniToVarV "${Character_Ini},Misc,Food" cheapFood string outer
+    /call iniToVarV "${Character_Ini},Misc,FoodWarningStackSize" cheapFoodWarningStackSize int outer
     /call iniToVarV "${Character_Ini},Misc,Drink" cheapDrink string outer
+    /call iniToVarV "${Character_Ini},Misc,DrinkWarningStackSize" cheapDrinkWarningStackSize int outer
   }
   /if (${FoodOn} && !${Assisting}) {
+  
     /if (${FindItem[${cheapFood}].ID} && (${Me.Hunger} < 4500)) {
       /useitem ${cheapFood}
       /delay 3
+      /if (${FindItem[${cheapFood}].StackCount} < ${cheapFoodWarningStackSize}) {
+        /bc Autofood - running low on ${cheapFood}
+      }
     }
     /if (${FindItem[${cheapDrink}].ID} && (${Me.Thirst} < 4500)) {
       /useitem ${cheapDrink}
+      /delay 3
+      /if (${FindItem[${cheapDrink}].StackCount} < ${cheapDrinkWarningStackSize}) {
+        /bc AutoFood - running low on ${cheapDrink}
+      }
     }
   }
 /if (${Debug}) /echo <== check_Food -|
