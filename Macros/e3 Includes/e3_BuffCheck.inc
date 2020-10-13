@@ -203,14 +203,14 @@ SUB checkAuras
     /declare s int local
     /for s 1 to ${auraSpells2D.Size[1]}
       /if (!${Bool[${Me.Aura[${auraSpells2D[${s},${iSpellName}]}]}]}) {
-        /declare previousSpell string local ${Me.Gem[8]}
+        /declare previousSpell string local ${Me.Gem[${DefaultGem}]}
         /call check_Ready "auraSpells2D" ${s}
         /if (${c_Ready}) {
           /if (${check_Mana["auraSpells2D",${s}]}) {
             /call e3_Cast ${Me.ID} "auraSpells2D" "${s}"
             /if (${Bool[${previousSpell}]}) {
               /echo Re-memorizing ${previousSpell} after aura cast
-              /memorize "${previousSpell}" "8"
+              /memorize "${previousSpell}" "${DefaultGem}"
             }
           }
         }
@@ -220,19 +220,19 @@ SUB checkAuras
     /if (${Me.Class.ShortName.Equal[BRD]}) {
       /if (${Twist.Twisting}) /call pauseTwist
       /if (${Me.Casting.ID}) /call interrupt
-      /declare previousSpell string local ${Me.Gem[8]}
+      /declare previousSpell string local ${Me.Gem[${DefaultGem}]}
       /call check_Ready "auraSpells2D" 1
       /if (${c_Ready}) {
         /cast ${Me.Gem[${auraSpells2D[1,${iCastName}]}]}
         /delay 7s !${Me.Casting.ID}
         /if (${Bool[${previousSpell}]}) {
           /echo Re-memorizing ${previousSpell} after aura cast
-          /memorize "${previousSpell}" "8"
+          /memorize "${previousSpell}" "${DefaultGem}"
         }
       }
       /call unpauseTwist
     } else {
-      /declare previousSpell string local ${Me.Gem[8]}
+      /declare previousSpell string local ${Me.Gem[${DefaultGem}]}
       /call check_Ready "auraSpells2D" 1
       /if (${c_Ready}) {
         /if (${check_Mana["auraSpells2D",1]}) {
@@ -242,7 +242,7 @@ SUB checkAuras
       }
       /if (${Bool[${previousSpell}]}) {
         /echo Re-memorizing ${previousSpell} after aura cast
-        /memorize "${previousSpell}" "8"
+        /memorize "${previousSpell}" "${DefaultGem}"
       }
     }
   }
@@ -293,91 +293,6 @@ SUB event_castGroupBuffs(line, ChatSender)
   /if (${GroupBuffs2D.Size[1]}) /docommand ${ChatToggle} Done buffing ${Spawn[id ${buffTarget}].CleanName}.
 /if (${Debug} || ${Debug_BuffCheck}) /echo <== castGroupBuffs -|
 /RETURN
-
-|duplicating code as usage of the group buff may vary widely
-#event castGroupBuffsL1 "<#1#> L1 Buff #*#"
-SUB event_castGroupBuffsL1(line, ChatSender)
-  /if (${Debug} || ${Debug_BuffCheck}) /echo |- event_castGroupBuffs L1 ==>
-  /if (!${Defined[GroupBuffsL12D]}) /return
-  /if (!${checkEventArgs[${ChatSender},${line},UZR,""]}) /return
-| -------------------Find buffTarget------------------- |
-  /declare buffTarget string local ${line.Right[-${Math.Calc[${line.Find[buff]}+4]}]}
-  /if (${Int[${buffTarget}]}) {
-    /varset buffTarget ${Spawn[id ${buffTarget}].ID}
-  } else /if (${buffTarget.Equal[me]}) {
-    /varset buffTarget ${Spawn[pc =${ChatSender}].ID}
-  } else /if (${buffTarget.Find['s pet]}) {
-    /varset buffTarget ${Spawn[pc =${buffTarget.Left[-6]}].Pet.ID}
-  } else /if (${buffTarget.Find[s pet]}) {
-    /varset buffTarget ${Spawn[pc =${buffTarget.Left[-5]}].Pet.ID}
-  } else /if (${buffTarget.Equal[pet]} || ${buffTarget.Equal[my pet]}) {
-    /varset buffTarget ${Spawn[pc =${ChatSender}].Pet.ID}
-  } else /if (${SpawnCount[=${buffTarget}]}) {
-    /varset buffTarget ${Spawn[=${buffTarget}].ID}
-  }
-
-  /declare s int local 1
-  /declare buffAttempts int local 1
-
-  :verifyCast
-  /if (${s} <= ${GroupBuffsL12D.Size[1]}) {
-    /if (${Debug} || ${Debug_BuffCheck}) /echo ${s} ${GroupBuffsL12D[${s},${iCastName}]} ${GroupBuffsL12D.Size[1]}
-    /if (${check_Distance[${buffTarget},${GroupBuffsL12D[${s},${iMyRange}]}]}) {
-      /if (${check_Mana["GroupBuffsL12D",${s}]}) {
-        /if (${buffAttempts} <= ${GroupBuffsL12D[${s},${iMaxTries}]}) {
-          /call e3_Cast ${buffTarget} "GroupBuffsL12D" "${s}"
-          /if (${castReturn.Equal[CAST_SUCCESS]}) /varcalc s ${s}+1
-          /goto :verifyCast
-        } else /if (${Debug} || ${Debug_BuffCheck}) /echo failed buffattempts
-      } else /if (${Debug} || ${Debug_BuffCheck}) /echo failed mana
-    } else /if (${Debug} || ${Debug_BuffCheck}) /echo failed dist
-  }
-  /if (${GroupBuffsL12D.Size[1]}) /docommand ${ChatToggle} Done Level 1 buffing ${Spawn[id ${buffTarget}].CleanName}.
-  /if (${Debug} || ${Debug_BuffCheck}) /echo <== castGroupBuffs -|
-/RETURN
-
-|duplicating code as usage of the group buff may vary widely
-#event castGroupBuffsL47 "<#1#> L47 Buff #*#"
-SUB event_castGroupBuffsL47(line, ChatSender)
-  /echo IN event_castGroupBuffsL47
-  /if (${Debug} || ${Debug_BuffCheck}) /echo |- event_castGroupBuffs L47 ==>
-  /if (!${Defined[GroupBuffsL472D]}) /return
-  /if (!${checkEventArgs[${ChatSender},${line},UZR,""]}) /return
-| -------------------Find buffTarget------------------- |
-  /declare buffTarget string local ${line.Right[-${Math.Calc[${line.Find[buff]}+4]}]}
-  /if (${Int[${buffTarget}]}) {
-    /varset buffTarget ${Spawn[id ${buffTarget}].ID}
-  } else /if (${buffTarget.Equal[me]}) {
-    /varset buffTarget ${Spawn[pc =${ChatSender}].ID}
-  } else /if (${buffTarget.Find['s pet]}) {
-    /varset buffTarget ${Spawn[pc =${buffTarget.Left[-6]}].Pet.ID}
-  } else /if (${buffTarget.Find[s pet]}) {
-    /varset buffTarget ${Spawn[pc =${buffTarget.Left[-5]}].Pet.ID}
-  } else /if (${buffTarget.Equal[pet]} || ${buffTarget.Equal[my pet]}) {
-    /varset buffTarget ${Spawn[pc =${ChatSender}].Pet.ID}
-  } else /if (${SpawnCount[=${buffTarget}]}) {
-    /varset buffTarget ${Spawn[=${buffTarget}].ID}
-  }
-
-  /declare s int local 1
-  /declare buffAttempts int local 1
-
-  :verifyCast
-  /if (${s} <= ${GroupBuffsL472D.Size[1]}) {
-    /if (${Debug} || ${Debug_BuffCheck}) /echo ${s} ${GroupBuffsL472D[${s},${iCastName}]} ${GroupBuffsL472D.Size[1]}
-    /if (${check_Distance[${buffTarget},${GroupBuffsL472D[${s},${iMyRange}]}]}) {
-      /if (${check_Mana["GroupBuffsL472D",${s}]}) {
-        /if (${buffAttempts} <= ${GroupBuffsL472D[${s},${iMaxTries}]}) {
-          /call e3_Cast ${buffTarget} "GroupBuffsL472D" "${s}"
-          /if (${castReturn.Equal[CAST_SUCCESS]}) /varcalc s ${s}+1
-          /goto :verifyCast
-        } else /if (${Debug} || ${Debug_BuffCheck}) /echo failed buffattempts
-      } else /if (${Debug} || ${Debug_BuffCheck}) /echo failed mana
-    } else /if (${Debug} || ${Debug_BuffCheck}) /echo failed dist
-  }
-  /if (${GroupBuffsL472D.Size[1]}) /docommand ${ChatToggle} Done Level 47 buffing ${Spawn[id ${buffTarget}].CleanName}.
-  /if (${Debug} || ${Debug_BuffCheck}) /echo <== castGroupBuffs -|
-  /RETURN
 
 |----------------------------------------------------|
 |- Command group leaders to request group buffs.	-|
@@ -579,6 +494,4 @@ Sub buffCheck_Background_Events
 	/doevents toggleCombatBuffs
 	/doevents BuffAll
 	/doevents castGroupBuffs
-  /doevents castGroupBuffsL1
-	/doevents castGroupBuffsL47
 /return

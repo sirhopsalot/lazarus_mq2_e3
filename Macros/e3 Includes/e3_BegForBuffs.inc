@@ -207,16 +207,8 @@ SUB event_buffRequestRelay(line, ChatSender, eventParams)
     /varset chatSenderLevel ${Spawn[${buffTarget}].Level}
     /echo buffreq level ${chatSenderLevel}
 
-    /if (${chatSenderLevel}<47) {
-        /tell ${ChatSender} Casting Level < 47 buffs on ${Spawn[id ${buffTarget}].CleanName}...
-        /bc L1 Buff ${buffTarget}
-    } else /if (${chatSenderLevel}<62) {
-        /tell ${ChatSender} Casting Level < 62 buffs on ${Spawn[id ${buffTarget}].CleanName}...
-        /bc L47 Buff ${buffTarget}
-    } else {
-        /tell ${ChatSender} Casting buffs on ${Spawn[id ${buffTarget}].CleanName}...
-        /bc Buff ${buffTarget}
-    }
+	/tell ${ChatSender} Casting buffs on ${Spawn[id ${buffTarget}].CleanName}...
+    /bc Buff ${buffTarget}
   }
   /if (${Debug} || ${Debug_BegForBuffs}) /echo <== event_buffRequestRelay -|
 /RETURN
