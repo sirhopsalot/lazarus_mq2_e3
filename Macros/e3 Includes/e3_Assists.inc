@@ -1495,6 +1495,9 @@ SUB assist_SpellArrays
     /if (${Bool[${Me.AltAbility[Doppelganger]}]}) {
       |/call BuildArray "swarmPets" "Doppelganger"
     }
+    /if (${Bool[${Me.AltAbility[Phantasmal Opponent]}]}) {
+      /call BuildArray "swarmPets" "Phantasmal Opponent"
+    }
   } else /if (${Me.Class.ShortName.Equal[PAL]}) {
     |/if (${Bool[${Me.AltAbility[Projection of Piety]}]}) /call BuildArray "swarmPets" "Projection of Piety"
   } else /if (${Me.Class.ShortName.Equal[DRU]}) {
