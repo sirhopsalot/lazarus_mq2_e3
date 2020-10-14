@@ -1956,6 +1956,7 @@ SUB check_Supply
 				/delay 1
 				/tar ${Me}
 				/delay 1
+				/declare previousSpell string local ${Me.Gem[${supplyGem}]}
 				| If no spell gem specified, use default set in casting
 				/if (${supplyGem} == 0 || ${supplyGem} == NULL) { 
 					/casting "${supplySpell}"
@@ -1970,6 +1971,12 @@ SUB check_Supply
 				| If the item is a modulation shard, tell everyone to put it in their bag
 				/if (${supplyItem.Find[Modulation Shard]}) {
 					/bcaa //autoinventory
+				}
+				| Memorize the previous spell if needed
+				/if (${Bool[${previousSpell}]}) {
+					/delay 1s
+					/echo ==> Supply: Memorizing ${previousSpell} to gem ${supplyGem}.
+					/call memorize_spell "${previousSpell}" "${supplyGem}"
 				}
 				/varset SupplyTimer${i} ${supplyTimeout}
 				/return
