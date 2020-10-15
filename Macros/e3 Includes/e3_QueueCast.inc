@@ -63,6 +63,7 @@ SUB castQueuedSpells
 			/call castQueuedSpell "${spellName}" ${spellTargetID}
 			/if (${ActionTaken} && ${castReturn.Equal[CAST_SUCCESS]}) {
 				/call PopStrQueue mySpellQueue
+				/varset queuedSpellTimer 0
 			} else {
 				/echo QueueCast: Failed to cast ${spellName} due to ${castReturn}
 			}
@@ -75,10 +76,24 @@ SUB castQueuedSpells
 			/if (${queuedSpellTimer.OriginalValue} >= 80) {
 				/docommand ${ChatToggle} Failed to cast ${spellName} after retries
 				/call PopStrQueue mySpellQueue
+				/varset queuedSpellTimer 0
 			} else /if (${Bool[${Me.Gem[${spellName}]}]} && ${Bool[${Me.GemTimer[${spellName}]}]}) {
 				| Set timer to the the cooldown time
 				/varset queuedSpellTimer ${Math.Calc[${Me.GemTimer[${spellName}]}/100]}
-			} else /if (${queuedSpellTimer.OriginalValue} < 80 && ${queuedSpellTimer.OriginalValue} > 0) {
+				/if (${queuedSpellTimer} >= 80) {
+                    /docommand ${ChatToggle} Too long reuse timer to cast ${spellName}
+                    /call PopStrQueue mySpellQueue
+                    /varset queuedSpellTimer 0
+                }
+			} else /if (${Bool[${Me.AltAbility[${spellName}]}]} && ${Bool[${Me.AltAbilityTimer[${spellName}]}]}) {
+                | Set timer to the the cooldown time
+                /varset queuedSpellTimer ${Math.Calc[${Me.AltAbilityTimer[${spellName}]}/100]}
+                /if (${queuedSpellTimer} >= 80) {
+                    /docommand ${ChatToggle} Too long reuse timer to cast ${spellName}
+                    /call PopStrQueue mySpellQueue
+                    /varset queuedSpellTimer 0
+                }
+            } else /if (${queuedSpellTimer.OriginalValue} < 80 && ${queuedSpellTimer.OriginalValue} > 0) {
 				/varset queuedSpellTimer ${Math.Calc[${queuedSpellTimer.OriginalValue}*2]}
 			} else {
 				/varset queuedSpellTimer 1s
