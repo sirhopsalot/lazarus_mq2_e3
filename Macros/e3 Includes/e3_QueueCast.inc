@@ -2,7 +2,7 @@
 | Queue Cast
 |
 | Author: Sirhopsalot
-| Contributor: Forsy
+| Contributors: Forsy, Warikan
 |
 | Queues a spell to be cast and retries with backoff times until it succeeds (or tries 4 times and a total of 15 seconds).
 | This works into the e3 casting patterns so if the toon is busy casting right now it will
