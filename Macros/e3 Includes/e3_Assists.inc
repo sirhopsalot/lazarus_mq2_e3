@@ -527,7 +527,6 @@ SUB check_OffAssistSpells
     }
   /next i
   /if (${Bool[${mobId}]}) {
-    /bct Sirhopsalot //popup Casting offtarget spell on ${Spawn[id ${mobId}].Name}
     /docommand ${ChatToggle} Casting offtarget spell on ${Spawn[id ${mobId}].Name}
     /call cast_longTermSpells "${mobId}" "OffAssist_Spells2D"
   }
