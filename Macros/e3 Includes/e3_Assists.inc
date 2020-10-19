@@ -502,6 +502,37 @@ SUB check_Nukes
 /if (${Debug} || ${Debug_Assists}) /echo <== check_Nukes -|
 /RETURN
 
+|--------------------------------------------------------------------------------|
+| Author: Sirhopsalot
+| Casts spells on the non-assist target (but only while assist is active)
+| this is useful for casting dots / debuffs on the non-assist targets 
+| when you know the main assist target will be dead soon
+|--------------------------------------------------------------------------------|
+SUB check_OffAssistSpells
+  | If we're not currently attacking something, don't do anything
+  /if (!${Assisting}) /return
+  | loop through the xtargets checking if any match our criteria
+  | break on the first one that matches
+  /declare pctAggro int local 80
+  /declare minHp int local 10
+  /declare highestHp int local 0
+  /declare mobId int local 0
+  /declare i int local
+  /for i 1 to 13
+    /if (${Bool[${Me.XTarget[${i}]}]} && ${Me.XTarget[${i}].TargetType.Equal[Auto Hater]} && ${Me.XTarget[${i}].Type.Equal[NPC]} && ${Me.XTarget[${i}].Aggressive} && ${Me.XTarget[${i}].ID} != ${AssistTarget} && ${Me.XTarget[${i}].PctHPs} >= ${minHp} && ${Me.XTarget[${i}].PctAggro} < ${pctAggro} && !${Bool[${Me.XTarget[${i}].Name.Find[Corpse]}]} && ${Me.XTarget[${i}].LineOfSight}) {
+      /if (${Me.XTarget[${i}].PctHPs} > ${highestHp}) {
+        /varset mobId ${Me.XTarget[${i}].ID}
+        /varset highestHp ${Me.XTarget[${i}].PctHPs}
+      }
+    }
+  /next i
+  /if (${Bool[${mobId}]}) {
+    /bct Sirhopsalot //popup Casting offtarget spell on ${Spawn[id ${mobId}].Name}
+    /docommand ${ChatToggle} Casting offtarget spell on ${Spawn[id ${mobId}].Name}
+    /call cast_longTermSpells "${mobId}" "OffAssist_Spells2D"
+  }
+/RETURN
+
 |----------------------------------------------------|
 |- interrupts casting if target is invalid (dead)   -|
 |----------------------------------------------------|
@@ -516,6 +547,7 @@ SUB check_Nukes
 |----------------------------------------------------|
 SUB check_Debuffs
   /if (${Defined[Command_Debuffs2D]}) /call Debuffs_OnCommand
+  /if (${Defined[All_Debuffs2D]}) /call Debuffs_OnAll
 	/if (${Assisting} && ${Defined[Assist_Debuffs2D]}) /call cast_longTermSpells "${AssistTarget}" "Assist_Debuffs2D"
 /if (${Debug} || ${Debug_Assists}) /echo <== check_Debuffs -|
 /RETURN
@@ -567,7 +599,7 @@ SUB cast_longTermSpells(int spellTarget, string ArrayName)
       /call TrueTarget ${spellTarg}
       /delay 5 ${Target.BuffsPopulated}
     }
-    /if (${Bool[${Select[${ArrayName},Command_Debuffs2D,Assist_Debuffs2D]}]}) {
+    /if (${Bool[${Select[${ArrayName},Command_Debuffs2D,Assist_Debuffs2D,All_Debuffs2D]}]}) {
       /if (${Target.BuffDuration[${${ArrayName}[${s},${iSpellName}]}]}/1000 > ${longTermRecastTime} && !${${ArrayName}[${s},${iSpellName}].Equal[${spammableSpell}]}) {
         /varcalc spellRecast ${Target.BuffDuration[${${ArrayName}[${s},${iSpellName}]}]}/1000 - ${longTermRecastTime}
         /call createTimer ${spellTimer} ${spellRecast}s
@@ -696,6 +728,46 @@ SUB Event_DebuffsOn(line, ChatSender, MobID)
 /if (${Debug} || ${Debug_Assists}) /echo <== event_DebuffsOn -|
 /RETURN
 
+|---------------------------------------------------------------------------------------------|
+|- Validates targets and adds them to a list of Debuff_AllTargets. Used for Debuffs_OnAll.	 -|
+|---------------------------------------------------------------------------------------------|
+|- Use, '/Debuff' or 'Debuffs on ${Target.ID}' in /tell, /group, or /bc.					 -|
+|---------------------------------------------------------------------------------------------|
+#EVENT DebuffsAllOn "<#1#> Debuff all on #2#"
+#EVENT DebuffsAllOn "#1# tells you, 'Debuff all on #2#'"
+SUB Event_DebuffsAllOn(line, ChatSender, MobID)
+/if (${Debug} || ${Debug_Assists}) /echo |- event_DebuffsOn ==>
+  /if (!${checkEventArgs[${ChatSender},${line},UZR,${MobID}]}) /return
+    /varset MobID ${c_eventArgData}
+		/if (${Defined[All_Debuffs2D]}) {
+			| Check if the target is a corpse
+			/if (${Spawn[id ${MobID}].Type.Equal[Corpse]} || !${Select[${Spawn[id ${MobID}].Type},${AcceptableTargetTypes}]}) {
+        /docommand ${ChatToggle} Unacceptable Target ${Spawn[id ${MobID}].Type}
+			} else {
+				| Check range to the debuff target.
+				/if (${Spawn[id ${MobID}].Distance} > ${MaxAssistDistance}) {
+					/docommand ${ChatToggle} ${Spawn[${MobID}].CleanName} is too far away.
+				} else {
+					| Check if the Debuff_AllTargets array is already defined
+					/if (${Defined[Debuff_AllTargets]}) {
+						/declare i int local
+						/for i 1 to ${Debuff_AllTargets.Size}
+							/if (${Debuff_AllTargets[${i}].Arg[1,_]} == ${MobID}) {
+								/docommand ${ChatToggle} I am already debuffing ${Spawn[id ${MobID}].CleanName}.
+								/goto :Skip
+							}
+						/next i
+					}
+					/call BuildArray Debuff_AllTargets ${MobID}_${Zone.ID}
+          |/docommand ${ChatToggle} -- Debuffing ${Spawn[${MobID}].CleanName} --
+          /bc [+g+] -- Debuffing [${Spawn[${MobID}].CleanName}] --
+				}
+			}
+		}
+	:Skip
+/if (${Debug} || ${Debug_Assists}) /echo <== event_DebuffsOn -|
+/RETURN
+
 |------------------------------------------------|
 |- Cancels debuffs on command on all targets. 	-|
 |------------------------------------------------|
@@ -745,6 +817,33 @@ SUB Debuffs_OnCommand
 /if (${Debug} || ${Debug_Assists}) /echo <== Debuffs_OnCommand -|
 /RETURN
 
+|--------------------------------------------------------------------|
+|- Casts All_Debuffs on targets listed in Debuff_AllTargets array.	-|
+|--------------------------------------------------------------------|
+SUB Debuffs_OnAll
+/if (${Debug} || ${Debug_Assists}) /echo |- Debuffs_OnAll ==>
+	/declare targetID int local
+	/declare targetZone int local
+	/declare i int local
+	/if (${Defined[Debuff_AllTargets]}) {
+    /for i 1 to ${Debuff_AllTargets.Size}
+      /varset targetID ${Debuff_AllTargets[${i}].Arg[1,_]}
+      /varset targetZone ${Debuff_AllTargets[${i}].Arg[2,_]}
+      | Check Mob Zone
+      /if (${Zone.ID} != ${targetZone}) {
+        /call RemoveArrayElement Debuff_AllTargets ${Debuff_AllTargets[${i}]}
+      } else {
+        | If the Debuff_Target has died, remove them from the array.
+        /if (!${Bool[${Spawn[id ${targetID}].Type.NotEqual[Corpse]}]}) {
+          /call RemoveArrayElement Debuff_AllTargets ${Debuff_AllTargets[${i}]}
+        } else {
+          /call cast_longTermSpells "${targetID}" "All_Debuffs2D"
+        }
+      }
+      /if (!${ActionTaken} && ${Defined[Debuff_AllTargets]}) /next i
+  }
+/if (${Debug} || ${Debug_Assists}) /echo <== Debuffs_OnAll -|
+/RETURN
 
 |---------------------------------------------------------------------------------------------|
 |- Validates targets and adds them to a list of Debuff_Targets. Used for Debuffs_OnCommand.	 -|
@@ -1362,11 +1461,13 @@ SUB assist_SpellArrays
   /call IniToArrayV "${Character_Ini},DoTs on Command,${spellsToUse}#"  Command_DoTs
   /call IniToArrayV "${Character_Ini},Debuffs,Debuff on Assist#"        Assist_Debuffs
   /call IniToArrayV "${Character_Ini},Debuffs,Debuff on Command#"       Command_Debuffs
+  /call IniToArrayV "${Character_Ini},Debuffs,Debuff on All#"           All_Debuffs
   /call IniToArrayV "${Character_Ini},TargetAE,TargetAE#"               TargetAE_Spells
   /call IniToArrayV "${Character_Ini},PBAE,PBAE#"                       PBAE_Spells
   /call IniToArrayV "${Character_Ini},Burn,Quick Burn#"                 QUICKBurns
   /call IniToArrayV "${Character_Ini},Burn,Long Burn#"                  LONGBurns
   /call IniToArrayV "${Character_Ini},Burn,Full Burn#"                  FULLBurns
+  /call IniToArrayV "${Character_Ini},Off Assist Spells,${spellsToUse}#"            OffAssistSpells
 
   /if (${Me.Class.ShortName.Equal[MAG]}) {
 	/if (!${Defined[summonMoltenOrb]}) /declare summonMoltenOrb bool outer FALSE
@@ -1392,15 +1493,16 @@ SUB assist_SpellArrays
     /if (${Bool[${Me.AltAbility[Celestial Hammer]}]}) /call BuildArray "swarmPets" "Celestial Hammer"
   } else /if (${Me.Class.ShortName.Equal[ENC]}) {
     /if (${Bool[${Me.AltAbility[Doppelganger]}]}) {
-      /call BuildArray "swarmPets" "Doppelganger"
+      |/call BuildArray "swarmPets" "Doppelganger"
+    }
+    /if (${Bool[${Me.AltAbility[Phantasmal Opponent]}]}) {
+      /call BuildArray "swarmPets" "Phantasmal Opponent"
     }
     /if (${Bool[${Me.AltAbility[Phantasmal Opponent]}]}) {
       /call BuildArray "swarmPets" "Phantasmal Opponent"
     }
   } else /if (${Me.Class.ShortName.Equal[PAL]}) {
-    /if (${Bool[${Me.AltAbility[Projection of Piety]}]}) /call BuildArray "swarmPets" "Projection of Piety"
-  } else /if (${Me.Class.ShortName.Equal[SHD]}) {
-    /if (${Bool[${Me.AltAbility[Chattering Bones]}]}) /call BuildArray "swarmPets" "Chattering Bones"
+    |/if (${Bool[${Me.AltAbility[Projection of Piety]}]}) /call BuildArray "swarmPets" "Projection of Piety"
   } else /if (${Me.Class.ShortName.Equal[DRU]}) {
     /if (${Bool[${Me.AltAbility[Spirits of Nature]}]}) {
       /echo Loading Spirits of Nature
@@ -1418,6 +1520,7 @@ SUB assist_SpellArrays
   /if (${Defined[TargetAE_Spells]})		/call BuildSpellArray "TargetAE_Spells" 	"TargetAE_Spells2D"
   /if (${Defined[Assist_Debuffs]})		/call BuildSpellArray "Assist_Debuffs" 		"Assist_Debuffs2D"
   /if (${Defined[Command_Debuffs]})		/call BuildSpellArray "Command_Debuffs" 	"Command_Debuffs2D"
+  /if (${Defined[All_Debuffs]})		    /call BuildSpellArray "All_Debuffs" 	    "All_Debuffs2D"
   /if (${Defined[Assist_DoTs]})	      /call BuildSpellArray "Assist_DoTs" 	    "Assist_DoTs2D"
   /if (${Defined[Command_DoTs]})	    /call BuildSpellArray "Command_DoTs" 	    "Command_DoTs2D"
   /if (${Defined[EPICBurns]})         /call BuildSpellArray "EPICBurns" 	      "EPICBurns2D"
@@ -1425,7 +1528,7 @@ SUB assist_SpellArrays
   /if (${Defined[LONGBurns]})	        /call BuildSpellArray "LONGBurns" 	      "LONGBurns2D"
   /if (${Defined[FULLBurns]})	        /call BuildSpellArray "FULLBurns" 	      "FULLBurns2D"
   /if (${Defined[swarmPets]})	        /call BuildSpellArray "swarmPets" 	      "swarmPets2D"
-
+  /if (${Defined[OffAssistSpells]})	  /call BuildSpellArray "OffAssistSpells"   "OffAssist_Spells2D"
 /RETURN
 
 |--------------------------------------------------------------------------------|
@@ -1588,6 +1691,7 @@ Sub assist_Background_Events
   /doevents EnrageOn
   /doevents EnrageOff
   /doevents DebuffsOn
+  /doevents DebuffsAllOn
   /doevents DebuffsOff
   /doevents DoTsOn
   /doevents DoTsOff
@@ -1595,4 +1699,15 @@ Sub assist_Background_Events
   /doevents SpellSet
   /doevents SetTank
   /doevents CombatMode
+  /doevents debuffsOnAll
 /return
+
+#EVENT debuffsOnAll "<|${Me.Name}|> Debuff On All"
+SUB event_debuffsOnAll(line)
+  /declare i int local
+  /for i 1 to 13
+    /if (${Me.XTarget[${i}].TargetType.Equal[Auto Hater]} && ${Me.XTarget[${i}].LineOfSight} && ${Me.XTarget[${i}].Aggressive} && ${Me.XTarget[${i}].ID}) {
+      /bc Debuff all on ${Me.XTarget[${i}].ID}
+    }
+  /next i
+/RETURN
