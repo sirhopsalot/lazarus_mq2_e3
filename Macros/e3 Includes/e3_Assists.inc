@@ -81,6 +81,9 @@ SUB event_Assist(line, ChatSender, int MobID)
           } else {
             /squelch /stick hold moveback ${RangedStickDistance}
           }
+        } else /if (${AssistType.Equal[off]}) {
+          | Face the target for less dmg and stun resist for Ogres
+          /squelch /face fast id ${AssistTarget}
         }
       /if (${Debug} || ${Debug_Assists}) /echo Assist=${Assisting} || AssistTarget=${AssistTarget} || AllowControl=${AllowControl}
       }
