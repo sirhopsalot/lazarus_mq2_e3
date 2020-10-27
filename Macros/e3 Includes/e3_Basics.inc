@@ -2308,20 +2308,39 @@ SUB check_StoneOn
     /declare stoneOn bool outer FALSE
   }
 
-  /if (${stoneOn} && ${Me.PctMana} < 100 && ${Me.PctHPs} > 70) {
-    /declare i int local
-    | hit the stone 30 times then take a short break
-    /for i 1 to 30
-      /casting "Manastone"
-      /delay 1
-    /next i
+  /if (!${Defined[HasManastone]}) {
+    /declare HasManastone bool outer ${Bool[${FindItem[=Manastone]}]}
   }
+
+  /if (!${Defined[HasCorruptedManastone]}) {
+    /declare HasCorruptedManastone bool outer ${Bool[${FindItem[=Corrupted Manastone]}]}
+  }
+
+  /if (!${Defined[corruptedManastoneTimer]}) {
+    /declare corruptedManastoneTimer timer outer 0
+  }
+  
+  /if (${stoneOn} && ${HasCorruptedManastone}) {
+    /if (${Me.PctMana} < 100 && ${Me.PctHPs} > 70 && ${Me.ItemReady[Corrupted Manastone]} && ${corruptedManastoneTimer} == 0) {
+      /itemnotify "Corrupted Manastone" rightmouseup
+      /varset corruptedManastoneTimer 62
+    }
+  }
+  
+  /declare i int local
+  | hit the stone 10 times
+  /for i 1 to 10
+    /if (${stoneOn} && ${HasManastone} && ${Me.PctMana} < 100 && ${Me.PctHPs} > 70) {
+      /itemnotify manastone rightmouseup
+    }
+  /next i
 
   /if (${stoneOn} && ${Me.PctMana} >= 100) {
     /varset stoneOn FALSE
     /docommand ${ChatToggle} Manastone off, mana 100%
   }
 /RETURN
+
 |-----------------------------------------------------------|
 |- Eat and Drink items in order to keep your hunger/thirst -|
 |- level below a certain level and not eat stat food       -|
