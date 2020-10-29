@@ -1710,6 +1710,8 @@ Sub basics_Aliases
 sub event_gimme(line, ChatSender, RequestedItem)
 	/declare DebugGimme false
 	/if (${DebugGimme}) /echo |- event_gimme ==>
+  /if (${Waiting4Rez}) /return
+  /if (${Bool[${Me.Buff[Resurrection Sickness]}]}) /return
 	/echo Gimme Event: ${ChatSender} has requested a ${RequestedItem}
 	/declare senderLoc string local ${Spawn[${ChatSender}].Loc}
 	/if (${DebugGimme}) /echo ${senderLoc}
@@ -1870,6 +1872,8 @@ sub event_gimme(line, ChatSender, RequestedItem)
 |----------------------------------------------------------------------------|
 SUB check_Gimme
 	/if (${Debug}) /echo |- check_Gimme ==>
+  /if (${Waiting4Rez}) /return
+  /if (${Bool[${Me.Buff[Resurrection Sickness]}]}) /return
 	/declare DebugCheckGimme local false
 	/if (!${Defined[GimmeEnabled]}) /declare GimmeEnabled bool outer ${Bool[${Ini[${Character_Ini},Gimme]}]}
     /if (${GimmeEnabled} && !${Bool[${Cursor.ID}]} && !${medBreak} && !${Me.CombatState.Equal[DEBUFFED]} && !${Me.Invis} && ${Me.PctHPs} == 100 && ${Me.PctAggro} < 1 && !${Me.CombatState.Equal[COMBAT]} && !${Assisting} && !${Me.Moving} && !${Me.Combat}) {   
@@ -1936,6 +1940,8 @@ SUB check_Gimme
 |----------------------------------------------------------------------------|
 SUB check_Supply
 	/if (${Debug}) /echo |- check_Supply ==>
+  /if (${Waiting4Rez}) /return
+  /if (${Bool[${Me.Buff[Resurrection Sickness]}]}) /return
 	/if (!${Defined[SupplyEnabled]}) /declare SupplyEnabled bool outer ${Bool[${Ini[${Character_Ini},Supply]}]}
     /if (${SupplyEnabled} && !${Bool[${Cursor.ID}]} && !${medBreak} && !${Me.CombatState.Equal[DEBUFFED]} && !${Me.Invis} && ${Me.PctMana} == 100 && ${Me.PctHPs} == 100 && ${Me.PctAggro} < 1 && !${Me.CombatState.Equal[COMBAT]} && !${Assisting} && !${Me.Moving} && !${Me.Combat}) { 
 		/if (!${Defined[Supply]}) /call IniToArrayV "${Character_Ini},Supply,Supply#" Supply
