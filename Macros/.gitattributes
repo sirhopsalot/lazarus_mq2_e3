@@ -15,5 +15,3 @@
 *.PDF	 diff=astextplain
 *.rtf	 diff=astextplain
 *.RTF	 diff=astextplain
-
-*.inc		text working-tree-encoding=UTF-16LE
