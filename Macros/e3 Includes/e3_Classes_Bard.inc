@@ -419,7 +419,7 @@ SUB dynamoTwist
           /varset spellName ${FindItem[=${spellName}].Spell} 
         }
 
-        /if (${Spell[${spellName}].SpellType.Equal[Beneficial]} && (!${Bool[${Me.Song[${spellName}]}]} || ${Me.Song[${spellName}].Duration} < 4000) && (${castName.NotEqual[${spellName}]} || ${Me.SpellReady[${spellName}]})) {
+        /if (${Spell[${spellName}].SpellType.Equal[Beneficial]} && (!${Bool[${Me.Song[${spellName}]}]} || ${Me.Song[${spellName}].Duration} < 7000) && (${castName.NotEqual[${spellName}]} || ${Me.SpellReady[${spellName}]})) {
           /echo casting ${castName}
           /if (${castName.NotEqual[${spellName}]}) {
             /itemnotify "${castName}" rightmouseup
