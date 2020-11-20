@@ -307,6 +307,8 @@ Sub BRD_Setup
     /declare songPlayer string outer Twist
   }
 
+  /declare dynamoPrecastTime int outer 8000
+
   /declare returnTwist		bool outer FALSE
   /declare playingMelody	bool outer TRUE
   /declare songSet string outer
@@ -419,7 +421,7 @@ SUB dynamoTwist
           /varset spellName ${FindItem[=${spellName}].Spell} 
         }
 
-        /if (${Spell[${spellName}].SpellType.Equal[Beneficial]} && (!${Bool[${Me.Song[${spellName}]}]} || ${Me.Song[${spellName}].Duration} < 7000) && (${castName.NotEqual[${spellName}]} || ${Me.SpellReady[${spellName}]})) {
+        /if (${Spell[${spellName}].SpellType.Equal[Beneficial]} && (!${Bool[${Me.Song[${spellName}]}]} || ${Me.Song[${spellName}].Duration} < ${dynamoPrecastTime}) && (${castName.NotEqual[${spellName}]} || ${Me.SpellReady[${spellName}]})) {
           /echo casting ${castName}
           /if (${castName.NotEqual[${spellName}]}) {
             /itemnotify "${castName}" rightmouseup
@@ -427,7 +429,7 @@ SUB dynamoTwist
             /cast ${castName}
           }
     
-          /delay 33 ${Bool[${Me.Song[${spellName}]}]}
+          /delay 33 ${Bool[${Me.Song[${spellName}]}]} && ${Me.Song[${spellName}].Duration} >= ${dynamoPrecastTime}
                 
           /stopsong
           /return
