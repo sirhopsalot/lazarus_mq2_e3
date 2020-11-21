@@ -17,6 +17,8 @@
 
 | Usage to clear everything:
 |    /bc Clear XTargets
+| Usage to clear everything and seek aggro:
+|    /bc Clear XTargets KeepAggro
 | Usage to select just the next target using the criteria (useful for switching to adds on boss fights)
 |    /bc Next Target
 |
@@ -30,8 +32,11 @@
 | Declare variables used in the macros
 |--------------------------------------------------------------------------------|
 SUB clearXTargets_Setup
-	/declare clearXTargetsOn bool outer FALSE
+	/declare ClearXTargetsOn bool outer FALSE
 	/declare ClearXTargetsDebug bool outer FALSE
+  /declare NumAggroTargets int outer 0
+  /declare KeepAggroOn bool outer FALSE
+  /declare FollowingPreClear bool outer FALSE
 /RETURN
 
 |--------------------------------------------------------------------------------|
@@ -56,17 +61,26 @@ SUB clearXTargets_Aliases
 
 
 | Toggles clearing on/off
-#event clearXTargets "<#1#> Clear XTarget#*#"
-SUB event_clearXTargets(line, ChatSender)
+#event clearXTargets "<#1#> Clear XTarget#2#"
+SUB event_clearXTargets(line, ChatSender, args)
   /if (!${ChatSender.Equal[${Me.Name}]}) /return
 
-  | toggle clearXTargetsOn on/off 
-  /if (!${clearXTargetsOn}) {
-    /varset clearXTargetsOn TRUE
-	/echo ClearXTargets: Enabled
+  /if (${Bool[${args.Find[KeepAggro]}]}) {
+    /varset KeepAggroOn TRUE
   } else {
-    /varset clearXTargetsOn FALSE
-	/echo ClearXTargets: Disabled
+    /varset KeepAggroOn FALSE
+  }
+
+  | toggle ClearXTargetsOn on/off 
+  /if (!${ClearXTargetsOn}) {
+    /varset ClearXTargetsOn TRUE
+    /varset FollowingPreClear TRUE
+    | Disable follow to stop melee/ranged toons bouncing
+    /stop
+  	/echo ClearXTargets: Enabled ${ClearXTargetsOn}
+  } else {
+    /varset ClearXTargetsOn FALSE
+	  /echo ClearXTargets: Disabled
   }
 /RETURN
 
@@ -91,7 +105,7 @@ SUB event_nextTarget(line, ChatSender)
   /if (${Bool[${mobId}]} && ${Bool[${Spawn[${mobId}]}]}) {
     /if (${ClearXTargetsDebug}) /echo Assisting on Next Target ${Spawn[${mobId}].CleanName} TargetID=${mobId}
     /call TrueTarget ${mobId}
-    /stick id ${mobId} 8 uw
+    /stick id ${mobId} 100% uw
     /delay 1
     /attack on
     /delay 1
@@ -99,7 +113,7 @@ SUB event_nextTarget(line, ChatSender)
     /delay 1
     /assistme
     /varset AllowControl TRUE
-    /varset AssistStickDistance 8
+    /varset AssistStickDistance 100%
   } else {
     /if (${ClearXTargetsDebug}) /echo No mobs on XTarget to assist on
   }
@@ -129,27 +143,44 @@ SUB event_getCloserClearXTargets
 
 | Triggers the Next Target or disable Clear XTarget as appropriate
 SUB check_clearXTargets
-  /if (!${clearXTargetsOn}) /return
+  | Count the current number of aggro targets
+  /varset NumAggroTargets 0
+  /declare numLowAggroTargets int local 0
+  /declare i int local 1
+  /for i 1 to 13
+    /if (${Me.XTarget[${i}].TargetType.Equal[Auto Hater]} && ${Me.XTarget[${i}].Aggressive}) {
+      /varset NumAggroTargets ${Math.Calc[${NumAggroTargets} + 1]}
+      /if (${Me.XTarget[${i}].PctAggro} < 100) {
+        /varset numLowAggroTargets ${Math.Calc[${numLowAggroTargets} + 1]}
+      }
+    }
+  /next i
+
+  /if (!${ClearXTargetsOn}) /return
 
   | Check if can't see target and re-stick
   /doevent faceTargetClearXTargets
   /doevent getCloserClearXTargets
 
   /if (!${Assisting} || ${Target.ID} == ${Me.ID}) {
-    | Go through the xtargets, if there are any to kill call Next Target
+    | If there are any aggro targets call Next Target
     | If there are none, disable Clear XTargets
-    /declare i int local 1
-    /for i 1 to 13
-      /if (${Me.XTarget[${i}].TargetType.Equal[Auto Hater]} && ${Me.XTarget[${i}].Aggressive}) {
-		| found a target
-        /bc Next Target
-        /return
-      }
-    /next i
+    /if (${NumAggroTargets} > 0) {
+      /bc Next Target
+      /return
+    }
 
-	| No target found, disable clearing
-    /varset clearXTargetsOn FALSE    
+  	| No target found, disable clearing
+    /varset ClearXTargetsOn FALSE    
     /echo ClearXTargets: XTargets Cleared, disabled Clear XTarget
+    /if (${FollowingPreClear}) {
+      | If following before clear, re-enable
+      /followme
+    }
     /attack off
+  }
+
+  /if (${KeepAggroOn} && ${numLowAggroTargets} >= 1 && ${Target.PctAggro} >= 100) {
+    /bc Next Target
   }
 /RETURN
