@@ -53,7 +53,10 @@ sub event_petWeapons(line, ChatSender)
     }
 
     /if (${Math.Distance[${originalLoc}]}>20) /call MoveToLoc ${originalLoc} 50 20
-    /if (${c_eventArgChatSender.NotEqual[${Me}]}) /tell ${c_eventArgChatSender} Finished arming pets
+    /if (${c_eventArgChatSender.NotEqual[${Me}]}) {
+		/delay 1s
+		/tell ${c_eventArgChatSender} Finished arming pets. If anything is missing, ask for it directly. Ex: "/tell ${Me.CleanName} Grant Spectral Plate".
+	}
     /varset Following ${wasFollowing}
   }
   |/varset Debug_MAG FALSE
@@ -127,6 +130,9 @@ SUB give_PetsWeapons(autoWeap)
               }
             } else {
               :WaitAccept_Loop
+			  /if (${c_eventArgChatSender.NotEqual[${Me}]}) {
+				/tell ${Spawn[id ${petIDArray[${p}]}].Master} ---Giving "${petItems2D[${w},${iCastName}]}" to ${Spawn[id ${petIDArray[${p}]}].CleanName}.
+			  }
               /notify GiveWnd GVW_Give_Button LeftMouseUp
               /delay 1s !${Window[GiveWnd].Open}
               /if (${Window[GiveWnd].Open}) {
