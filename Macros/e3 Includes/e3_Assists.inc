@@ -1074,8 +1074,9 @@ SUB event_SwarmPets(line, ChatSender, int swarmTarget)
         /call check_Ready "swarmPets2D" ${i}
         /if (${c_Ready} && ${swarmPets2D[${i},${iIfs}]}) {
           /if (${check_Distance[${swarmTarget},${swarmPets2D[1,${iMyRange}]}]}) {
+            /g SWARM-${swarmPets2D[${i},${iSpellName}]}
 				    /call e3_Cast ${swarmTarget} "swarmPets2D" "${i}"
-					/delay 2s
+					  /delay 2s
           }
         }
 			/next i
@@ -1484,6 +1485,7 @@ SUB assist_SpellArrays
 	/if (${Bool[${Me.AltAbility[Wake the Dead]}]})  /call BuildArray "swarmPets" "Rise of Bones"
   } else /if (${Me.Class.ShortName.Equal[SHM]}) {
     /if (${Bool[${Me.AltAbility[Spirit Call]}]})    /call BuildArray "swarmPets" "Spirit Call"
+    /if (${Bool[${FindItem[Shattered Gnoll Slayer]}]})    /call BuildArray "swarmPets" "Shattered Gnoll Slayer"
   } else /if (${Me.Class.ShortName.Equal[WIZ]}) {
     /if (${Bool[${Me.AltAbility[Call of Xuzl]}]})   /call BuildArray "swarmPets" "Call of Xuzl"
   } else /if (${Me.Class.ShortName.Equal[BRD]}) {
@@ -1497,20 +1499,12 @@ SUB assist_SpellArrays
     /if (${Bool[${Me.AltAbility[Phantasmal Opponent]}]}) {
       /call BuildArray "swarmPets" "Phantasmal Opponent"
     }
-    /if (${Bool[${Me.AltAbility[Phantasmal Opponent]}]}) {
-      /call BuildArray "swarmPets" "Phantasmal Opponent"
-    }
   } else /if (${Me.Class.ShortName.Equal[PAL]}) {
     |/if (${Bool[${Me.AltAbility[Projection of Piety]}]}) /call BuildArray "swarmPets" "Projection of Piety"
   } else /if (${Me.Class.ShortName.Equal[DRU]}) {
-    /if (${Bool[${Me.AltAbility[Spirits of Nature]}]}) {
-      /echo Loading Spirits of Nature
-      /call BuildArray "swarmPets" "Spirits of Nature"
-    }
-    /if (${Bool[${Me.AltAbility[Nature's Guardian]}]}) {
-      /echo Loading Nature's Guardian
-      /call BuildArray "swarmPets" "Nature's Guardian"
-    }
+    /if (${Bool[${Me.AltAbility[Spirits of Nature]}]}) /call BuildArray "swarmPets" "Spirits of Nature"
+    /if (${Bool[${Me.AltAbility[Nature's Guardian]}]}) /call BuildArray "swarmPets" "Nature's Guardian"
+    /if (${Bool[${FindItem[Shattered Gnoll Slayer]}]}) /call BuildArray "swarmPets" "Shattered Gnoll Slayer"
   }
 
   /if (${Defined[MyAbilities]})		    /call BuildSpellArray "MyAbilities"	      "Abilities2D"
