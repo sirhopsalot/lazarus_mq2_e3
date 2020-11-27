@@ -301,13 +301,16 @@ Sub BRD_Setup
   /call IniToArrayV "${Character_Ini},Bard,MelodyIf#"	melodyIfArray
   /call iniToVarV "${Character_Ini},Bard,Auto-Sonata (On/Off)" autoSonataOn bool outer
   /call iniToVarV "${Character_Ini},Bard,SongPlayer" songPlayer string outer
+  /call iniToVarV "${Character_Ini},Bard,DynamoPrecastTime" dynamoPrecastTime int outer
 
   /if (!${Defined[songPlayer]}) {
     /echo Setting default SongPlayer to Twist
     /declare songPlayer string outer Twist
   }
 
-  /declare dynamoPrecastTime int outer 8000
+  /if (!${Defined[dynamoPrecastTime]}) {
+    /declare dynamoPrecastTime int outer 4000
+  }
 
   /declare returnTwist		bool outer FALSE
   /declare playingMelody	bool outer TRUE
@@ -387,7 +390,7 @@ Sub BRD_Aliases
 /return
 
 SUB dynamoTwist  
-  /if (${songPlayer.NotEqual["Dynamo"]}) /return
+  /if (${songPlayer.NotEqual["Dynamo"]} || ${Me.Invis}) /return
 
   | Read auto-melody for starting melody
   | If the target is self, read through the list and cast the first one that's not on
@@ -455,7 +458,7 @@ SUB dynamoTwist
     
           /delay 33 (${Bool[${Target.Buff[${spellName}]}]} && ${Target.BuffDuration[${spellName}]} > 3300)
                 
-          | TODO: if the detrimental spell does not stick, delay spellcast time and double each time
+          | If the detrimental spell does not stick, delay spellcast time and double each time
           | No Hold Timer: ${Defined[nht${targetID}-${pendingCastID}]}
           | Timer not expired: ${Bool[${nht${targetID}-${pendingCastID}}]}
           | either /next i OR /goto :skipSong
@@ -479,33 +482,5 @@ SUB dynamoTwist
         }
       }      
     /next i
-    /return
-
-    /if (${Raid.Members} > 0 && !${Bool[${Me.Song[Chorus of Marr]}]}) {
-      /cast "Chorus of Marr"
-      /delay 4s ${Bool[${Me.Song[Chorus of Marr]}]}
-      /stopsong
-      /return
-    } else /if (!${Bool[${Me.Song[Wind of Marr]}]}) {
-      /itemnotify "Lute of the Flowing Waters" rightmouseup
-      /delay 4s ${Bool[${Me.Song[Wind of Marr]}]}
-      /return
-    }
-
-    /if (!${Bool[${Me.Song[Niv's Harmonic]}]}) {
-      /echo casting "Niv's Harmonic"
-      /cast "Niv's Harmonic"
-      /delay 4s ${Bool[${Me.Song[Niv's Harmonic]}]}
-      /stopsong
-      /return
-    }
-
-    /if (!${Bool[${Me.Song[Song of the Storm]}]}) {
-      /echo casting "Song of the Storm"
-      /cast "Song of the Storm"
-      /delay 4s ${Bool[${Me.Song[Song of the Storm]}]}
-      /stopsong
-      /return
-    }
   }
 /return
