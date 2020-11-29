@@ -319,6 +319,7 @@ Sub BRD_Setup
   /declare songCastTimer timer outer
   /declare currentlyCastingSong string outer none
   /declare currentlyCastingSongNhtTimerName string outer none
+  /declare previousCastSong string outer none
 
   /if (${Defined[mezArray]}) {
     /call BuildSpellArray "mezArray"	"mezArray2D"
@@ -406,11 +407,13 @@ SUB dynamoTwist
     /declare songIf string local
     /declare ifsPassed bool local TRUE
     /declare tid int local 0
+    /declare castTime int local 33
 
     /for i 1 to ${melodyArray.Size}
       /varset spellName ${melodyArray[${i}].Arg[1,/]}
       /varset castName ${spellName}
       /varset ifsPassed TRUE
+      /varset castTime 33
       |/echo ${melodyArray[${i}]}
       /if (${Bool[${melodyArray[${i}].Find[Ifs]}]}) {
         /call argueString Ifs| "${melodyArray[${i}]}"
@@ -426,6 +429,7 @@ SUB dynamoTwist
         | Handle items
         /if (${FindItemCount[=${spellName}]}) {
           /varset spellName ${FindItem[=${spellName}].Spell} 
+          /varset castTime ${FindItem[=${spellName}].CastTime}
         }
 
         /if (${Spell[${spellName}].SpellType.Equal[Beneficial]}) {
@@ -446,7 +450,22 @@ SUB dynamoTwist
           |/echo ${nhtTimerName} Timer defined
           /if (${${nhtTimerName}} > 0) {
             |/echo skipping ${spellName} for timer ${nhtTimerName}, current time: ${${nhtTimerName}}
+            /if (${i} < ${melodyArray.Size}) {
+              /next i
+            } else {
+              /return
+            }
+          }
+        }
+
+        /if (${previousCastSong.Equal[${spellName}]}) {
+          |/echo Sang ${spellName} previously, skipping to next song
+          /call delaySongCast "${previousCastSong}" "${nhtTimerName}"
+          /varset previousCastSong none
+          /if (${i} < ${melodyArray.Size}) {
             /next i
+          } else {
+            /return
           }
         }
 
@@ -456,21 +475,17 @@ SUB dynamoTwist
           /if (${castName.NotEqual[${spellName}]}) {
             /itemnotify "${castName}" rightmouseup
           } else {
-            /cast ${castName}
+            /cast "${castName}"
           }
 
-          /varset currentlyCastingSong ${spellName}
-          /varset currentlyCastingSongNhtTimerName ${nhtTimerName}
-          /varset songCastTimer 33
+          /varset previousCastSong ${spellName}
+          |/echo Casting=${Me.Casting.Name}
+          /if (${Me.Casting.Name.Equal[${spellName}]} || ${castTime} == 0) {
+            /varset currentlyCastingSong ${spellName}
+            /varset currentlyCastingSongNhtTimerName ${nhtTimerName}
+            /varset songCastTimer ${castTime}
+          }
     
-          |/delay 33 ${Bool[${Me.Song[${spellName}]}]} && ${Me.Song[${spellName}].Duration} >= ${dynamoPrecastTime}
-
-          | If the Beneficial spell does not stick, delay spellcast time and double each time
-          |/if (!${Bool[${Me.Song[${spellName}]}]}) {
-          |  /call delaySongCast "${spellName}" "${nhtTimerName}"
-          |}
-                
-          |/stopsong
           /return
         } else /if (${Spell[${spellName}].SpellType.Equal[Detrimental]} && ${Bool[${Target.Type.Equal[NPC]}]} && (!${Bool[${Target.Buff[${spellName}]}]} || ${Target.BuffDuration[${spellName}]} < 3300) && (${castName.NotEqual[${spellName}]} || ${Me.SpellReady[${spellName}]}) && ${Target.LineOfSight}) {
           |/echo Singing ${castName}
@@ -478,23 +493,16 @@ SUB dynamoTwist
           /if (${castName.NotEqual[${spellName}]}) {
             /itemnotify "${castName}" rightmouseup
           } else {
-            /cast ${castName}
+            /cast "${castName}"
           }
 
-          /if (${Me.Casting.Equal[${spellName}]}) {
+          /varset previousCastSong ${spellName}
+          /if (${Me.Casting.Name.Equal[${spellName}]} || ${castTime} == 0) {
             /varset currentlyCastingSong ${spellName}
             /varset currentlyCastingSongNhtTimerName ${nhtTimerName}
-            /varset songCastTimer 33
+            /varset songCastTimer ${castTime}
           }
 
-          |/delay 33 (${Bool[${Target.Buff[${spellName}]}]} && ${Target.BuffDuration[${spellName}]} > 3300)
-                
-          | If the Detrimental spell does not stick, delay spellcast time and double each time
-          |/if (!${Bool[${Target.Buff[${spellName}]}]}) {
-          |  /call delaySongCast "${spellName}" "${nhtTimerName}"
-          |}
-
-          |/stopsong
           /return
         }
       }      
@@ -509,17 +517,26 @@ SUB check_Dynamo
   /if (${Bool[${Me.Casting}]} && ${songCastTimer} > 0) /return
   
   /stopsong
+  
+  |/echo currentlyCastingSongNhtTimerName=${currentlyCastingSongNhtTimerName}
 
   | Check for setting delay timer
   /if (${Spell[${currentlyCastingSong}].SpellType.Equal[Beneficial]}) {
     | If the Beneficial spell does not stick, delay spellcast time and double each time
     /if (!${Bool[${Me.Song[${currentlyCastingSong}]}]}) {
       /call delaySongCast "${currentlyCastingSong}" "${currentlyCastingSongNhtTimerName}"
+    } else /if (${Defined[${currentlyCastingSongNhtTimerName}]}) {
+      |/echo resetting timer for ${currentlyCastingSong}
+      | Song successfually cast, reset the timer to 0
+      /varset ${currentlyCastingSongNhtTimerName} 0
     }
   } else {
     | If the Detrimental spell does not stick, delay spellcast time and double each time
     /if (!${Bool[${Target.Buff[${currentlyCastingSong}]}]}) {
       /call delaySongCast "${currentlyCastingSong}" "${currentlyCastingSongNhtTimerName}"
+    } else /if (${Defined[${currentlyCastingSongNhtTimerName}]}) {
+      | Song successfually cast, reset the timer to 0
+      /varset ${currentlyCastingSongNhtTimerName} 0
     }
   }
 
@@ -540,9 +557,8 @@ SUB delaySongCast(songName, myNhtTimerName)
     |/echo Creating new no hold timer ${myNhtTimerName}
     /declare ${myNhtTimerName} timer outer 30
   } else {
-    | Double the no hold timer from the previous time
-    |/echo Updating no hold timer ${myNhtTimerName}
-    /varset ${myNhtTimerName} ${Math.Calc[${${myNhtTimerName}.OriginalValue} + 60]}
+    | Increase the no hold timer from the previous time, up to 1 minute
+    /if (${${myNhtTimerName}.OriginalValue} < 600) /varset ${myNhtTimerName} ${Math.Calc[${${myNhtTimerName}.OriginalValue} + 60]}
   }
   |/echo ${songName} did not take hold, waiting ${myNhtTimerName} = ${${myNhtTimerName}.OriginalValue} before trying again
 /RETURN
