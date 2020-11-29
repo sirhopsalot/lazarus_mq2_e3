@@ -452,7 +452,7 @@ SUB dynamoTwist
 
         |/echo ${Spell[${spellName}].SpellType.Equal[Beneficial]} && (!${Bool[${Me.Song[${spellName}]}]} || ${Me.Song[${spellName}].Duration} < ${dynamoPrecastTime}) && (${castName.NotEqual[${spellName}]} || ${Me.SpellReady[${spellName}]})
         /if (${Spell[${spellName}].SpellType.Equal[Beneficial]} && (!${Bool[${Me.Song[${spellName}]}]} || ${Me.Song[${spellName}].Duration} < ${dynamoPrecastTime}) && (${castName.NotEqual[${spellName}]} || ${Me.SpellReady[${spellName}]})) {
-          /echo Singing ${castName}
+          |/echo Singing ${castName}
           /if (${castName.NotEqual[${spellName}]}) {
             /itemnotify "${castName}" rightmouseup
           } else {
@@ -473,7 +473,7 @@ SUB dynamoTwist
           |/stopsong
           /return
         } else /if (${Spell[${spellName}].SpellType.Equal[Detrimental]} && ${Bool[${Target.Type.Equal[NPC]}]} && (!${Bool[${Target.Buff[${spellName}]}]} || ${Target.BuffDuration[${spellName}]} < 3300) && (${castName.NotEqual[${spellName}]} || ${Me.SpellReady[${spellName}]})) {
-          /echo Singing ${castName}
+          |/echo Singing ${castName}
 
           /if (${castName.NotEqual[${spellName}]}) {
             /itemnotify "${castName}" rightmouseup
@@ -538,5 +538,5 @@ SUB delaySongCast(songName, myNhtTimerName)
     |/echo Updating no hold timer ${myNhtTimerName}
     /varset ${myNhtTimerName} ${Math.Calc[${${myNhtTimerName}.OriginalValue} * 2]}
   }
-  /echo ${songName} did not take hold, waiting ${myNhtTimerName} = ${${myNhtTimerName}.OriginalValue} before trying again
+  |/echo ${songName} did not take hold, waiting ${myNhtTimerName} = ${${myNhtTimerName}.OriginalValue} before trying again
 /RETURN
