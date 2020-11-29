@@ -528,6 +528,10 @@ SUB check_Dynamo
 /RETURN
 
 SUB delaySongCast(songName, myNhtTimerName)
+  /if (${songName.Equal[none]}) {
+    /return
+  }
+  
   | spell did not take hold, create no hold timer
   /if (!${Defined[${myNhtTimerName}]}) {
     | create a new no hold timer
