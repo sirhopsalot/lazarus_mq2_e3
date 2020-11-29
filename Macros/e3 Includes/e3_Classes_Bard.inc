@@ -316,6 +316,9 @@ Sub BRD_Setup
   /declare playingMelody	bool outer TRUE
   /declare songSet string outer
   /declare resumeTwistDelay timer outer
+  /declare songCastTimer timer outer
+  /declare currentlyCastingSong string outer none
+  /declare currentlyCastingSongNhtTimerName string outer none
 
   /if (${Defined[mezArray]}) {
     /call BuildSpellArray "mezArray"	"mezArray2D"
@@ -362,7 +365,7 @@ Sub BRD_Background_Events
   /doevents setFixedMelody
   /call melodyIfs
   /call autoSonata
-  /call dynamoTwist
+  /call check_Dynamo
 /return
 |--------------------------------------------------------------|
 SUB BRD_MacroSettings
@@ -402,6 +405,7 @@ SUB dynamoTwist
     /declare i int local 0
     /declare songIf string local
     /declare ifsPassed bool local TRUE
+    /declare tid int local 0
 
     /for i 1 to ${melodyArray.Size}
       /varset spellName ${melodyArray[${i}].Arg[1,/]}
@@ -424,63 +428,115 @@ SUB dynamoTwist
           /varset spellName ${FindItem[=${spellName}].Spell} 
         }
 
+        /if (${Spell[${spellName}].SpellType.Equal[Beneficial]}) {
+          /varset tid ${Me.ID}
+        } else {
+          /varset tid ${Target.ID}
+        }
+
+        /if (!${Defined[nhtTimerName]}) {
+          /declare nhtTimerName string local song-nht${tid}-${Spell[${spellName}].ID}
+        } else {
+          /varset nhtTimerName song-nht${tid}-${Spell[${spellName}].ID}
+        }
+
+        |/echo nhtTimerName = ${nhtTimerName}
+
+        /if (${Defined[${nhtTimerName}]}) {
+          |/echo ${nhtTimerName} Timer defined
+          /if (${${nhtTimerName}} > 0) {
+            |/echo skipping ${spellName} for timer ${nhtTimerName}, current time: ${${nhtTimerName}}
+            /next i
+          }
+        }
+
+        |/echo ${Spell[${spellName}].SpellType.Equal[Beneficial]} && (!${Bool[${Me.Song[${spellName}]}]} || ${Me.Song[${spellName}].Duration} < ${dynamoPrecastTime}) && (${castName.NotEqual[${spellName}]} || ${Me.SpellReady[${spellName}]})
         /if (${Spell[${spellName}].SpellType.Equal[Beneficial]} && (!${Bool[${Me.Song[${spellName}]}]} || ${Me.Song[${spellName}].Duration} < ${dynamoPrecastTime}) && (${castName.NotEqual[${spellName}]} || ${Me.SpellReady[${spellName}]})) {
-          /echo casting ${castName}
+          /echo Singing ${castName}
           /if (${castName.NotEqual[${spellName}]}) {
             /itemnotify "${castName}" rightmouseup
           } else {
             /cast ${castName}
           }
+
+          /varset currentlyCastingSong ${spellName}
+          /varset currentlyCastingSongNhtTimerName ${nhtTimerName}
+          /varset songCastTimer 33
     
-          /delay 33 ${Bool[${Me.Song[${spellName}]}]} && ${Me.Song[${spellName}].Duration} >= ${dynamoPrecastTime}
+          |/delay 33 ${Bool[${Me.Song[${spellName}]}]} && ${Me.Song[${spellName}].Duration} >= ${dynamoPrecastTime}
+
+          | If the Beneficial spell does not stick, delay spellcast time and double each time
+          |/if (!${Bool[${Me.Song[${spellName}]}]}) {
+          |  /call delaySongCast "${spellName}" "${nhtTimerName}"
+          |}
                 
-          /stopsong
+          |/stopsong
           /return
         } else /if (${Spell[${spellName}].SpellType.Equal[Detrimental]} && ${Bool[${Target.Type.Equal[NPC]}]} && (!${Bool[${Target.Buff[${spellName}]}]} || ${Target.BuffDuration[${spellName}]} < 3300) && (${castName.NotEqual[${spellName}]} || ${Me.SpellReady[${spellName}]})) {
-          /echo casting ${castName}
-          /if (!${Defined[nhtTimerName]}) {
-            /declare nhtTimerName string local song-nht${Target.ID}-${Spell[${spellName}].ID}
-          } else {
-            /varset nhtTimerName song-nht${Target.ID}-${Spell[${spellName}].ID}
-          }
-
-          /if (${Defined[${nhtTimerName}]}) {
-            /if (${${nhtTimerName}} > 0) {
-              /next i
-            }
-          }
+          /echo Singing ${castName}
 
           /if (${castName.NotEqual[${spellName}]}) {
             /itemnotify "${castName}" rightmouseup
           } else {
             /cast ${castName}
           }
-    
-          /delay 33 (${Bool[${Target.Buff[${spellName}]}]} && ${Target.BuffDuration[${spellName}]} > 3300)
+
+          /varset currentlyCastingSong ${spellName}
+          /varset currentlyCastingSongNhtTimerName ${nhtTimerName}
+          /varset songCastTimer 33
+
+          |/delay 33 (${Bool[${Target.Buff[${spellName}]}]} && ${Target.BuffDuration[${spellName}]} > 3300)
                 
-          | If the detrimental spell does not stick, delay spellcast time and double each time
-          | No Hold Timer: ${Defined[nht${targetID}-${pendingCastID}]}
-          | Timer not expired: ${Bool[${nht${targetID}-${pendingCastID}}]}
-          | either /next i OR /goto :skipSong
-          /if (!${Bool[${Target.Buff[${spellName}]}]}) {
-            | spell did not take hold, create no hold timer
-            /if (!${Defined[${nhtTimerName}]}) {
-              | create a new no hold timer
-              /echo Creating new no hold timer ${nhtTimerName}
-              /declare ${nhtTimerName} timer outer 30
-            } else {
-              | Double the no hold timer from the previous time
-              /echo Updating no hold timer ${nhtTimerName}
-              /varset ${nhtTimerName} ${Math.Calc[${${nhtTimerName}.OriginalValue} * 2]}
-            }
-            /echo ${spellName} did not take hold, waiting ${nhtTimerName} = ${${nhtTimerName}.OriginalValue} before trying again
-          }
+          | If the Detrimental spell does not stick, delay spellcast time and double each time
+          |/if (!${Bool[${Target.Buff[${spellName}]}]}) {
+          |  /call delaySongCast "${spellName}" "${nhtTimerName}"
+          |}
 
-
-          /stopsong
+          |/stopsong
           /return
         }
       }      
-    /next i
+    /if (${i} < ${melodyArray.Size}) /next i
   }
 /return
+
+SUB check_Dynamo
+  /if (${songPlayer.NotEqual["Dynamo"]} || ${Me.Invis}) /return
+
+  | If currently casting and haven't run out of time to cast, skip check
+  /if (${Bool[${Me.Casting}]} && ${songCastTimer} > 0) /return
+  
+  /stopsong
+
+  | Check for setting delay timer
+  /if (${Spell[${currentlyCastingSong}].SpellType.Equal[Beneficial]}) {
+    | If the Beneficial spell does not stick, delay spellcast time and double each time
+    /if (!${Bool[${Me.Song[${currentlyCastingSong}]}]}) {
+      /call delaySongCast "${currentlyCastingSong}" "${currentlyCastingSongNhtTimerName}"
+    }
+  } else {
+    | If the Detrimental spell does not stick, delay spellcast time and double each time
+    /if (!${Bool[${Target.Buff[${currentlyCastingSong}]}]}) {
+      /call delaySongCast "${currentlyCastingSong}" "${currentlyCastingSongNhtTimerName}"
+    }
+  }
+
+  /varset currentlyCastingSong none
+  /varset currentlyCastingSongNhtTimerName none
+
+  /call dynamoTwist  
+/RETURN
+
+SUB delaySongCast(songName, myNhtTimerName)
+  | spell did not take hold, create no hold timer
+  /if (!${Defined[${myNhtTimerName}]}) {
+    | create a new no hold timer
+    |/echo Creating new no hold timer ${myNhtTimerName}
+    /declare ${myNhtTimerName} timer outer 30
+  } else {
+    | Double the no hold timer from the previous time
+    |/echo Updating no hold timer ${myNhtTimerName}
+    /varset ${myNhtTimerName} ${Math.Calc[${${myNhtTimerName}.OriginalValue} * 2]}
+  }
+  /echo ${songName} did not take hold, waiting ${myNhtTimerName} = ${${myNhtTimerName}.OriginalValue} before trying again
+/RETURN
