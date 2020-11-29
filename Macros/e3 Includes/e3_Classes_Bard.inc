@@ -472,7 +472,7 @@ SUB dynamoTwist
                 
           |/stopsong
           /return
-        } else /if (${Spell[${spellName}].SpellType.Equal[Detrimental]} && ${Bool[${Target.Type.Equal[NPC]}]} && (!${Bool[${Target.Buff[${spellName}]}]} || ${Target.BuffDuration[${spellName}]} < 3300) && (${castName.NotEqual[${spellName}]} || ${Me.SpellReady[${spellName}]})) {
+        } else /if (${Spell[${spellName}].SpellType.Equal[Detrimental]} && ${Bool[${Target.Type.Equal[NPC]}]} && (!${Bool[${Target.Buff[${spellName}]}]} || ${Target.BuffDuration[${spellName}]} < 3300) && (${castName.NotEqual[${spellName}]} || ${Me.SpellReady[${spellName}]}) && ${Target.LineOfSight}) {
           |/echo Singing ${castName}
 
           /if (${castName.NotEqual[${spellName}]}) {
@@ -481,9 +481,11 @@ SUB dynamoTwist
             /cast ${castName}
           }
 
-          /varset currentlyCastingSong ${spellName}
-          /varset currentlyCastingSongNhtTimerName ${nhtTimerName}
-          /varset songCastTimer 33
+          /if (${Me.Casting.Equal[${spellName}]}) {
+            /varset currentlyCastingSong ${spellName}
+            /varset currentlyCastingSongNhtTimerName ${nhtTimerName}
+            /varset songCastTimer 33
+          }
 
           |/delay 33 (${Bool[${Target.Buff[${spellName}]}]} && ${Target.BuffDuration[${spellName}]} > 3300)
                 
@@ -501,7 +503,7 @@ SUB dynamoTwist
 /return
 
 SUB check_Dynamo
-  /if (${songPlayer.NotEqual["Dynamo"]} || ${Me.Invis}) /return
+  /if (${songPlayer.NotEqual["Dynamo"]} || ${Me.Invis} || !${Defined[melodyArray]}) /return
 
   | If currently casting and haven't run out of time to cast, skip check
   /if (${Bool[${Me.Casting}]} && ${songCastTimer} > 0) /return
@@ -531,7 +533,7 @@ SUB delaySongCast(songName, myNhtTimerName)
   /if (${songName.Equal[none]}) {
     /return
   }
-  
+
   | spell did not take hold, create no hold timer
   /if (!${Defined[${myNhtTimerName}]}) {
     | create a new no hold timer
@@ -540,7 +542,7 @@ SUB delaySongCast(songName, myNhtTimerName)
   } else {
     | Double the no hold timer from the previous time
     |/echo Updating no hold timer ${myNhtTimerName}
-    /varset ${myNhtTimerName} ${Math.Calc[${${myNhtTimerName}.OriginalValue} * 2]}
+    /varset ${myNhtTimerName} ${Math.Calc[${${myNhtTimerName}.OriginalValue} + 60]}
   }
   |/echo ${songName} did not take hold, waiting ${myNhtTimerName} = ${${myNhtTimerName}.OriginalValue} before trying again
 /RETURN
