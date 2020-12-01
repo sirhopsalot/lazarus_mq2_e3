@@ -428,8 +428,8 @@ SUB dynamoTwist
       /if (${ifsPassed}) {
         | Handle items
         /if (${FindItemCount[=${spellName}]}) {
+          /varset castTime ${Math.Calc[${FindItem[=${spellName}].CastTime}/100 + 3]}
           /varset spellName ${FindItem[=${spellName}].Spell} 
-          /varset castTime ${FindItem[=${spellName}].CastTime}
         }
 
         /if (${Spell[${spellName}].SpellType.Equal[Beneficial]}) {
@@ -460,11 +460,15 @@ SUB dynamoTwist
 
         /if (${previousCastSong.Equal[${spellName}]}) {
           |/echo Sang ${spellName} previously, skipping to next song
+          |/echo previousCastSong = ${previousCastSong}
           /call delaySongCast "${previousCastSong}" "${nhtTimerName}"
           /varset previousCastSong none
+          |/echo ${previousCastSong}
           /if (${i} < ${melodyArray.Size}) {
+            |/echo going to next i
             /next i
           } else {
+            |/echo no more songs, returning
             /return
           }
         }
@@ -484,6 +488,8 @@ SUB dynamoTwist
             /varset currentlyCastingSong ${spellName}
             /varset currentlyCastingSongNhtTimerName ${nhtTimerName}
             /varset songCastTimer ${castTime}
+
+            |/echo ${spellName} songCastTimer = ${songCastTimer}
           }
     
           /return
@@ -492,15 +498,20 @@ SUB dynamoTwist
 
           /if (${castName.NotEqual[${spellName}]}) {
             /itemnotify "${castName}" rightmouseup
+            /delay 5
           } else {
             /cast "${castName}"
           }
+
+          |/echo Casting=${Me.Casting.Name}
 
           /varset previousCastSong ${spellName}
           /if (${Me.Casting.Name.Equal[${spellName}]} || ${castTime} == 0) {
             /varset currentlyCastingSong ${spellName}
             /varset currentlyCastingSongNhtTimerName ${nhtTimerName}
             /varset songCastTimer ${castTime}
+
+            |/echo ${spellName} songCastTimer = ${songCastTimer}
           }
 
           /return
@@ -515,7 +526,11 @@ SUB check_Dynamo
 
   | If currently casting and haven't run out of time to cast, skip check
   /if (${Bool[${Me.Casting}]} && ${songCastTimer} > 0) /return
-  
+
+  /if (${Bool[${Me.Casting}]}) {
+    |/echo stopping ${Me.Casting}, songCastTimer = ${songCastTimer}
+  }
+
   /stopsong
   
   |/echo currentlyCastingSongNhtTimerName=${currentlyCastingSongNhtTimerName}
