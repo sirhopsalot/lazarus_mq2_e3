@@ -42,6 +42,7 @@ Sub BST_Setup
 |----------------------------------------------------------------------------|
 Sub BST_Background_Events
 	/doevents AE_POS
+	/doevents paragonActive
 	/doevents paragonToggle
 	/doevents focusedParagonToggle
 	/call checkParagon
@@ -66,6 +67,24 @@ Sub event_AE_POS(string line)
 	}
 /return
 |--------------------------------------------------------------|
+#event paragonActive "#1# tells you, 'paragon active'"
+#event paragonActive "<#1#> paragon active"
+#event paragonActive "#1# tells the group, 'paragon active'"
+Sub event_paragonActive(line, ChatSender)	
+	/if (${autoParagon}) {
+		/docommand ${ChatToggle} ${Me}: Auto Paragon is currently on
+	} else {
+		/docommand ${ChatToggle} ${Me}: Auto Paragon is currently off
+	}
+	
+	/if (${autoFocusedParagon}) {
+		/docommand ${ChatToggle} ${Me}: Auto Focused Paragon is currently on
+	} else {
+		/docommand ${ChatToggle} ${Me}: Auto Focused Paragon is currently off
+	}
+/return
+|----------------------------------------------------------------------------|
+|--------------------------------------------------------------|
 #event paragonToggle "#1# tells you, 'paragon toggle'"
 #event paragonToggle "<#1#> paragon toggle"
 #event paragonToggle "#1# tells the group, 'paragon toggle'"
@@ -77,9 +96,9 @@ Sub event_paragonToggle(line, ChatSender)
 	}
 	
 	/if (${autoParagon}) {
-		/docommand ${ChatToggle} Paragon On
+		/docommand ${ChatToggle} ${Me}: Paragon On
 	} else {
-		/docommand ${ChatToggle} Paragon Off
+		/docommand ${ChatToggle} ${Me}: Paragon Off
 	}
 /return
 |--------------------------------------------------------------|
@@ -94,9 +113,9 @@ Sub event_focusedParagonToggle(line, ChatSender)
 	}
 	
 	/if (${autoFocusedParagon}) {
-		/docommand ${ChatToggle} Focused Paragon On
+		/docommand ${ChatToggle} ${Me}: Focused Paragon On
 	} else {
-		/docommand ${ChatToggle} Focused Paragon Off
+		/docommand ${ChatToggle} ${Me}: Focused Paragon Off
 	}
 /return
 |----------------------------------------------------------------------------|
@@ -147,7 +166,7 @@ Sub checkParagonGroupCasting(ArrayName, int ArrayIndex)
 		}
 	/next g
 	
-	| Must have at least 3 targets and avg group mana below manapct				
+	| Must have at least 3 targets and avg group mana below manapct
 	/varcalc avgGrpMana ${avgGrpMana} / ${targetCount}
 	/if (${numLowMana} > 2 && ${avgGrpMana} <= ${paragonManaPct}) { 
 		/varset castParagon TRUE
