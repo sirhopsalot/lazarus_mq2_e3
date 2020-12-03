@@ -1728,6 +1728,20 @@ sub event_gimme(line, ChatSender, RequestedItem)
 	/declare platOnCursor local false
 	/target pc ${ChatSender}
 	/declare IsMyBot bool local ${Bool[${Select[${ChatSender}, ${NetBots.Client}]}]}
+
+  /if (!${Defined[GimmeSharing]}) {
+    /if (${IniExt[${Character_Ini},Misc,GimmeSharing].Count} > 0) {
+      /call iniToVarV "${Character_Ini},Misc,GimmeSharing" GimmeSharing bool outer
+    } else {
+      /declare GimmeSharing bool outer TRUE
+    }
+  }
+
+  /if (!${GimmeSharing} && !${IsMyBot}) {
+    /tell ${ChatSender} I have disabled Gimme sharing, please seek your supplies elsewhere
+    /return
+  }
+
 	| check if the requestor can be reached
 	/if (!${Spawn[${ChatSender}].LineOfSight}) {
 		/tell ${ChatSender} Where are you? I don't see you. Please move closer if you want me to give you something.
@@ -1763,7 +1777,7 @@ sub event_gimme(line, ChatSender, RequestedItem)
 		/notify InventoryWindow IW_AltCurr_CreateItemButton leftmouseup
 		/delay 1s
 		/notify QuantityWnd QTYW_Accept_Button leftmouseup
-		/delay 3s ${Cursor.ID}
+		/delay 3s ${Bool[${Cursor.ID}]}
 		/if (${Window[InventoryWindow].Child[IW_AltCurrPage].Open}) /if (${Window[InventoryWindow].DoClose}) /echo Inventory Window Closed
 	} else /if (${IsMyBot} && (${RequestedItem.Equal[platinum]} || ${RequestedItem.Equal[pp]} || ${RequestedItem.Equal[plat]})) {
 		/if (${Me.Platinum} > 0) {
@@ -1788,7 +1802,7 @@ sub event_gimme(line, ChatSender, RequestedItem)
 		/if (${DebugGimme}) /echo IsMyBot = ${IsMyBot}		
 		/if (${IsNoRent} || ${IsMyBot}) {
 			/ItemNotify "${RequestedItem}" leftmouseup
-			/delay 2s ${Cursor.ID}
+			/delay 2s ${Bool[${Cursor.ID}]}
 		} else {
 			/delay 2s
 			/tell ${ChatSender} Only temporary items can be requested
@@ -1796,7 +1810,7 @@ sub event_gimme(line, ChatSender, RequestedItem)
 		}
 	} else /if (${Bool[${FindItem[=Summoned: ${RequestedItem}]}]}) {
 		/ItemNotify "Summoned: ${RequestedItem}" leftmouseup
-		/delay 2s ${Cursor.ID}
+		/delay 2s ${Bool[${Cursor.ID}]}
 	} else {
 		/if (${DebugGimme}) /echo Summoning ${RequestedItem}
 		/declare RequestedItemString string local ${RequestedItem}
@@ -1812,12 +1826,15 @@ sub event_gimme(line, ChatSender, RequestedItem)
 		} else /if (${Bool[${Me.Book[${RequestedItemStringWithoutSummoned}]}]} || ${Bool[${Me.AltAbility[${RequestedItemStringWithoutSummoned}]}]}) {
 			/if (${DebugGimme}) /echo casting ${RequestedItemStringWithoutSummoned}
 			/casting "${RequestedItemStringWithoutSummoned}"
+		} else /if (${Bool[${RequestedItem.Find[Sanguine Mind Crystal]}]} && ${Bool[${Me.AltAbility[Sanguine Mind Crystal]}]}) {
+			/if (${DebugGimme}) /echo casting Sanguine Mind Crystal
+			/casting "Sanguine Mind Crystal"
 		} else {
 			/delay 2s
 			/tell ${ChatSender} Spell ${RequestedItem} not found
 			/varset SummoningItem false
 		}
-		/if (${SummoningItem}) /delay 10s ${Cursor.ID}
+		/if (${SummoningItem}) /delay 10s ${Bool[${Cursor.ID}]}
 		/if (${DebugGimme}) /echo Summoned ${RequestedItem} ${SummoningItem}
 	}
 	/if ((${Cursor.ID} || ${platOnCursor}) && !${IsRequestedItemModShard}) {
@@ -1832,12 +1849,20 @@ sub event_gimme(line, ChatSender, RequestedItem)
 		/if (${DebugGimme}) /echo IsClose = ${Bool[${Math.Distance[${senderLoc}]}<20]}
 		/click left target
 		/delay 3s ${Window[TradeWnd].Open}
-		/while (${Window[TradeWnd].Open}) {
+    /declare tradeTries int local 0
+		/while (${Window[TradeWnd].Open} && ${tradeTries} < 2) {
 			/notify TradeWnd TRDW_Trade_Button leftmouseup 
 			/delay 5
 			/bct ${Target.CleanName} //notify TradeWnd TRDW_Trade_Button leftmouseup 
 			/delay 1s
+      /varset tradeTries ${Math.Calc[${tradeTries} + 1]}
+      /echo tradeTries=${tradeTries}
 		}
+    /if (${Window[TradeWnd].Open}) {
+      /echo Cancelling the trade with ${ChatSender}
+      /t ${ChatSender} Cancelling the trade. Please turn on auto accept trades using /plugin mq2autoaccepttrades.
+      /notify TradeWnd TRDW_Cancel_Button leftmouseup 
+    }
 		/call ClearCursor
 		| Move back to original location
 		/if (${Stick.Active}) /squelch /stick off
