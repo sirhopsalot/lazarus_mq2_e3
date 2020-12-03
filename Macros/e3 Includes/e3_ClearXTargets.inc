@@ -45,6 +45,7 @@ SUB clearXTargets_Setup
 SUB clearXTargets_Background_Events
 	/doevents clearXTargets
 	/doevents nextTarget
+  /doevents rotateTarget
 	/call check_clearXTargets
 /RETURN
 
@@ -183,4 +184,61 @@ SUB check_clearXTargets
   /if (${KeepAggroOn} && ${numLowAggroTargets} >= 1 && ${Target.PctAggro} >= 100) {
     /bc Next Target
   }
+/RETURN
+
+| Selects the next target and attacks
+#event rotateTarget "<#1#> Rotate Target"
+SUB event_rotateTarget(line, ChatSender)
+  /if (!${ChatSender.Equal[${Me.Name}]} || ${NumAggroTargets} == 0) /return
+  /declare i int local
+  /declare mobId int local
+  /declare xtarIndex int local
+  /declare newTargetId int local
+
+  /if (${Bool[${AssistTarget}]}) {
+    | Find the current target index
+    /for i 1 to 13
+      /if (${AssistTarget} == ${Me.XTarget[${i}].ID}) {
+        /if (${ClearXTargetsDebug}) /echo Current target index = ${i} with name: ${Me.XTarget[${i}].Name}
+        /varset xtarIndex ${Math.Calc[${i} + 1]}
+        | If we're at the last toon on the list, start at the beginning
+        /if (${i} == 13 || ${Me.XTarget[${Math.Calc[${i} + 1]}].ID} == 0) {
+          /varset xtarIndex 1
+        }
+        /if (${ClearXTargetsDebug}) /echo Searching for rotate target starting at xtarIndex = ${xtarIndex}
+        /break
+      }
+    /next i    
+  } else {
+    | Set the index to 1
+    /varset xtarIndex 1
+  }
+
+  | find the next valid target in the list
+  /for i ${xtarIndex} to 13
+    /if (${Me.XTarget[${i}].TargetType.Equal[Auto Hater]} && !${Bool[${Me.XTarget[${i}].Name.Find[Corpse]}]} && !${Bool[${Me.XTarget[${i}].Name.Find[wooden box]}]} && !${Bool[${Me.XTarget[${i}].Name.Find[Chest]}]} && !${Bool[${Me.XTarget[${i}].Name.Find[a barrel]}]} && !${Bool[${Me.XTarget[${i}].Name.Find[a box]}]} && !${Bool[${Me.XTarget[${i}].Name.Find[crate]}]} && !${Bool[${Me.XTarget[${i}].Name.Find[hollow_tree]}]} && ${Me.XTarget[${i}].LineOfSight} && ${Me.XTarget[${i}].Distance} < 75) {
+      /if (${ClearXTargetsDebug}) /echo Switching to target at index = ${i} with name: ${Me.XTarget[${i}].Name}
+      /varset mobId ${Me.XTarget[${i}].ID}
+      /if (${ClearXTargetsDebug}) /echo Switching to target mob with id = ${mobId}
+      /break
+    }
+  /next i
+
+  /if (${Bool[${mobId}]} && ${Bool[${Spawn[${mobId}]}]}) {
+    /if (${ClearXTargetsDebug}) /echo Assisting on Next Rotate Target ${Spawn[${mobId}].CleanName} TargetID=${mobId}
+    /call TrueTarget ${mobId}
+    /stick id ${mobId} 100% uw
+    /delay 1
+    /attack on
+    /delay 1
+    /bcga //pet attack
+    /delay 1
+    /assistme
+    /varset AllowControl TRUE
+    /varset AssistStickDistance 100%
+  } else {
+    /if (${ClearXTargetsDebug}) /echo No mobs on XTarget to assist on
+  }
+
+  /doevent flush event_rotateTarget
 /RETURN
