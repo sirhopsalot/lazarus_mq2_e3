@@ -2470,13 +2470,13 @@ SUB event_sendInstanceInvites(line, ChatSender)
 	} else /if (${Raid.Members} == 0 && ${Group.Members} > 0) {
 		/declare i int local
 		/for i 1 to ${Group.Members} {
-			/varset membersStr ${membersStr} ${Group.Member[${i}]}
+			/if (${Group.Member[${i}].Name.NotEqual[${ChatSender}]}) /varset membersStr ${membersStr} ${Group.Member[${i}].Name}
 		}
 		/next i
 	} else /if (${Raid.Members} > 0) {
 		/declare i int local
 		/for i 1 to ${Raid.Members} {
-			/varset membersStr ${membersStr} ${Group.Member[${i}]}
+			/if (${Raid.Member[${i}].Name.NotEqual[${ChatSender}]}) /varset membersStr ${membersStr} ${Raid.Member[${i}].Name}
 		}
 		/next i
 	} else {
@@ -2487,5 +2487,7 @@ SUB event_sendInstanceInvites(line, ChatSender)
 	/if (${membersStr.Length} > 0) {
 		/echo Sending instance invites!
 		/say #inst invite ${membersStr}
+	} else {
+		/echo There are no group/raid members to send invites to.
 	}
 /return
