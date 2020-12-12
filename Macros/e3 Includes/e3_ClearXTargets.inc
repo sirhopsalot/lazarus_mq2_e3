@@ -36,7 +36,26 @@ SUB clearXTargets_Setup
 	/declare ClearXTargetsDebug bool outer FALSE
   /declare NumAggroTargets int outer 0
   /declare KeepAggroOn bool outer FALSE
-  /declare FollowingPreClear bool outer FALSE
+
+  /if (!${Defined[FollowAfterClearXTargets]}) {
+    /if (${IniExt[${Character_Ini},Misc,FollowAfterClearXTargets].Count} > 0) {
+      /call iniToVarV "${Character_Ini},Misc,FollowAfterClearXTargets" FollowAfterClearXTargets bool outer
+    } else {
+      /declare FollowAfterClearXTargets bool outer TRUE
+    }
+  }
+
+  /if (${ClearXTargetsDebug}) /echo FollowAfterClearXTargets = ${FollowAfterClearXTargets}
+
+  /if (!${Defined[ClearXTargetStickDistance]}) {
+    /if (${IniExt[${Character_Ini},Misc,ClearXTargetStickDistance].Count} > 0) {
+      /call iniToVarV "${Character_Ini},Misc,ClearXTargetStickDistance" ClearXTargetStickDistance int outer
+    } else {
+      /declare ClearXTargetStickDistance int outer 10
+    }
+  }
+
+  /if (${ClearXTargetsDebug}) /echo ClearXTargetStickDistance = ${ClearXTargetStickDistance}
 /RETURN
 
 |--------------------------------------------------------------------------------|
@@ -67,15 +86,16 @@ SUB event_clearXTargets(line, ChatSender, args)
   /if (!${ChatSender.Equal[${Me.Name}]}) /return
 
   /if (${Bool[${args.Find[KeepAggro]}]}) {
+    /if (${ClearXTargetsDebug}) /echo KeepAggro On
     /varset KeepAggroOn TRUE
   } else {
+    /if (${ClearXTargetsDebug}) /echo KeepAggro Off
     /varset KeepAggroOn FALSE
   }
 
   | toggle ClearXTargetsOn on/off 
   /if (!${ClearXTargetsOn}) {
     /varset ClearXTargetsOn TRUE
-    /varset FollowingPreClear TRUE
     | Disable follow to stop melee/ranged toons bouncing
     /stop
   	/echo ClearXTargets: Enabled ${ClearXTargetsOn}
@@ -106,7 +126,7 @@ SUB event_nextTarget(line, ChatSender)
   /if (${Bool[${mobId}]} && ${Bool[${Spawn[${mobId}]}]}) {
     /if (${ClearXTargetsDebug}) /echo Assisting on Next Target ${Spawn[${mobId}].CleanName} TargetID=${mobId}
     /call TrueTarget ${mobId}
-    /stick id ${mobId} 100% uw
+    /stick id ${mobId} ${ClearXTargetStickDistance} uw
     /delay 1
     /attack on
     /delay 1
@@ -114,7 +134,7 @@ SUB event_nextTarget(line, ChatSender)
     /delay 1
     /assistme
     /varset AllowControl TRUE
-    /varset AssistStickDistance 100%
+    /varset AssistStickDistance ${ClearXTargetStickDistance}
   } else {
     /if (${ClearXTargetsDebug}) /echo No mobs on XTarget to assist on
   }
@@ -174,8 +194,8 @@ SUB check_clearXTargets
   	| No target found, disable clearing
     /varset ClearXTargetsOn FALSE    
     /echo ClearXTargets: XTargets Cleared, disabled Clear XTarget
-    /if (${FollowingPreClear}) {
-      | If following before clear, re-enable
+    /if (${FollowAfterClearXTargets}) {
+      | If set to follow after clearing
       /followme
     }
     /attack off
@@ -227,7 +247,7 @@ SUB event_rotateTarget(line, ChatSender)
   /if (${Bool[${mobId}]} && ${Bool[${Spawn[${mobId}]}]}) {
     /if (${ClearXTargetsDebug}) /echo Assisting on Next Rotate Target ${Spawn[${mobId}].CleanName} TargetID=${mobId}
     /call TrueTarget ${mobId}
-    /stick id ${mobId} 100% uw
+    /stick id ${mobId} ${ClearXTargetStickDistance} uw
     /delay 1
     /attack on
     /delay 1
@@ -235,7 +255,7 @@ SUB event_rotateTarget(line, ChatSender)
     /delay 1
     /assistme
     /varset AllowControl TRUE
-    /varset AssistStickDistance 100%
+    /varset AssistStickDistance ${ClearXTargetStickDistance}
   } else {
     /if (${ClearXTargetsDebug}) /echo No mobs on XTarget to assist on
   }
