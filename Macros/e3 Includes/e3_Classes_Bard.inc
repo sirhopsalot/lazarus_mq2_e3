@@ -102,7 +102,7 @@ SUB EVENT_startMelody(line, ChatSender, melodyName)
         /if (${fixedMelody.Equal[stop]}) {
           /varset fixedMelody off
         }
-        /twist ${songSet}
+        /if (${songPlayer.NotEqual["Dynamo"]}) /twist ${songSet}
       }
     }
   }
@@ -113,14 +113,14 @@ SUB pauseTwist
 /if (${Debug} || ${Debug_Casting}) /echo |- pauseTwist ==>
 	/varset	returnTwist TRUE
 	/squelch /twist stop
-	/delay 2 !${Me.Casting.ID}
+	/delay 2s !${Me.Casting.ID}
 /if (${Debug} || ${Debug_Casting}) /echo <== pauseTwist -|
 /return
 |--------------------------------------------------------------|
 SUB unpauseTwist
 	/delay 2 !${Me.Casting.ID}
 	/varset 	returnTwist FALSE
-	/squelch 	/twist ${songSet}
+	/if (${songPlayer.NotEqual["Dynamo"]}) /squelch 	/twist ${songSet}
 	/delay 2 ${Me.Casting.ID}
 /return
 |--------------------------------------------------------------|
@@ -131,9 +131,11 @@ sub event_toggleMez(line, ChatSender, mezToggle)
     /if (${Debug} || ${Debug_Ench}) /echo |- remove_RuneTarget ==>
       /if (${mezToggle.Equal[on]}) {
         /varset autoMez TRUE
+        /varset fixedMelody ${currentMelody}
         /docommand ${ChatToggle} << Mezzing Enabled >>
       } else {
         /varset autoMez FALSE
+        /varset fixedMelody off
         /docommand ${ChatToggle} << Mezzing Disabled >>
     }
     /if (${Debug}) /echo <== remove_RuneTarget -|
@@ -298,10 +300,26 @@ Sub BRD_Setup
   /call IniToArrayV "${Character_Ini},Bard,Charm#"	charmArray
   /call IniToArrayV "${Character_Ini},Bard,MelodyIf#"	melodyIfArray
   /call iniToVarV "${Character_Ini},Bard,Auto-Sonata (On/Off)" autoSonataOn bool outer
+  /call iniToVarV "${Character_Ini},Bard,SongPlayer" songPlayer string outer
+  /call iniToVarV "${Character_Ini},Bard,DynamoPrecastTime" dynamoPrecastTime int outer
+
+  /if (!${Defined[songPlayer]}) {
+    /echo Setting default SongPlayer to Twist
+    /declare songPlayer string outer Twist
+  }
+
+  /if (!${Defined[dynamoPrecastTime]}) {
+    /declare dynamoPrecastTime int outer 4000
+  }
+
   /declare returnTwist		bool outer FALSE
   /declare playingMelody	bool outer TRUE
   /declare songSet string outer
   /declare resumeTwistDelay timer outer
+  /declare songCastTimer timer outer
+  /declare currentlyCastingSong string outer none
+  /declare currentlyCastingSongNhtTimerName string outer none
+  /declare previousCastSong string outer none
 
   /if (${Defined[mezArray]}) {
     /call BuildSpellArray "mezArray"	"mezArray2D"
@@ -331,6 +349,9 @@ Sub BRD_Setup
     /next i
   }
 
+  | Clear songs that were playing from previous macro
+  /stopsong
+  /twist end
 /if (${Debug}) /echo <== BRD_Setup -|
 /return
 |--------------------------------------------------------------|
@@ -345,6 +366,7 @@ Sub BRD_Background_Events
   /doevents setFixedMelody
   /call melodyIfs
   /call autoSonata
+  /call check_Dynamo
 /return
 |--------------------------------------------------------------|
 SUB BRD_MacroSettings
@@ -361,6 +383,7 @@ SUB BRD_CharacterSettings
   /call WriteToIni "${Character_Ini},Bard,Charm"
   /call WriteToIni "${Character_Ini},Bard,Auto-Sonata (On/Off)" Off
   /call WriteToIni "${Character_Ini},Bard,MelodyIf"
+  /call WriteToIni "${Character_Ini},Bard,SongPlayer" Twist
 /RETURN
 |--------------------------------------------------------------|
 Sub BRD_Aliases
@@ -369,3 +392,188 @@ Sub BRD_Aliases
   /squelch /alias /mezon /bc Mez on
   /squelch /alias /mezoff /bc Mez off
 /return
+
+SUB dynamoTwist  
+  /if (${songPlayer.NotEqual["Dynamo"]} || ${Me.Invis}) /return
+
+  | Read auto-melody for starting melody
+  | If the target is self, read through the list and cast the first one that's not on
+  | If the spell type is detrimental, check if I have a target, and if I do go cast that one on the target if it's not on yet
+  | may need a "rotate" if you want to skip when it doesn't 
+  /if (!${Bool[${Me.Casting}]} && ${Defined[melodyArray]}) {
+    /declare spellName string local
+    /declare castName string local
+    /declare i int local 0
+    /declare songIf string local
+    /declare ifsPassed bool local TRUE
+    /declare tid int local 0
+    /declare castTime int local 33
+
+    /for i 1 to ${melodyArray.Size}
+      /varset spellName ${melodyArray[${i}].Arg[1,/]}
+      /varset castName ${spellName}
+      /varset ifsPassed TRUE
+      /varset castTime 33
+      |/echo ${melodyArray[${i}]}
+      /if (${Bool[${melodyArray[${i}].Find[Ifs]}]}) {
+        /call argueString Ifs| "${melodyArray[${i}]}"
+        /varset songIf ${Ini[${Character_Ini},Ifs,${c_argueString},NULL,noparse]}
+        |/echo checking ${spellName} for ${c_argueString}
+        /if (!${songIf}) {
+          |/echo skipping ${spellName} for ${c_argueString}
+          /varset ifsPassed FALSE
+        }
+      }
+
+      /if (${ifsPassed}) {
+        | Handle items
+        /if (${FindItemCount[=${spellName}]}) {
+          /varset castTime ${Math.Calc[${FindItem[=${spellName}].CastTime}/100 + 3]}
+          /varset spellName ${FindItem[=${spellName}].Spell} 
+        }
+
+        /if (${Spell[${spellName}].SpellType.Equal[Beneficial]}) {
+          /varset tid ${Me.ID}
+        } else {
+          /varset tid ${Target.ID}
+        }
+
+        /if (!${Defined[nhtTimerName]}) {
+          /declare nhtTimerName string local song-nht${tid}-${Spell[${spellName}].ID}
+        } else {
+          /varset nhtTimerName song-nht${tid}-${Spell[${spellName}].ID}
+        }
+
+        |/echo nhtTimerName = ${nhtTimerName}
+
+        /if (${Defined[${nhtTimerName}]}) {
+          |/echo ${nhtTimerName} Timer defined
+          /if (${${nhtTimerName}} > 0) {
+            |/echo skipping ${spellName} for timer ${nhtTimerName}, current time: ${${nhtTimerName}}
+            /if (${i} < ${melodyArray.Size}) {
+              /next i
+            } else {
+              /return
+            }
+          }
+        }
+
+        /if (${previousCastSong.Equal[${spellName}]}) {
+          |/echo Sang ${spellName} previously, skipping to next song
+          |/echo previousCastSong = ${previousCastSong}
+          /call delaySongCast "${previousCastSong}" "${nhtTimerName}"
+          /varset previousCastSong none
+          |/echo ${previousCastSong}
+          /if (${i} < ${melodyArray.Size}) {
+            |/echo going to next i
+            /next i
+          } else {
+            |/echo no more songs, returning
+            /return
+          }
+        }
+
+        |/echo ${Spell[${spellName}].SpellType.Equal[Beneficial]} && (!${Bool[${Me.Song[${spellName}]}]} || ${Me.Song[${spellName}].Duration} < ${dynamoPrecastTime}) && (${castName.NotEqual[${spellName}]} || ${Me.SpellReady[${spellName}]})
+        /if (${Spell[${spellName}].SpellType.Equal[Beneficial]} && (!${Bool[${Me.Song[${spellName}]}]} || ${Me.Song[${spellName}].Duration} < ${dynamoPrecastTime}) && (${castName.NotEqual[${spellName}]} || ${Me.SpellReady[${spellName}]})) {
+          |/echo Singing ${castName}
+          /if (${castName.NotEqual[${spellName}]}) {
+            /itemnotify "${castName}" rightmouseup
+          } else {
+            /cast "${castName}"
+          }
+
+          /varset previousCastSong ${spellName}
+          |/echo Casting=${Me.Casting.Name}
+          /if (${Me.Casting.Name.Equal[${spellName}]} || ${castTime} == 0) {
+            /varset currentlyCastingSong ${spellName}
+            /varset currentlyCastingSongNhtTimerName ${nhtTimerName}
+            /varset songCastTimer ${castTime}
+
+            |/echo ${spellName} songCastTimer = ${songCastTimer}
+          }
+    
+          /return
+        } else /if (${Spell[${spellName}].SpellType.Equal[Detrimental]} && ${Bool[${Target.Type.Equal[NPC]}]} && (!${Bool[${Target.Buff[${spellName}]}]} || ${Target.BuffDuration[${spellName}]} < 3300) && (${castName.NotEqual[${spellName}]} || ${Me.SpellReady[${spellName}]}) && ${Target.LineOfSight}) {
+          |/echo Singing ${castName}
+
+          /if (${castName.NotEqual[${spellName}]}) {
+            /itemnotify "${castName}" rightmouseup
+            /delay 5
+          } else {
+            /cast "${castName}"
+          }
+
+          |/echo Casting=${Me.Casting.Name}
+
+          /varset previousCastSong ${spellName}
+          /if (${Me.Casting.Name.Equal[${spellName}]} || ${castTime} == 0) {
+            /varset currentlyCastingSong ${spellName}
+            /varset currentlyCastingSongNhtTimerName ${nhtTimerName}
+            /varset songCastTimer ${castTime}
+
+            |/echo ${spellName} songCastTimer = ${songCastTimer}
+          }
+
+          /return
+        }
+      }      
+    /if (${i} < ${melodyArray.Size}) /next i
+  }
+/return
+
+SUB check_Dynamo
+  /if (${songPlayer.NotEqual["Dynamo"]} || ${Me.Invis} || !${Defined[melodyArray]}) /return
+
+  | If currently casting and haven't run out of time to cast, skip check
+  /if (${Bool[${Me.Casting}]} && ${songCastTimer} > 0) /return
+
+  /if (${Bool[${Me.Casting}]}) {
+    |/echo stopping ${Me.Casting}, songCastTimer = ${songCastTimer}
+  }
+
+  /stopsong
+  
+  |/echo currentlyCastingSongNhtTimerName=${currentlyCastingSongNhtTimerName}
+
+  | Check for setting delay timer
+  /if (${Spell[${currentlyCastingSong}].SpellType.Equal[Beneficial]}) {
+    | If the Beneficial spell does not stick, delay spellcast time and double each time
+    /if (!${Bool[${Me.Song[${currentlyCastingSong}]}]}) {
+      /call delaySongCast "${currentlyCastingSong}" "${currentlyCastingSongNhtTimerName}"
+    } else /if (${Defined[${currentlyCastingSongNhtTimerName}]}) {
+      |/echo resetting timer for ${currentlyCastingSong}
+      | Song successfually cast, reset the timer to 0
+      /varset ${currentlyCastingSongNhtTimerName} 0
+    }
+  } else {
+    | If the Detrimental spell does not stick, delay spellcast time and double each time
+    /if (!${Bool[${Target.Buff[${currentlyCastingSong}]}]}) {
+      /call delaySongCast "${currentlyCastingSong}" "${currentlyCastingSongNhtTimerName}"
+    } else /if (${Defined[${currentlyCastingSongNhtTimerName}]}) {
+      | Song successfually cast, reset the timer to 0
+      /varset ${currentlyCastingSongNhtTimerName} 0
+    }
+  }
+
+  /varset currentlyCastingSong none
+  /varset currentlyCastingSongNhtTimerName none
+
+  /call dynamoTwist  
+/RETURN
+
+SUB delaySongCast(songName, myNhtTimerName)
+  /if (${songName.Equal[none]}) {
+    /return
+  }
+
+  | spell did not take hold, create no hold timer
+  /if (!${Defined[${myNhtTimerName}]}) {
+    | create a new no hold timer
+    |/echo Creating new no hold timer ${myNhtTimerName}
+    /declare ${myNhtTimerName} timer outer 30
+  } else {
+    | Increase the no hold timer from the previous time, up to 1 minute
+    /if (${${myNhtTimerName}.OriginalValue} < 600) /varset ${myNhtTimerName} ${Math.Calc[${${myNhtTimerName}.OriginalValue} + 60]}
+  }
+  |/echo ${songName} did not take hold, waiting ${myNhtTimerName} = ${${myNhtTimerName}.OriginalValue} before trying again
+/RETURN
