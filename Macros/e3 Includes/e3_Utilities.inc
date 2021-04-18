@@ -835,6 +835,7 @@ SUB ClearCursor
 	/declare i int local 1
   :check_cursor
 	/if (${Cursor.ID}) {
+	/bc AutoInventory Item: ${Cursor} 
     /autoinventory
     /if (${i} > 5) {
       /beep
