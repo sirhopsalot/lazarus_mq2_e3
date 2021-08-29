@@ -155,7 +155,7 @@ SUB meleeCombatBuffs(ArrayName, int s)
 /RETURN
 
 |--------------------------------------------------------|
-|- Casts Proc Buffs (e.x: Panther, Mana Flare           -|
+|- Casts Proc Buffs (e.x: Panther, Mana Flare)          -|
 |--------------------------------------------------------|
 SUB buffProcs
 /if (${Debug} || ${Debug_BuffCheck}) /echo |- buffProcs ==>
@@ -164,7 +164,7 @@ SUB buffProcs
     /declare g int local
 
     /for s 1 to ${ProcBuffs2D.Size[1]}
-      /for g 1 to ${Math.Calc[${Group.GroupSize}-1]}
+      /for g 0 to ${Math.Calc[${Group.GroupSize}-1]} | include 0 so you can self proc buff
         /if (${Group.Member[${g}].ID}) {
           /if (${procBuffClass.Find[${Group.Member[${g}].Class.ShortName}]}) {
             /if (!${NetBots[${Group.Member[${g}]}].Buff.Find[${ProcBuffs2D[${s},${iSpellID}]}]} && !${NetBots[${Group.Member[${g}]}].Buff.Find[${ProcBuffs2D[${s},${iCheckFor}]} ]}) {
