@@ -1600,6 +1600,7 @@ Sub basics_Background_Events
   /doevents collect
   /doevents sendInstanceInvites
   /doevents manastoneToggle
+  /doevent outOfSomething
   /call check_StoneOn
 |		/varset event_counter 1
 |	} else {
@@ -2490,4 +2491,10 @@ SUB event_sendInstanceInvites(line, ChatSender)
 	} else {
 		/echo There are no group/raid members to send invites to.
 	}
+/return
+
+|** Warn you when a bot is out of food/drink **|
+#event outOfSomething "You are out of #1#."
+SUB event_outOfSomething(line, Something)
+  /docommand ${ChatToggle} [${Me.Name}] I'm out of ${Something}!
 /return
