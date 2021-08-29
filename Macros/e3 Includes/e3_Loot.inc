@@ -8,14 +8,26 @@
 #event lootRelay "#1# tells you, 'loot #2#'"
 SUB Event_lootRelay(line, ChatSender, looting)
   /if (!${Defined[Auto_Loot]}) /declare Auto_Loot bool outer TRUE
+  /if (!${Defined[LootOnly]}) /declare LootOnly bool outer FALSE
+  /if (!${Defined[LootOnlyItem]}) /declare LootOnlyItem string outer
   /if (${Select[${looting},on]}) {
     /varset Auto_Loot TRUE
+    /varset LootOnly FALSE
     /r Looting Enabled
     /if (${Me.CombatState.NotEqual[Combat]} || ${combatLooting}) /call loot_Area
 
   } else /if (${Select[${looting},off]}) {
     /varset Auto_Loot FALSE
     /r Looting Disabled
+  } else {
+    /varset Auto_Loot TRUE
+    /varset LootOnly TRUE
+    /if (${Select[${looting},dc]}) {
+      /varset looting Diamond Coin
+    }
+    /varset LootOnlyItem ${looting}
+    /r Looting ${looting}s Only Enabled
+    /if (${Me.CombatState.NotEqual[Combat]} || ${combatLooting}) /call loot_Area
   }
 /return
 
@@ -147,7 +159,16 @@ SUB lootCorpse
 
     /delay 1s ${Corpse.Item[${i}].ID}
     |/if (${Debug} || ${Debug_Loot}) /echo itemID ${Corpse.Item[${i}].ID}
-    /call get_lootSetting ${i} 0
+  
+    /if (${LootOnly}) {
+      /if (${Corpse.Item[${i}].Name.Equal[${LootOnlyItem}]}) {
+        /varset lootSetting Keep
+      } else {
+        /varset lootSetting Skip
+      }
+    } else {
+      /call get_lootSetting ${i} 0
+    }
 
     /if (${lootSetting.Find[Skip]}) /goto :skipItem
     /varset itemName ${Corpse.Item[${i}].Name}
