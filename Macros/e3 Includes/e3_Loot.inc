@@ -6,19 +6,22 @@
 |${MacroQuest.ChatChannel[1]}
 |--------------------------------------------------------------------|
 #event lootRelay "#1# tells you, 'loot #2#'"
+#event lootRelay "<#1#> loot #2#"
+#event lootRelay "[#1#(msg)] loot #2#"
 SUB Event_lootRelay(line, ChatSender, looting)
+  /if (${Me.Name.Equal[${ChatSender}]}) /return
   /if (!${Defined[Auto_Loot]}) /declare Auto_Loot bool outer TRUE
   /if (!${Defined[LootOnly]}) /declare LootOnly bool outer FALSE
   /if (!${Defined[LootOnlyItem]}) /declare LootOnlyItem string outer
   /if (${Select[${looting},on]}) {
     /varset Auto_Loot TRUE
     /varset LootOnly FALSE
-    /r Looting Enabled
+    /docommand ${ChatToggle} Looting Enabled
     /if (${Me.CombatState.NotEqual[Combat]} || ${combatLooting}) /call loot_Area
 
   } else /if (${Select[${looting},off]}) {
     /varset Auto_Loot FALSE
-    /r Looting Disabled
+    /docommand ${ChatToggle} Looting Disabled
   } else {
     /varset Auto_Loot TRUE
     /varset LootOnly TRUE
@@ -26,7 +29,7 @@ SUB Event_lootRelay(line, ChatSender, looting)
       /varset looting Diamond Coin
     }
     /varset LootOnlyItem ${looting}
-    /r Looting ${looting}s Only Enabled
+    /docommand ${ChatToggle} ${looting}s Only Enabled
     /if (${Me.CombatState.NotEqual[Combat]} || ${combatLooting}) /call loot_Area
   }
 /return
@@ -116,6 +119,7 @@ SUB loot_Area
   } else {
     /call MoveToLoc ${startY} ${startX} 15 20
   }
+  /docommand ${ChatToggle} ${Group.Leader} Looting Complete
   /if (${Debug} || ${Debug_Loot}) /echo <== loot_Area -|
 /return
 
