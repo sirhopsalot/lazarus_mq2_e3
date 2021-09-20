@@ -380,20 +380,10 @@ Sub buffCheck_Setup
   /if (${Me.Book[Twincast Aura]}) /varset auraSpell Twincast Aura
   /if (${Me.Book[Holy Aura]}) /varset auraSpell Holy Aura
   /if (${Me.Book[Blessed Aura]}) /varset auraSpell Blessed Aura
-  /if (${Bool[${Me.AltAbility[Spirit Mastery]}]}) {
-    /if (${Me.Book[Aura of Divinity]} && ${Me.Book[Aura of the Zealot]}) /varset auraSpell2 Aura of the Zealot
-    /if (${Me.Book[Aura of Divinity]} && ${Me.Book[Aura of the Pious]}) /varset auraSpell2 Aura of the Pious
-  }
-  /if (${Bool[${Me.AltAbility[Auroria Mastery]}]}) {
-    /if (${Me.Book[Beguiler's Aura]} && ${Me.Book[Beguiler's Aura]}) /varset auraSpell2 Beguiler's Aura
-    /if (${Me.Book[Twincast Aura]} && ${Me.Book[Illusionist's Aura]}) /varset auraSpell2 Illusionist's Aura
-  	/if (${Me.Book[Aura of Endless Glamour]} && ${Me.Book[Aura of Endless Glamour]}) /varset auraSpell2 Aura of Endless Glamour
-  }
-
+  /if (${Bool[${Me.AltAbility[Spirit Mastery]}]}) /varset auraSpell Spirit Mastery
+  /if (${Bool[${Me.AltAbility[Auroria Mastery]}]}) /varset auraSpell Auroria Mastery
   /if (${auraSpell.Length}) /call BuildArray "auraSpells" "${auraSpell}"
-  /if (${auraSpell2.Length}) /call BuildArray "auraSpells" "${auraSpell2}"
-	
-	/call buff_SpellArrays
+  /call buff_SpellArrays
 
 /if (${Debug} || ${Debug_BuffCheck}) /echo <== buffCheck_Setup -|
 /return
