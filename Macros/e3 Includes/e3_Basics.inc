@@ -1771,7 +1771,7 @@ sub event_gimme(line, ChatSender, RequestedItem)
 		/delay 5s ${Window[InventoryWindow].Open}
 		/notify InventoryWindow IW_Subwindows tabselect 5
 		/delay 1s
-		/notify InventoryWindow AltCurr_PointList listselect 4
+		/notify InventoryWindow AltCurr_PointList listselect 8
 		/delay 1s
 		/notify InventoryWindow IW_AltCurr_ReclaimButton leftmouseup
 		/delay 1s
