@@ -108,14 +108,10 @@ SUB castQueuedSpells
 | Calls e3_Cast for the given spell at the given target
 SUB castQueuedSpell(spellName, targetID)
 	/if (${DebugQueueCast}) /echo Casting queued ${spellName} on ${Spawn[id ${targetID}].Name} TargetID=${targetID}
-
 	/declare whatToCast string local
-	/if (${spellName.Find[:]}) {
-		/echo Found ":" in spell name ${spellName}, queue cast does not support spire AAs
-		/return
-	} else /if (${Bool[${Me.Book[${spellName}]}]} || ${Bool[${Me.AltAbility[${spellName}]}]}) {
+	/if (${Bool[${Me.Book[${spellName}]}]} || ${Bool[${Me.AltAbility[${spellName}]}]}) {
 		/if (${DebugQueueCast}) /echo Found spell or alt ability '${spellName}'
-		/varset whatToCast ${Spell[${spellName}]}
+		/varset whatToCast ${spellName}
 	} else /if (${Bool[${FindItemCount[=${spellName}]}]}) {
 		/if (${DebugQueueCast}) /echo Found item '${spellName}'
 		/varset whatToCast ${FindItem[=${spellName}]}
