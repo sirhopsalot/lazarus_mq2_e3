@@ -1711,6 +1711,7 @@ Sub basics_Aliases
 |#event gimme "<#1#> Gimme #2#"
 sub event_gimme(line, ChatSender, RequestedItem)
 	/declare DebugGimme false
+	/declare SummonSpellCast 
 	/if (${DebugGimme}) /echo |- event_gimme ==>
   /if (${Waiting4Rez}) /return
   /if (${Bool[${Me.Buff[Resurrection Sickness]}]}) /return
@@ -1812,18 +1813,35 @@ sub event_gimme(line, ChatSender, RequestedItem)
 	} else /if (${Bool[${FindItem[=Summoned: ${RequestedItem}]}]}) {
 		/ItemNotify "Summoned: ${RequestedItem}" leftmouseup
 		/delay 2s ${Bool[${Cursor.ID}]}
+		
 	} else {
+	
 		/if (${DebugGimme}) /echo Summoning ${RequestedItem}
 		/declare RequestedItemString string local ${RequestedItem}
 		/declare RequestedItemStringWithoutSummoned string local ${RequestedItemString.Replace["Summoned: ",]}
 		/declare SummoningItem bool local true
 		/echo ${RequestedItem}
+		/if (${IsRequestedItemModShard}) {
+			|get rid of old mod rods, to remote then local
+			/bca //itemnotify "Summoned: Large Modulation Shard" leftmouseup
+			/itemnotify "Summoned: Large Modulation Shard" leftmouseup
+			/delay 2s
+			|be sure to evaluate this on the client side using noparse
+			/noparse /bca //if (${Cursor.Name.Find[Summoned:]}) /destroy
+			/if (${Cursor.Name.Find[Summoned:]}) /destroy
+			/delay 2s
+			
+		}
 		/if (${Bool[${Me.Book[${RequestedItem}]}]} || ${Bool[${Me.AltAbility[${RequestedItem}]}]}) {
 			/if (${DebugGimme}) /echo casting "${RequestedItem}"
 			/casting "${RequestedItem}"
 		} else /if (${Bool[${Me.Book[Summon: ${RequestedItem}]}]}) {
 			/if (${DebugGimme}) /echo casting "Summon: ${RequestedItem}"
 			/casting "Summon: ${RequestedItem}"
+		} else /if (${Bool[${Me.Book[Summon ${RequestedItemStringWithoutSummoned}]}]}) {
+			/if (${DebugGimme}) /echo casting "Summon ${RequestedItemStringWithoutSummoned}"
+			/casting "Summon ${RequestedItemStringWithoutSummoned}"
+			/varset SummonSpellCast "Summon ${RequestedItemStringWithoutSummoned}"
 		} else /if (${Bool[${Me.Book[${RequestedItemStringWithoutSummoned}]}]} || ${Bool[${Me.AltAbility[${RequestedItemStringWithoutSummoned}]}]}) {
 			/if (${DebugGimme}) /echo casting ${RequestedItemStringWithoutSummoned}
 			/casting "${RequestedItemStringWithoutSummoned}"
@@ -1835,9 +1853,18 @@ sub event_gimme(line, ChatSender, RequestedItem)
 			/tell ${ChatSender} Spell ${RequestedItem} not found
 			/varset SummoningItem false
 		}
-		/if (${SummoningItem}) /delay 10s ${Bool[${Cursor.ID}]}
+		/if (${SummoningItem}) /delay 15s ${Bool[${Cursor.ID}]}
 		/if (${DebugGimme}) /echo Summoned ${RequestedItem} ${SummoningItem}
+		
+		| If the item is a modulation shard, tell everyone to put it in their bag
+		| and flush the other events that have piled up as this is a long casting spell
+		/if (${IsRequestedItemModShard}) {
+			/bcaa //autoinventory
+			/doevents flush gimme
+			/return
+		}
 	}
+	
 	/if ((${Cursor.ID} || ${platOnCursor}) && !${IsRequestedItemModShard}) {
 		/declare originalLoc string local ${Me.Loc}
 		/if (${DebugGimme}) /echo IsClose = ${Bool[${Math.Distance[${senderLoc}]}<20]}
@@ -1850,15 +1877,16 @@ sub event_gimme(line, ChatSender, RequestedItem)
 		/if (${DebugGimme}) /echo IsClose = ${Bool[${Math.Distance[${senderLoc}]}<20]}
 		/click left target
 		/delay 3s ${Window[TradeWnd].Open}
-    /declare tradeTries int local 0
+		/declare tradeTries int local 0
 		/while (${Window[TradeWnd].Open} && ${tradeTries} < 2) {
 			/notify TradeWnd TRDW_Trade_Button leftmouseup 
 			/delay 5
 			/bct ${Target.CleanName} //notify TradeWnd TRDW_Trade_Button leftmouseup 
 			/delay 1s
-      /varset tradeTries ${Math.Calc[${tradeTries} + 1]}
-      /echo tradeTries=${tradeTries}
+			/varset tradeTries ${Math.Calc[${tradeTries} + 1]
 		}
+      /echo tradeTries=${tradeTries}
+	}
     /if (${Window[TradeWnd].Open}) {
       /echo Cancelling the trade with ${ChatSender}
       /t ${ChatSender} Cancelling the trade. Please turn on auto accept trades using /plugin mq2autoaccepttrades.
@@ -1871,10 +1899,8 @@ sub event_gimme(line, ChatSender, RequestedItem)
 	} else /if (!${IsRequestedItemModShard}) {
 		/tell ${ChatSender} Sorry, I don't have a ${RequestedItem} and couldn't summon one for you. The spell/AA may be on cooldown.
 	} 
-	| If the item is a modulation shard, tell everyone to put it in their bag
-	/if (${IsRequestedItemModShard}) {
-		/bcaa //autoinventory
-	}
+	
+	
 /return
 
 |----------------------------------------------------------------------------|
