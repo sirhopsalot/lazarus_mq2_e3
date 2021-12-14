@@ -199,7 +199,10 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex)
     /if (${${ArrayName}[${ArrayIndex},${iTargetType}].Equal[Self]}) {
 		/if (${Bool[${FindItem[=${pendingCast}]}]}) {
 			/useitem "${pendingCast}"
-			/delay 1
+			/delay 3
+			|set to a default good value unless overwritten for a reason
+			/varset castReturn CAST_SUCCESS
+
 		} else {
 			/casting "${pendingCastID}|${pendingType}"		
 		}
@@ -218,7 +221,9 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex)
 			/next i_target
 			|/echo casting item "${pendingCast}" on ${targetID}
 			/useitem "${pendingCast}"
-			/delay 1
+			/delay 3
+			|set to a default good value unless overwritten for a reason
+			/varset castReturn CAST_SUCCESS
 		} else {
 			/casting "${pendingCastID}|${pendingType}" "-targetid|${targetID}"
 		}
