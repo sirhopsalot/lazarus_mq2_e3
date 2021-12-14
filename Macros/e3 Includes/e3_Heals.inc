@@ -696,7 +696,7 @@ SUB check_TankAndXTargetNeedHeal
 		|/echo check_HealCasting_DuringDetrimental no target found
 	}
 	/if (${healXTargets}) {
-	|/if (false) {	
+	
 		/if (${Math.Rand[2]}==0) {
 			/for xtargetIndex 1 to ${numXTargets}
 		} else {
