@@ -486,6 +486,12 @@ SUB check_Nukes
       /if (${c_Ready} && ${Nukes2D[${castIndex},${iIfs}]}) {
         /if (${check_Mana["Nukes2D",${castIndex}]}) {
           /if (${check_Distance[${AssistTarget},${Nukes2D[${s},${iMyRange}]}]}) {
+
+             /if (${Select[${Me.Class.ShortName},CLR,DRU,SHM]}) {
+     
+               /varset Nukes2D[${castIndex},${iSubToRun}] check_HealCasting_DuringDetrimental
+           
+            }
             /call e3_Cast ${AssistTarget} "Nukes2D" "${castIndex}"
           }
         }
@@ -624,6 +630,10 @@ SUB cast_longTermSpells(int spellTarget, string ArrayName)
     /if (${c_Ready}) {
       /if (${check_Mana[${ArrayName},${s}]}) {
         /if (${check_Distance[${spellTarg},${${ArrayName}[${s},${iMyRange}]}]}) {
+    
+            /if (${Select[${Me.Class.ShortName},CLR,DRU,SHM]}) {
+               /varset ${ArrayName}[${s},${iSubToRun}] check_HealCasting_DuringDetrimental
+            }
           /call e3_Cast ${spellTarg} "${ArrayName}" "${s}"
         } else {
           /if (${Debug} || ${Debug_Assists}) /echo ${spellTarg} out of range for ${${ArrayName}[${s},${iMyRange}]} ${${ArrayName}[${s},${iCastName}]}
