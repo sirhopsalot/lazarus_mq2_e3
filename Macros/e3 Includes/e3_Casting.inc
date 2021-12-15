@@ -349,7 +349,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex)
 	}
 	/if (${Following} && !${Assisting}) /call AcquireFollow
   /if (${Me.Class.ShortName.Equal[BRD]}) /varset resumeTwistDelay 5
-  |/if (${returnTwist})	/call unpauseTwist
+  /if (${returnTwist})	/call unpauseTwist
 	/if (${Debug} || ${Debug_Casting})  /echo |- e3_Cast -| castReturn= ${Cast.Result} ${castReturn}
 |/varset Debug_Casting FALSE
 /return
