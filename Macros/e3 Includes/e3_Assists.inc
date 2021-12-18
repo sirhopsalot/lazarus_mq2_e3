@@ -936,13 +936,117 @@ SUB DoTs_OnCommand
         /if (!${Bool[${Spawn[id ${targetID}].Type.NotEqual[Corpse]}]}) {
           /call RemoveArrayElement DoT_Targets ${DoT_Targets[${i}]}
         } else {
-          /call cast_longTermSpells "${targetID}" "Command_DoTs2D"
+          |/call cast_longTermSpells "${targetID}" "Command_DoTs2D"
+          |Ewiclip MOD: New method for DoTs
+          /call cast_damageOverTimeSpells ${targetID} "Command_DoTs2D"
         }
       }
     /if (!${ActionTaken} && ${Defined[DoT_Targets]}) /next i
   }
 /if (${Debug} || ${Debug_Assists}) /echo <== DoT_OnCommand -|
 /RETURN
+
+|--------------------------------------|
+| -- Ewiclip MOD: New Method for DoTs -|
+|--------------------------------------|
+
+SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
+
+/declare i int local
+|${${ArrayName}[${i},${iCastName}]}        --> strSpellName
+|${${ArrayName}[${i},${iAllowSpellSwap}]} --> 0/1 
+|${${ArrayName}[${i},${iNoEarlyRecast}]}  --> 0/1
+|${${ArrayName}[${i},${iNoStack}]}        --> 0/1
+|${${ArrayName}[${i},${iTriggerSpell}]}   --> 0/strSpellName
+|${${ArrayName}[${i},${iIfs}]}            --> /noaprse string
+|${${ArrayName}[${i},${iMinMana}]}        --> int 
+
+/for i 1 to ${${ArrayName}.Size[1]}
+    /doevents DoTsOff
+
+    /if (${Bool[${Target.ID} != ${TargetID}]}) {
+      /target id ${TargetID}
+      /delay 2
+    }
+
+    /if (!${Bool[${Spawn[id ${TargetID}].Type.NotEqual[Corpse]}]}) {
+      /return
+    }
+
+    | -- Rules that tell us to skip the DoT we're on and evaluate off the next DoT.
+
+    |Skip if /MinMana|%% is set and my mana percentage is below the defined amount in the parameter
+    /if (!${${ArrayName}[${i},${iMinMana}]} < ${Me.PctMana}) {
+      /continue
+    }
+
+    |Skip of defiend IF isn't met
+    /if (!${${ArrayName}[${i},${iIfs}]}) {
+      /continue
+    }
+
+    |Skip if /NoEarlyRecast is set and the mob has this spell from me
+    /if (${TimeLeftOnMySpell[${${ArrayName}[${i},${iCastName}]}]} > 0 && ${${ArrayName}[${i},${iNoEarlyRecast}]}) {
+      /continue
+    }
+
+    |Skip if /NoStack is set and ANYONE (including myself) have already casted this on the NPC
+    /if (${${ArrayName}[${i},${iNoStack}]} && (${Bool[${Target.Buff[${FindItem[=${${ArrayName}[${i},${iCastName}]}].Spell}]}]} || ${Bool[${Target.Buff[=${${ArrayName}[${i},${iCastName}]}]}]})) {
+      /continue
+    }
+
+    |Skip if /TriggerSpell|SpellName is set and both the spell and TriggerSpell are already on the NPC from me
+    /if (${Bool[${${ArrayName}[${i},${iTriggerSpell}]}]} && ${TimeLeftOnMySpell[${${ArrayName}[${i},${iTriggerSpell}]}]} > 4 && ${TimeLeftOnMySpell[${${ArrayName}[${i},${iCastName}]}]} > 4) {
+      /continue
+    }
+
+    |Skip if this spell is already on the NPC from me and has more than 4 seconds let on it. (This is item casts)
+    /if (${Bool[${FindItem[=${${ArrayName}[${i},${iCastName}]}]}]} && ${TimeLeftOnMySpell[${FindItem[=${${ArrayName}[${i},${iCastName}]}].Spell}]} > 4) {
+      /continue
+    }
+
+    |Skip if this spell is already on the NPC from me and has more than 4 seconds let on it. (This is spell casts)
+    /if (${TimeLeftOnMySpell[${${ArrayName}[${i},${iCastName}]}]} > 4 && !${Bool[${${ArrayName}[${i},${iTriggerSpell}]}]}) {
+      /continue
+    }
+
+
+    /if (!${Bool[${Me.Casting}]} && (${Me.ItemReady[${${ArrayName}[${i},${iCastName}]}]} || ${Me.SpellReady[${${ArrayName}[${i},${iCastName}]}]} || ${Me.AltAbilityReady[${${ArrayName}[${i},${iCastName}]}]})) {
+      /call e3_Cast ${TargetID} ${ArrayName} ${i}
+      |Code to ignore universal cooldown -- I should put this in a "ShouldICastThisDoT" method
+      /if (${i} < ${${ArrayName}.Size[1]} && ${Bool[${Me.Book[${${ArrayName}[${i},${iCastName}]}]}]} && !${Bool[${Me.Book[${${ArrayName}[${Math.Calc[${i}+1]},${iCastName}]}]}]}) {
+        /if (!${Bool[${${ArrayName}[${Math.Calc[${i}+1]},${iIfs}]}]}) {
+          /return
+        } 
+        /if (${TimeLeftOnMySpell[${${ArrayName}[${Math.Calc[${i}+1]},${iCastName}]}]} > 0 && ${${ArrayName}[${Math.Calc[${i}+1]},${iNoEarlyRecast}]}) {
+          /return
+        }
+        /if (${${ArrayName}[${Math.Calc[${i}+1]},${iNoStack}]} && (${Bool[${Target.Buff[${FindItem[=${${ArrayName}[${Math.Calc[${i}+1]},${iCastName}]}].Spell}]}]} || ${Bool[${Target.Buff[=${${ArrayName}[${Math.Calc[${i}+1]},${iCastName}]}]}]})) {
+          /return
+        }
+        /if (${Bool[${${ArrayName}[${Math.Calc[${i}+1]},${iTriggerSpell}]}]} && ${TimeLeftOnMySpell[${${ArrayName}[${Math.Calc[${i}+1]},${iTriggerSpell}]}]} > 4 && ${TimeLeftOnMySpell[${${ArrayName}[${Math.Calc[${i}+1]},${iCastName}]}]} > 4) {
+          /return
+        }
+        /if (${Bool[${FindItem[=${${ArrayName}[${Math.Calc[${i}+1]},${iCastName}]}]}]} && ${TimeLeftOnMySpell[${FindItem[=${${ArrayName}[${Math.Calc[${i}+1]},${iCastName}]}].Spell}]} > 4) {
+          /return
+        }
+        /if (${TimeLeftOnMySpell[${${ArrayName}[${Math.Calc[${i}+1]},${iCastName}]}]} > 4 && !${Bool[${${ArrayName}[${Math.Calc[${i}+1]},${iTriggerSpell}]}]}) {
+          /return
+        }
+        /echo QuickCast:: ${${ArrayName}[${Math.Calc[${Math.Calc[${i}+1]}+1]},${iCastName}]}
+        /useitem "${${ArrayName}[${Math.Calc[${i}+1]},${iCastName}]}"
+        /delay 3
+      } else {
+        /return
+      }
+    }
+
+/next i
+
+/RETURN
+
+
+
 
 |----------------------------|
 |- Turns AE functions on.	  -|
@@ -1714,3 +1818,44 @@ SUB event_debuffsOnAll(line)
     }
   /next i
 /RETURN
+
+|Ewiclip MOD: Function for returning if a spell gem is empty
+SUB GetEmptySpellGem
+  /declare i int local 
+  /for i 1 to ${Math.Calc[8+${Me.AltAbility[Mnemonic Retention].Rank}]}
+    /if (!${Bool[${Me.Gem[${i}]}]}) {
+      /RETURN ${i}
+    }
+  /next i
+/RETURN 0
+
+|----------------------------------------------------------------------|
+|- Ewiclip MOD: Function for returning duration of my spell on the NPC
+|- Return Seconds remaining for a buff on your target
+|----------------------------------------------------------------------|
+Sub TimeLeftOnMySpell(SpellName)
+  |${Target.BuffDuration[${${ArrayName}[${i},${iCastName}]} ]} -- Divide by 1000 to get seconds remaining on DoTName
+  |${Target.Buff[${${ArrayName}[${i},${iCastName}]} ].Caster}  -- Who casted this DoT?
+  |${Target.Buff[DoTName].ID) -- SpellID 
+  |${FindItem[DoTName].Spell.ID} -- Returns ID of spell on item correctly
+  
+  /declare SpellID string local 0
+  /declare ItemName string local
+  /declare BuffDuration int local 0
+
+  /if (${Bool[${FindItem[=${SpellName}]}]}) {
+    /varset SpellID ${FindItem[${SpellName}].Spell.ID}
+    /varset ItemName SpellName
+    /varset SpellName ${FindItem[${SpellName}].Spell}
+  } else {
+    /varset SpellID ${Spell[${SpellName}].ID}
+  }
+  
+  /declare iBuff int local 1
+  /for iBuff 1 to 100
+    /if ((${SpellName.Equal[${Target.Buff[${iBuff}]}]}) && ${SpellID.Equal[${Target.Buff[${iBuff}].ID}]} && ${Target.Buff[${iBuff}].Caster.Equal[${Me}]}) {
+      /varset BuffDuration ${Math.Calc[${Target.BuffDuration[${iBuff}]} / 1000]}
+      /break
+    }
+  /next iBuff
+/RETURN ${BuffDuration}
