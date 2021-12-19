@@ -391,7 +391,7 @@ SUB check_Nukes
 	  /declare s int local
     /declare m int local
     /declare assistToT int local
-
+    
    /for s 1 to ${Nukes2D.Size[1]}
     /varset castIndex ${s}
     /if (${Debug} || ${Debug_Assists}) /echo ${s} ${castIndex} ${Nukes2D[${castIndex},${iCastName}]}
@@ -432,11 +432,37 @@ SUB check_Nukes
         }
       }
       | if /rotate is defined, and the current array index was the last successful cast, skip to next index
-      /if (${Nukes2D[${castIndex},${iCastName}].Equal[${lastSuccessfulCast}]} && ${Nukes2D[${castIndex},${iRotate}]} && ${Nukes2D.Size[1]} > 1) {
-        /if (${Debug} || ${Debug_Assists}) /echo skipping cast of ${Nukes2D[${castIndex},${iCastName}]} /rotate is defined
-        /goto :skipCast
+    /if (${Nukes2D[${castIndex},${iCastName}].Equal[${lastSuccessfulCast}]} && ${Nukes2D[${castIndex},${iRotate}]} && ${Nukes2D.Size[1]} > 1) {
+      /if (${Debug} || ${Debug_Assists}) /echo skipping cast of ${Nukes2D[${castIndex},${iCastName}]} /rotate is defined
+      
+      |need to check if any of our other spells can cast, if not, we can ignore this rotate
+      
+      /declare otherSpellsReady bool local
+      /varset otherSpellsReady FALSE
+      /declare currentCastName string local
+      /varset currentCastName ${Nukes2D[${castIndex},${iCastName}]}
+      /declare i int local
+      /for i 1 to ${Nukes2D.Size[1]}
+
+        |if not the currently casting spell, lets check if they are ready to cast.          
+        /if (!${Nukes2D[${i},${iCastName}].Equal[${currentCastName}]}) {
+          /call check_Ready "Nukes2D" ${i}
+          /if (${c_Ready} && ${Nukes2D[${i},${iIfs}]}) {
+            /varset otherSpellsReady TRUE
+            /if (${Debug} || ${Debug_Assists}) /echo other spells ready allowing the skip
+            /break
+          }
+        }
+      /next i
+      |if others spells are ready to cast, its ok to skip this.
+        /if (${otherSpellsReady}) {
+            /if (${Debug} || ${Debug_Assists}) /echo calling skipcast
+          /goto :skipCast
+        } else {
+          /if (${Debug} || ${Debug_Assists})/echo no other spell ready, allowing the current rotate spell to cast.
+        }  
       }
-      | if i have Gift Of Mana find a spell with /GoM
+    | if i have Gift Of Mana find a spell with /GoM
       /if (${Bool[${Me.Song[Gift of Mana].ID}]}) {
         /for m 1 to ${Nukes2D.Size[1]}
           /if (${Nukes2D[${m},${iGiftOfMana}]}) {
@@ -474,14 +500,14 @@ SUB check_Nukes
 	  
       /call check_Ready "Nukes2D" ${castIndex}
 	  
-	  /if (${Debug} || ${Debug_Assists}) {
-		/echo Checking Nuke ${Nukes2D[${castIndex},${iIfs}]}
-		/echo Mana ${check_Mana["Nukes2D",${castIndex}]}
-		/echo Target  ${AssistTarget}
-		/echo Cast index ${castIndex}
-		/echo Check Distance ${check_Distance[${AssistTarget},${Nukes2D[${s},${iMyRange}]}]}
-		/echo Range ${Nukes2D[${s},${iMyRange}]}
-	  }
+      /if (${Debug} || ${Debug_Assists}) {
+      /echo Checking Nuke ${Nukes2D[${castIndex},${iIfs}]}
+      /echo Mana ${check_Mana["Nukes2D",${castIndex}]}
+      /echo Target  ${AssistTarget}
+      /echo Cast index ${castIndex}
+      /echo Check Distance ${check_Distance[${AssistTarget},${Nukes2D[${s},${iMyRange}]}]}
+      /echo Range ${Nukes2D[${s},${iMyRange}]}
+      }
 	  
       /if (${c_Ready} && ${Nukes2D[${castIndex},${iIfs}]}) {
         /if (${check_Mana["Nukes2D",${castIndex}]}) {
