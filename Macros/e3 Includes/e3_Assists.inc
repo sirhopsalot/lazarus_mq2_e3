@@ -459,7 +459,7 @@ SUB check_Nukes
             /if (${Debug} || ${Debug_Assists}) /echo calling skipcast
           /goto :skipCast
         } else {
-          /if (${Debug} || ${Debug_Assists})/echo no other spell ready, allowing the current rotate spell to cast.
+          /if (${Debug} || ${Debug_Assists}) /echo no other spell ready, allowing the current rotate spell to cast.
         }  
       }
     | if i have Gift Of Mana find a spell with /GoM
