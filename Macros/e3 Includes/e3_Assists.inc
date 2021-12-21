@@ -953,6 +953,7 @@ SUB DoTs_OnCommand
 SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
 
 /declare i int local
+/declare iSpellSwap int local 0
 |${${ArrayName}[${i},${iCastName}]}        --> strSpellName
 |${${ArrayName}[${i},${iAllowSpellSwap}]} --> 0/1 
 |${${ArrayName}[${i},${iNoEarlyRecast}]}  --> 0/1
@@ -960,10 +961,11 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
 |${${ArrayName}[${i},${iTriggerSpell}]}   --> 0/strSpellName
 |${${ArrayName}[${i},${iIfs}]}            --> /noaprse string
 |${${ArrayName}[${i},${iMinMana}]}        --> int 
+|${${ArrayName}[${i},${iSpellGem}]}        --> int 
 
 /for i 1 to ${${ArrayName}.Size[1]}
     /doevents DoTsOff
-
+    
     /if (${Bool[${Target.ID} != ${TargetID}]}) {
       /target id ${TargetID}
       /delay 2
@@ -973,10 +975,13 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
       /return
     }
 
+
+
+
     | -- Rules that tell us to skip the DoT we're on and evaluate off the next DoT.
 
     |Skip if /MinMana|%% is set and my mana percentage is below the defined amount in the parameter
-    /if (!${${ArrayName}[${i},${iMinMana}]} < ${Me.PctMana}) {
+    /if (!${${ArrayName}[${i},${iMinMana}]} > ${Me.PctMana}) {
       /continue
     }
 
@@ -1013,8 +1018,58 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
 
     /if (!${Bool[${Me.Casting}]} && (${Me.ItemReady[${${ArrayName}[${i},${iCastName}]}]} || ${Me.SpellReady[${${ArrayName}[${i},${iCastName}]}]} || ${Me.AltAbilityReady[${${ArrayName}[${i},${iCastName}]}]})) {
       /call e3_Cast ${TargetID} ${ArrayName} ${i}
+
+      |Spell Swap Code Specifically for /AllowSpellSwap
+      /if (${Bool[${Me.SpellInCooldown}]} && ${${ArrayName}[${i},${iAllowSpellSwap}]} && ${Bool[${Me.Book[${${ArrayName}[${i},${iCastName}]}]}]}) {
+        /for iSpellSwap 1 to ${${ArrayName}.Size[1]}
+          /if (${TimeLeftOnMySpell[${${ArrayName}[${iSpellSwap},${iCastName}]}]} > 18 || ${Bool[${Me.Gem[${${ArrayName}[${iSpellSwap},${iCastName}]}]}]} || !${Bool[${Me.Book[${${ArrayName}[${iSpellSwap},${iCastName}]}]}]} || !${${ArrayName}[${iSpellSwap},${iAllowSpellSwap}]}) {
+            /continue
+          }
+              /while (!${Window[SpellBookWnd].Open}) {
+                /if (${GetEmptySpellGem[]} > 0) {
+                  /MemSpell ${GetEmptySpellGem[]} "${${ArrayName}[${iSpellSwap},${iCastName}]}" 
+                } else {
+                  /MemSpell ${Me.Gem[${${ArrayName}[${i},${iCastName}]}]} "${${ArrayName}[${iSpellSwap},${iCastName}]}" 
+                }
+              }
+              /break
+         /next iSpellSwap
+      } else {
+        |Code to mem non any spell in any empty gem with /Gem|# as the preferred location
+        /if (${Bool[${Me.SpellInCooldown}]} && ${Bool[${Me.Book[${${ArrayName}[${i},${iCastName}]}]}]} && !${Bool[${${ArrayName}[${i},${iSpellSwap}]}]}) {
+          /for iSpellSwap 1 to ${${ArrayName}.Size[1]}
+            /if (!${Bool[${Me.Gem[${${ArrayName}[${iSpellSwap},${iCastName}]}]}]} && ${Bool[${Me.Book[${${ArrayName}[${iSpellSwap},${iCastName}]}]}]}) {
+              |/echo I should mem ${${ArrayName}[${iSpellSwap},${iCastName}]}
+              /while (!${Window[SpellBookWnd].Open}) {
+                /if (${${ArrayName}[${iSpellSwap},${iSpellGem}]} != ${DefaultGem}) {
+                  /echo Mem1
+                  /MemSpell ${${ArrayName}[${iSpellSwap},${iSpellGem}]} "${${ArrayName}[${iSpellSwap},${iCastName}]}"
+                  /break
+                }
+                /if (${GetEmptySpellGem[]} > 0) {
+                  /echo Mem2
+                  /MemSpell ${GetEmptySpellGem[]} "${${ArrayName}[${iSpellSwap},${iCastName}]}" 
+                } else {
+                  /echo Mem3
+                  /MemSpell ${DefaultGem} "${${ArrayName}[${iSpellSwap},${iCastName}]}" 
+                }
+              }
+              /break
+            }
+          /next iSpellSwap
+        }
+      }
+      |End Spell Swap Code
+
+
       |Code to ignore universal cooldown -- I should put this in a "ShouldICastThisDoT" method
       /if (${i} < ${${ArrayName}.Size[1]} && ${Bool[${Me.Book[${${ArrayName}[${i},${iCastName}]}]}]} && !${Bool[${Me.Book[${${ArrayName}[${Math.Calc[${i}+1]},${iCastName}]}]}]}) {
+        
+        |Skip if /MinMana|%% is set and my mana percentage is below the defined amount in the parameter
+        /if (!${${ArrayName}[${Math.Calc[${i}+1]},${iMinMana}]} > ${Me.PctMana}) {
+          /continue
+        }
+        
         /if (!${Bool[${${ArrayName}[${Math.Calc[${i}+1]},${iIfs}]}]}) {
           /return
         } 
@@ -1033,7 +1088,7 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
         /if (${TimeLeftOnMySpell[${${ArrayName}[${Math.Calc[${i}+1]},${iCastName}]}]} > 4 && !${Bool[${${ArrayName}[${Math.Calc[${i}+1]},${iTriggerSpell}]}]}) {
           /return
         }
-        /echo QuickCast:: ${${ArrayName}[${Math.Calc[${Math.Calc[${i}+1]}+1]},${iCastName}]}
+        /echo QuickCast:: ${${ArrayName}[${Math.Calc[${i}+1]},${iCastName}]}
         /useitem "${${ArrayName}[${Math.Calc[${i}+1]},${iCastName}]}"
         /delay 3
       } else {
