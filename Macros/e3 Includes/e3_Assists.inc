@@ -391,6 +391,10 @@ SUB check_Nukes
 	  /declare s int local
     /declare m int local
     /declare assistToT int local
+    /declare HaveGiftOfManaBuff bool False local
+    /if (${Bool[${Me.Song[Gift of Mana].ID}]} || ${Bool[${Me.Song[Celestial Gift].ID}]} || ${Bool[${Me.Song[Celestial Boon].ID}]}) {
+        /varset HaveGiftOfManaBuff True
+    }
 
    /for s 1 to ${Nukes2D.Size[1]}
     /varset castIndex ${s}
@@ -427,35 +431,83 @@ SUB check_Nukes
           /if (${Debug} || ${Debug_Assists}) /echo setting lastSuccessfulCast to ${lastSuccessfulCast} because noburn and rotate defined
           /varset lastSuccessfulCast ${Nukes2D[${castIndex},${iCastName}]}
         } else {
-          /if (${Debug} || ${Debug_Assists}) /echo \ay skipping cast of ${Nukes2D[${castIndex},${iCastName}]}, i am burning and /NoBurn is set
+          /if (${Debug} || ${Debug_Assists}) /echo skipping cast of ${Nukes2D[${castIndex},${iCastName}]}, i am burning and /NoBurn is set
           /goto :skipCast
         }
       }
       | if /rotate is defined, and the current array index was the last successful cast, skip to next index
-      /if (${Nukes2D[${castIndex},${iCastName}].Equal[${lastSuccessfulCast}]} && ${Nukes2D[${castIndex},${iRotate}]} && ${Nukes2D.Size[1]} > 1) {
-        /if (${Debug} || ${Debug_Assists}) /echo skipping cast of ${Nukes2D[${castIndex},${iCastName}]} /rotate is defined
-        /goto :skipCast
+    /if (${Nukes2D[${castIndex},${iCastName}].Equal[${lastSuccessfulCast}]} && ${Nukes2D[${castIndex},${iRotate}]} && ${Nukes2D.Size[1]} > 1) {
+      /if (${Debug} || ${Debug_Assists}) /echo skipping cast of ${Nukes2D[${castIndex},${iCastName}]} /rotate is defined
+      |need to check if any of our other spells can cast, if not, we can ignore this rotate
+      /declare otherSpellsReady bool local
+      /varset otherSpellsReady FALSE
+      /declare currentCastName string local
+      /varset currentCastName ${Nukes2D[${castIndex},${iCastName}]}
+      /declare i int local
+      /for i 1 to ${Nukes2D.Size[1]}
+        |if not the currently casting spell, lets check if they are ready to cast.          
+        /if (!${Nukes2D[${i},${iCastName}].Equal[${currentCastName}]}) {
+          /call check_Ready "Nukes2D" ${i}
+          /if (${c_Ready} && ${Nukes2D[${i},${iIfs}]}) {
+            /if (${Bool[${Nukes2D[${castIndex},${iGiftOfMana}]}]}) {
+              |its specified to use gift of mana, well do we have it?
+              /if (${HaveGiftOfManaBuff}) {
+                /varset otherSpellsReady TRUE
+                /if (${Debug} || ${Debug_Assists}) /echo other spells ready allowing the skip
+                /break
+              }
+            } else {
+              /varset otherSpellsReady TRUE
+              /if (${Debug} || ${Debug_Assists}) /echo other spells ready allowing the skip
+              /break
+            }
+          }
+        }
+      /next i
+      |if others spells are ready to cast, its ok to skip this.
+        /if (${otherSpellsReady}) {
+            /if (${Debug} || ${Debug_Assists}) /echo calling skipcast
+          /goto :skipCast
+        } else {
+          /if (${Debug} || ${Debug_Assists}) /echo no other spell ready, allowing the current rotate spell to cast.
+        }  
       }
-      | if i have Gift Of Mana find a spell with /GoM
-      /if (${Bool[${Me.Song[Gift of Mana].ID}]}) {
+
+    | if i have Gift Of Mana find a spell with /GoM, that is ready
+      /if (${HaveGiftOfManaBuff}) {
+        /if (${Debug} || ${Debug_Assists}) /echo have gift of mana, selecting GOM spell flag
         /for m 1 to ${Nukes2D.Size[1]}
           /if (${Nukes2D[${m},${iGiftOfMana}]}) {
-            /varset castIndex ${m}
-            /varset lastSuccessfulCast 0
+          
+            /call check_Ready "Nukes2D" ${m}
+            /if (${c_Ready}) {
+              /if (${Debug} || ${Debug_Assists}) /echo found a ready spell for GOM
+              /varset castIndex ${m}
+              /varset lastSuccessfulCast 0
+              /break
+            } 
           }
         /next m
       }
+      |if this is a spell with /GoM, yet we don't have GoM buff, skip this spell.
+      /if (!${HaveGiftOfManaBuff} && ${Bool[${Nukes2D[${castIndex},${iGiftOfMana}]}]} ) {
+          | we do not have gift of mana, make sure our current index is not a GOM spell, if so skip it
+          /if (${Debug} || ${Debug_Assists}) /echo skipping gift of mana spell ${Nukes2D[${castIndex},${iCastName}]}
+          /varset lastSuccessfulCast 0
+          /goto :skipcast
+      }
+
       |if i have aggro and /noaggro is set, skip the spell
       /if (${Nukes2D[${castIndex},${iNoAggro}]}) {
         /if (${Me.TargetOfTarget.CleanName.Equal[${Me.CleanName}]}) {
-          /if (${Debug} || ${Debug_Assists}) /echo \ay skipping cast of ${Nukes2D[${castIndex},${iCastName}]}, i have aggro and /noaggro is set
+          /if (${Debug} || ${Debug_Assists}) /echo skipping cast of ${Nukes2D[${castIndex},${iCastName}]}, i have aggro and /noaggro is set
           /goto :skipCast
         }
       }
       |only cast if my aggro is greater than PctAggro and the target is a Named
       /if (${Nukes2D[${castIndex},${iPctAggro}]} > 0) {
         /if (${Me.PctAggro} < ${Nukes2D[${castIndex},${iPctAggro}]} || !${Target.Named}) {
-          /if (${Debug} || ${Debug_Assists}) /echo \ay skipping cast of ${Nukes2D[${castIndex},${iCastName}]}, my aggro ${Me.PctAggro} is < PctAggro ${Nukes2D[${castIndex},${iPctAggro}]}
+          /if (${Debug} || ${Debug_Assists}) /echo skipping cast of ${Nukes2D[${castIndex},${iCastName}]}, my aggro ${Me.PctAggro} is < PctAggro ${Nukes2D[${castIndex},${iPctAggro}]}
           /if (${Debug} || ${Debug_Assists}) /echo ${Nukes2D[${castIndex},${iPctAggro}]} ${Me.PctAggro} < ${Nukes2D[${castIndex},${iPctAggro}]} !${Target.Named}
           /goto :skipCast
         }
@@ -464,7 +516,7 @@ SUB check_Nukes
       | if i have spell damage reduction recourse and the mob has more than 25% health or i have < 10% mana, skip cast.  cast anyway if i have GoM to avoid losing it
       /if (${Me.Buff[Weave of Weakness].ID} || ${Me.Buff[Flames of Weakness].ID}) {
         /if ((${Target.PctHPs} > 25 || ${Me.PctMana} < 10) && !${Bool[${Me.Song[Gift of Mana].ID}]} && !${use_QUICKBurns} && !${use_LONGBurns} && !${use_FULLBurns}) {
-          /if (${Debug} || ${Debug_Assists}) /echo \ay skipping cast of ${Nukes2D[${castIndex},${iCastName}]}, i have spell damage reduction
+          /if (${Debug} || ${Debug_Assists}) /echo skipping cast of ${Nukes2D[${castIndex},${iCastName}]}, i have spell damage reduction
           /goto :skipCast
         }
       }
@@ -474,14 +526,14 @@ SUB check_Nukes
 	  
       /call check_Ready "Nukes2D" ${castIndex}
 	  
-	  /if (${Debug} || ${Debug_Assists}) {
-		/echo Checking Nuke ${Nukes2D[${castIndex},${iIfs}]}
-		/echo Mana ${check_Mana["Nukes2D",${castIndex}]}
-		/echo Target  ${AssistTarget}
-		/echo Cast index ${castIndex}
-		/echo Check Distance ${check_Distance[${AssistTarget},${Nukes2D[${s},${iMyRange}]}]}
-		/echo Range ${Nukes2D[${s},${iMyRange}]}
-	  }
+      /if (${Debug} || ${Debug_Assists}) {
+      /echo Checking Nuke ${Nukes2D[${castIndex},${iIfs}]}
+      /echo Mana ${check_Mana["Nukes2D",${castIndex}]}
+      /echo Target  ${AssistTarget}
+      /echo Cast index ${castIndex}
+      /echo Check Distance ${check_Distance[${AssistTarget},${Nukes2D[${s},${iMyRange}]}]}
+      /echo Range ${Nukes2D[${s},${iMyRange}]}
+      }
 	  
       /if (${c_Ready} && ${Nukes2D[${castIndex},${iIfs}]}) {
         /if (${check_Mana["Nukes2D",${castIndex}]}) {
