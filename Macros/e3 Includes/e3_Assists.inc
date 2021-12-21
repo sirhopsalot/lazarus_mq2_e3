@@ -1020,11 +1020,15 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
       /call e3_Cast ${TargetID} ${ArrayName} ${i}
 
       |Spell Swap Code Specifically for /AllowSpellSwap
+      |These spells will De-Mem and Re-Mem a new spell immediately after cast. /Gem|# is ignored for these spells. 
       /if (${Bool[${Me.SpellInCooldown}]} && ${${ArrayName}[${i},${iAllowSpellSwap}]} && ${Bool[${Me.Book[${${ArrayName}[${i},${iCastName}]}]}]}) {
         /for iSpellSwap 1 to ${${ArrayName}.Size[1]}
           /if (${TimeLeftOnMySpell[${${ArrayName}[${iSpellSwap},${iCastName}]}]} > 18 || ${Bool[${Me.Gem[${${ArrayName}[${iSpellSwap},${iCastName}]}]}]} || !${Bool[${Me.Book[${${ArrayName}[${iSpellSwap},${iCastName}]}]}]} || !${${ArrayName}[${iSpellSwap},${iAllowSpellSwap}]}) {
             /continue
           }
+              |After /MemSpell the book will automatically close. However, while in combat this command sometimes fails to start the first time we send it.
+              |We put this into a loop to ensure "it as least tries" -- If the spell really does fail to mem it will exit on it's own and try again next cycle.
+              |/MemSpell {int WhereToMem} {String SpellToMem}
               /while (!${Window[SpellBookWnd].Open}) {
                 /if (${GetEmptySpellGem[]} > 0) {
                   /MemSpell ${GetEmptySpellGem[]} "${${ArrayName}[${iSpellSwap},${iCastName}]}" 
@@ -1035,19 +1039,22 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
               /break
          /next iSpellSwap
       } else {
-        |Code to mem non any spell in any empty gem with /Gem|# as the preferred location
+        |Code to mem any spell in any empty gem with /Gem|# as the preferred location. This only applies to spells that DO NOT have /AllowSpellSwap defined.
+        |/AllowSpellSwap spells are mem-shuffled with the code directly above this. And we ignore /Gem|# for those. 
+        |In E3, if no /Gem|# is defined it automatically assigns the ${DefaultGem} to that specific spell's ${iSpellGem} variable.
         /if (${Bool[${Me.SpellInCooldown}]} && ${Bool[${Me.Book[${${ArrayName}[${i},${iCastName}]}]}]} && !${Bool[${${ArrayName}[${i},${iSpellSwap}]}]}) {
           /for iSpellSwap 1 to ${${ArrayName}.Size[1]}
             /if (!${Bool[${Me.Gem[${${ArrayName}[${iSpellSwap},${iCastName}]}]}]} && ${Bool[${Me.Book[${${ArrayName}[${iSpellSwap},${iCastName}]}]}]}) {
-              |/echo I should mem ${${ArrayName}[${iSpellSwap},${iCastName}]}
+              |After /MemSpell the book will automatically close. However, while in combat this command sometimes fails to start the first time we send it.
+              |We put this into a loop to ensure "it as least tries" -- If the spell really does fail to mem it will exit on it's own and try again next cycle.
+              |/MemSpell {int WhereToMem} {String SpellToMem}
               /while (!${Window[SpellBookWnd].Open}) {
+                |If I join this IF with an else /if it causes a hard client crash.
                 /if (${${ArrayName}[${iSpellSwap},${iSpellGem}]} != ${DefaultGem}) {
-                  /echo Mem1
                   /MemSpell ${${ArrayName}[${iSpellSwap},${iSpellGem}]} "${${ArrayName}[${iSpellSwap},${iCastName}]}"
                   /break
                 }
                 /if (${GetEmptySpellGem[]} > 0) {
-                  /echo Mem2
                   /MemSpell ${GetEmptySpellGem[]} "${${ArrayName}[${iSpellSwap},${iCastName}]}" 
                 } else {
                   /echo Mem3
@@ -1061,30 +1068,40 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
       }
       |End Spell Swap Code
 
-
-      |Code to ignore universal cooldown -- I should put this in a "ShouldICastThisDoT" method
+      |These checks are the same as above--but for the NEXT spell in the DoT array. This is so we don't QuickCast a spell that wouldn't be casted already.
       /if (${i} < ${${ArrayName}.Size[1]} && ${Bool[${Me.Book[${${ArrayName}[${i},${iCastName}]}]}]} && !${Bool[${Me.Book[${${ArrayName}[${Math.Calc[${i}+1]},${iCastName}]}]}]}) {
         
         |Skip if /MinMana|%% is set and my mana percentage is below the defined amount in the parameter
         /if (!${${ArrayName}[${Math.Calc[${i}+1]},${iMinMana}]} > ${Me.PctMana}) {
           /continue
         }
-        
+
+        |Skip of defiend IF isn't met
         /if (!${Bool[${${ArrayName}[${Math.Calc[${i}+1]},${iIfs}]}]}) {
           /return
         } 
+
+        |Skip if /NoEarlyRecast is set and the mob has this spell from me
         /if (${TimeLeftOnMySpell[${${ArrayName}[${Math.Calc[${i}+1]},${iCastName}]}]} > 0 && ${${ArrayName}[${Math.Calc[${i}+1]},${iNoEarlyRecast}]}) {
           /return
         }
+
+        |Skip if /NoStack is set and ANYONE (including myself) have already casted this on the NPC
         /if (${${ArrayName}[${Math.Calc[${i}+1]},${iNoStack}]} && (${Bool[${Target.Buff[${FindItem[=${${ArrayName}[${Math.Calc[${i}+1]},${iCastName}]}].Spell}]}]} || ${Bool[${Target.Buff[=${${ArrayName}[${Math.Calc[${i}+1]},${iCastName}]}]}]})) {
           /return
         }
+
+        |Skip if /TriggerSpell|SpellName is set and both the spell and TriggerSpell are already on the NPC from me
         /if (${Bool[${${ArrayName}[${Math.Calc[${i}+1]},${iTriggerSpell}]}]} && ${TimeLeftOnMySpell[${${ArrayName}[${Math.Calc[${i}+1]},${iTriggerSpell}]}]} > 4 && ${TimeLeftOnMySpell[${${ArrayName}[${Math.Calc[${i}+1]},${iCastName}]}]} > 4) {
           /return
         }
+
+        |Skip if this spell is already on the NPC from me and has more than 4 seconds let on it. (This is item casts and not spells)
         /if (${Bool[${FindItem[=${${ArrayName}[${Math.Calc[${i}+1]},${iCastName}]}]}]} && ${TimeLeftOnMySpell[${FindItem[=${${ArrayName}[${Math.Calc[${i}+1]},${iCastName}]}].Spell}]} > 4) {
           /return
         }
+
+        |Skip if this spell is already on the NPC from me and has more than 4 seconds let on it. (This is spell casts and not items)
         /if (${TimeLeftOnMySpell[${${ArrayName}[${Math.Calc[${i}+1]},${iCastName}]}]} > 4 && !${Bool[${${ArrayName}[${Math.Calc[${i}+1]},${iTriggerSpell}]}]}) {
           /return
         }
