@@ -26,7 +26,8 @@
 | CAST_DISTRACTED      | To Distracted ( spell book open )                                    |
 | CAST_COMPONENTS| Missing Component													                                |
 |---------------------------------------------------------------------------------------------|
-Sub e3_Cast(int targetID, ArrayName, int ArrayIndex)
+Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, int StopEchos)
+|StopEchos = Skips the /echo on successful cast if a value other than 0 is passed with the /call e3_Cast
 /if (${Debug} || ${Debug_Casting}) /echo |- e3_Cast ==>
 	/varset pendingCast		${${ArrayName}[${ArrayIndex},${iCastName}]}
 	/varset pendingCastID	${${ArrayName}[${ArrayIndex},${iCastID}]}
@@ -138,7 +139,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex)
 |  Casting
 :cast_spell
   |/if (${Me.Name.Equal[Lube]}) /gu Casting ${pendingCast} ${pendingCastID} ${Spawn[id ${targetID}].Name} ${targetID}
-	/echo Casting ${pendingCast} ${pendingCastID} ${Spawn[id ${targetID}].Name} ${targetID}
+	/if (!${StopEchos}) /echo Casting ${pendingCast} ${pendingCastID} ${Spawn[id ${targetID}].Name} ${targetID}
 	|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	|Use Disc
 	/if (${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Disc]}) {

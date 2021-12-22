@@ -1142,7 +1142,7 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
               |We put this into a loop to ensure "it as least tries" -- If the spell really does fail to mem it will exit on it's own and try again next cycle.
               |/MemSpell {int WhereToMem} {String SpellToMem}
               /while (!${Window[SpellBookWnd].Open}) {
-                |If I join this IF with an else /if it causes a hard client crash.
+                |If I join this IF with an else /if it causes a hard client crash. --- /break prevents it from sending 2 different MemSpells
                 /if (${${ArrayName}[${iSpellSwap},${iSpellGem}]} != ${DefaultGem}) {
                   /MemSpell ${${ArrayName}[${iSpellSwap},${iSpellGem}]} "${${ArrayName}[${iSpellSwap},${iCastName}]}"
                   /break
@@ -1150,7 +1150,6 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
                 /if (${GetEmptySpellGem[]} > 0) {
                   /MemSpell ${GetEmptySpellGem[]} "${${ArrayName}[${iSpellSwap},${iCastName}]}" 
                 } else {
-                  /echo Mem3
                   /MemSpell ${DefaultGem} "${${ArrayName}[${iSpellSwap},${iCastName}]}" 
                 }
               }
@@ -1164,43 +1163,44 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
       |These checks are the same as above--but for the NEXT spell in the DoT array. This is so we don't QuickCast a spell that wouldn't be casted already.
       /if (${i} < ${${ArrayName}.Size[1]} && ${Bool[${Me.Book[${${ArrayName}[${i},${iCastName}]}]}]} && !${Bool[${Me.Book[${${ArrayName}[${Math.Calc[${i}+1]},${iCastName}]}]}]}) {
         
+        |Incrementing loop up 1 so we can check the next spell in sequence. 
+        /varcalc i ${i}+1
         |Skip if /MinMana|%% is set and my mana percentage is below the defined amount in the parameter
-        /if (!${${ArrayName}[${Math.Calc[${i}+1]},${iMinMana}]} > ${Me.PctMana}) {
+        /if (!${${ArrayName}[${i},${iMinMana}]} > ${Me.PctMana}) {
           /continue
         }
 
         |Skip of defiend IF isn't met
-        /if (!${Bool[${${ArrayName}[${Math.Calc[${i}+1]},${iIfs}]}]}) {
+        /if (!${Bool[${${ArrayName}[${i},${iIfs}]}]}) {
           /return
         } 
 
         |Skip if /NoEarlyRecast is set and the mob has this spell from me
-        /if (${TimeLeftOnMySpell[${${ArrayName}[${Math.Calc[${i}+1]},${iCastName}]}]} > 0 && ${${ArrayName}[${Math.Calc[${i}+1]},${iNoEarlyRecast}]}) {
+        /if (${TimeLeftOnMySpell[${${ArrayName}[${i},${iCastName}]}]} > 0 && ${${ArrayName}[${i},${iNoEarlyRecast}]}) {
           /return
         }
 
         |Skip if /NoStack is set and ANYONE (including myself) have already casted this on the NPC
-        /if (${${ArrayName}[${Math.Calc[${i}+1]},${iNoStack}]} && (${Bool[${Target.Buff[${FindItem[=${${ArrayName}[${Math.Calc[${i}+1]},${iCastName}]}].Spell}]}]} || ${Bool[${Target.Buff[=${${ArrayName}[${Math.Calc[${i}+1]},${iCastName}]}]}]})) {
+        /if (${${ArrayName}[${i},${iNoStack}]} && (${Bool[${Target.Buff[${FindItem[=${${ArrayName}[${i},${iCastName}]}].Spell}]}]} || ${Bool[${Target.Buff[=${${ArrayName}[${i},${iCastName}]}]}]})) {
           /return
         }
 
         |Skip if /TriggerSpell|SpellName is set and both the spell and TriggerSpell are already on the NPC from me
-        /if (${Bool[${${ArrayName}[${Math.Calc[${i}+1]},${iTriggerSpell}]}]} && ${TimeLeftOnMySpell[${${ArrayName}[${Math.Calc[${i}+1]},${iTriggerSpell}]}]} > 4 && ${TimeLeftOnMySpell[${${ArrayName}[${Math.Calc[${i}+1]},${iCastName}]}]} > 4) {
+        /if (${Bool[${${ArrayName}[${i},${iTriggerSpell}]}]} && ${TimeLeftOnMySpell[${${ArrayName}[${i},${iTriggerSpell}]}]} > 4 && ${TimeLeftOnMySpell[${${ArrayName}[${i},${iCastName}]}]} > 4) {
           /return
         }
 
         |Skip if this spell is already on the NPC from me and has more than 4 seconds let on it. (This is item casts and not spells)
-        /if (${Bool[${FindItem[=${${ArrayName}[${Math.Calc[${i}+1]},${iCastName}]}]}]} && ${TimeLeftOnMySpell[${FindItem[=${${ArrayName}[${Math.Calc[${i}+1]},${iCastName}]}].Spell}]} > 4) {
+        /if (${Bool[${FindItem[=${${ArrayName}[${i},${iCastName}]}]}]} && ${TimeLeftOnMySpell[${FindItem[=${${ArrayName}[${i},${iCastName}]}].Spell}]} > 4) {
           /return
         }
 
         |Skip if this spell is already on the NPC from me and has more than 4 seconds let on it. (This is spell casts and not items)
-        /if (${TimeLeftOnMySpell[${${ArrayName}[${Math.Calc[${i}+1]},${iCastName}]}]} > 4 && !${Bool[${${ArrayName}[${Math.Calc[${i}+1]},${iTriggerSpell}]}]}) {
+        /if (${TimeLeftOnMySpell[${${ArrayName}[${i},${iCastName}]}]} > 4 && !${Bool[${${ArrayName}[${i},${iTriggerSpell}]}]}) {
           /return
         }
-        /echo QuickCast:: ${${ArrayName}[${Math.Calc[${i}+1]},${iCastName}]}
-        /useitem "${${ArrayName}[${Math.Calc[${i}+1]},${iCastName}]}"
-        /delay 3
+        /echo QuickCast:: ${${ArrayName}[${i},${iCastName}]}
+        /call e3_Cast ${TargetID} ${ArrayName} ${i} 1
       } else {
         /return
       }
