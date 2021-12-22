@@ -1200,7 +1200,7 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
           /return
         }
         /echo QuickCast:: ${${ArrayName}[${i},${iCastName}]}
-        /call e3_Cast ${TargetID} ${ArrayName} ${i} 1
+        /call e3_Cast ${TargetID} ${ArrayName} ${i} True
       } else {
         /return
       }

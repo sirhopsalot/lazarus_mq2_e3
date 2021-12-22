@@ -26,7 +26,7 @@
 | CAST_DISTRACTED      | To Distracted ( spell book open )                                    |
 | CAST_COMPONENTS| Missing Component													                                |
 |---------------------------------------------------------------------------------------------|
-Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, int StopEchos)
+Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 |StopEchos = Skips the /echo on successful cast if a value other than 0 is passed with the /call e3_Cast
 /if (${Debug} || ${Debug_Casting}) /echo |- e3_Cast ==>
 	/varset pendingCast		${${ArrayName}[${ArrayIndex},${iCastName}]}
