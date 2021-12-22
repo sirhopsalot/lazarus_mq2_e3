@@ -5,6 +5,7 @@
 |--------------------------------------------------------------------|
 #event Assist "<#1#> Assist on #2#"
 SUB event_Assist(line, ChatSender, int MobID)
+
 /if (${Debug} || ${Debug_Assists}) /echo |- event_Assist ==>
   /if (!${checkEventArgs[${ChatSender},${line},UZR,${MobID}]}) /return
   /varset MobID ${c_eventArgData}
@@ -138,7 +139,8 @@ SUB AssistOff
 	/if (${use_EPICBurns})           /varset use_EPICBurns FALSE
 
   /if (${Defined[${resistCount}]}) /deletevar ${resistCount}
-	/if (${Following}) /call AcquireFollow
+  /call check_ResistCounters
+  /if (${Following}) /call AcquireFollow
 
 /if (${Debug} || ${Debug_Assists}) /echo |- AssistOff -| <== [${Assisting}] || AssistTarget: [${AssistTarget}]
 /RETURN
@@ -1006,6 +1008,7 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
 
 /declare i int local
 /declare iSpellSwap int local 0
+/declare spellTimer string local
 |${${ArrayName}[${i},${iCastName}]}        --> strSpellName
 |${${ArrayName}[${i},${iAllowSpellSwap}]} --> 0/1 
 |${${ArrayName}[${i},${iNoEarlyRecast}]}  --> 0/1
@@ -1017,60 +1020,98 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
 
 /for i 1 to ${${ArrayName}.Size[1]}
     /doevents DoTsOff
-    
-    /if (${Bool[${Target.ID} != ${TargetID}]}) {
-      /target id ${TargetID}
-      /delay 2
-    }
-
+    |make sure we have the right target    
+   
+    |make sure our target is not a corpse
     /if (!${Bool[${Spawn[id ${TargetID}].Type.NotEqual[Corpse]}]}) {
       /return
     }
 
-
-
-
+    |setups for resist counters and spellRetry timers
+    /varset spellTimer spellTimer_${TargetID}_${ArrayName}_${i}
+		/varset resistCount resist_${TargetID}_${ArrayName}_${i}
+    |Is there a spell timer configured for this spell and target? if so, skip this   
+    /if (${Defined[${spellTimer}]}) {
+		  /if (${${spellTimer}}) {
+        |/echo skipping ${spellTimer}
+        /continue
+      }
+    }
     | -- Rules that tell us to skip the DoT we're on and evaluate off the next DoT.
-
     |Skip if /MinMana|%% is set and my mana percentage is below the defined amount in the parameter
     /if (!${${ArrayName}[${i},${iMinMana}]} > ${Me.PctMana}) {
       /continue
     }
-
     |Skip of defiend IF isn't met
     /if (!${${ArrayName}[${i},${iIfs}]}) {
       /continue
     }
-
+    |verify the spell we want to use is actulaly ready
+    /if (!(${Me.ItemReady[${${ArrayName}[${i},${iCastName}]}]} || ${Me.SpellReady[${${ArrayName}[${i},${iCastName}]}]} || ${Me.AltAbilityReady[${${ArrayName}[${i},${iCastName}]}]})) {
+       /continue
+    }
+    |Change the target here, as we need the correct target if using TimeLeftOnMySpell
+    /if (${Bool[${Target.ID} != ${TargetID}]}) {
+      /if (${Debug} || ${Debug_Assists})  /echo changing target to ${TargetID}
+      /target id ${TargetID}
+      /delay 2
+    }
     |Skip if /NoEarlyRecast is set and the mob has this spell from me
     /if (${TimeLeftOnMySpell[${${ArrayName}[${i},${iCastName}]}]} > 0 && ${${ArrayName}[${i},${iNoEarlyRecast}]}) {
       /continue
     }
-
     |Skip if /NoStack is set and ANYONE (including myself) have already casted this on the NPC
     /if (${${ArrayName}[${i},${iNoStack}]} && (${Bool[${Target.Buff[${FindItem[=${${ArrayName}[${i},${iCastName}]}].Spell}]}]} || ${Bool[${Target.Buff[=${${ArrayName}[${i},${iCastName}]}]}]})) {
       /continue
     }
-
     |Skip if /TriggerSpell|SpellName is set and both the spell and TriggerSpell are already on the NPC from me
     /if (${Bool[${${ArrayName}[${i},${iTriggerSpell}]}]} && ${TimeLeftOnMySpell[${${ArrayName}[${i},${iTriggerSpell}]}]} > 4 && ${TimeLeftOnMySpell[${${ArrayName}[${i},${iCastName}]}]} > 4) {
       /continue
     }
-
-    |Skip if this spell is already on the NPC from me and has more than 4 seconds let on it. (This is item casts)
+    |Skip if this spell is already on the NPC from me and has more than 4 seconds left on it. (This is item casts)
     /if (${Bool[${FindItem[=${${ArrayName}[${i},${iCastName}]}]}]} && ${TimeLeftOnMySpell[${FindItem[=${${ArrayName}[${i},${iCastName}]}].Spell}]} > 4) {
       /continue
     }
-
-    |Skip if this spell is already on the NPC from me and has more than 4 seconds let on it. (This is spell casts)
+    |Skip if this spell is already on the NPC from me and has more than 4 seconds left on it. (This is spell casts)
     /if (${TimeLeftOnMySpell[${${ArrayName}[${i},${iCastName}]}]} > 4 && !${Bool[${${ArrayName}[${i},${iTriggerSpell}]}]}) {
       /continue
     }
+ 
 
+    /if (!${Bool[${Me.Casting}]}) {
 
-    /if (!${Bool[${Me.Casting}]} && (${Me.ItemReady[${${ArrayName}[${i},${iCastName}]}]} || ${Me.SpellReady[${${ArrayName}[${i},${iCastName}]}]} || ${Me.AltAbilityReady[${${ArrayName}[${i},${iCastName}]}]})) {
+     
+      |Cast the spell!
       /call e3_Cast ${TargetID} ${ArrayName} ${i}
-
+      
+      /if (${Cast.Stored.Name.Equal[${${ArrayName}[${i},${iSpellName}]}]} && ${castReturn.Equal[CAST_RESIST]}) {
+       
+        /if (!${Defined[${resistCount}]}) {
+          |this will declare a resist counter as an int outer 1, so we can also keep track of it to delete it later.
+          /call register_ResistCounter ${resistCount}
+        
+        } else {
+          /varcalc ${resistCount} ${${resistCount}}+1
+          /if (${Debug} || ${Debug_Assists})  /echo incrementing resist counter to:${${resistCount}} for:${resistCount}
+          /if (${${resistCount}} >= ${${ArrayName}[${i},${iMaxTries}]}) {
+            /varset ${resistCount} 0
+            /call createTimer "${spellTimer}" "1m"
+        }
+      }
+      | If the spell did not take hold.
+      } else /if (${Cast.Stored.Name.Equal[${${ArrayName}[${i},${iSpellName}]}]} && ${castReturn.Equal[CAST_TAKEHOLD]} && !${Cast.Stored.Name.Equal[${spammableSpell}]}) {
+        /if (${Defined[${resistCount}]}) {
+           /varset ${resistCount} 0
+        }
+        |/echo creating spell timer for 3 min before retry
+        /call createTimer "${spellTimer}" "3m"
+        | If the target was immune.
+      } else /if (${Cast.Stored.Name.Equal[${${ArrayName}[${i},${iSpellName}]}]} && ${castReturn.Equal[CAST_IMMUNE]} && !${Cast.Stored.Name.Equal[${spammableSpell}]}) {
+        /if (${Defined[${resistCount}]}) {
+           /varset ${resistCount} 0
+        }
+        /call createTimer "${spellTimer}" "5m"
+      }
       |Spell Swap Code Specifically for /AllowSpellSwap
       |These spells will De-Mem and Re-Mem a new spell immediately after cast. /Gem|# is ignored for these spells. 
       /if (${Bool[${Me.SpellInCooldown}]} && ${${ArrayName}[${i},${iAllowSpellSwap}]} && ${Bool[${Me.Book[${${ArrayName}[${i},${iCastName}]}]}]}) {
@@ -1907,6 +1948,7 @@ Sub assist_Aliases
 
 |--------------------------------------------------------------------------------|
 Sub assist_Background_Events
+ 
   /if (${auto_AssistOn})    /call check_AutoAssist
   /if (${tankKillEngaged})  /call tankKill
   /doevents Assist

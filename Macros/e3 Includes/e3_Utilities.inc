@@ -864,7 +864,7 @@ SUB check_macroTimers
     /if (${Defined[${timerArray[${i}]}]}) {
 		  /if (!${${timerArray[${i}]}}) {
         /if (${Debug}) /echo Deleting timer: ${timerArray[${i}]}
-			  /varcalc SpentTimerCounter ${SpentTimerCounter} + 1
+			    /varcalc SpentTimerCounter ${SpentTimerCounter} + 1
 				/deletevar ${timerArray[${i}]}
 				/varset SpentTimerList ${SpentTimerList}${i},
 			}
@@ -879,6 +879,53 @@ SUB check_macroTimers
 	}
 /if (${Debug}) /echo <== check_macroTimers -|
 /RETURN
+|--------------------------------------------------------------------|
+|- Deletes spell resist counters thare are defined during combat	-|
+|--------------------------------------------------------------------|
+SUB check_ResistCounters
+
+
+   /if (!${Defined[spellResistCounters]}) {
+        /declare spellResistCounters[1024] string outer
+        /declare spellResistCountersIndex int outer
+        /varset spellResistCountersIndex 0
+  } 
+  |we are no longer in combat, so we can now clear all the values in the array and set the current index to 0
+  /if (!${Defined[DoT_Targets]} && ${spellResistCountersIndex} > 0) {
+
+      /declare s int local
+      /declare nameOfCounter string local
+      /for s 1 to ${spellResistCountersIndex}
+      
+        /varset nameOfCounter ${spellResistCounters[${s}]}
+	    /echo check_ResistCounterReset checking for defined ${nameOfCounter}
+		/if (${Defined[${nameOfCounter}]}) {
+		  /echo check_ResistCounterReset deleting defined ${nameOfCounter}
+         /deletevar ${nameOfCounter}
+        } else {
+			/echo check_ResistCounterReset there nothing defined for  ${nameOfCounter}
+		}
+      
+      /next s
+    
+      /varset spellResistCountersIndex 0
+  }
+
+/Return
+SUB register_ResistCounter(resistVariableName)
+	/if (!${Defined[spellResistCounters]}) {
+			/declare spellResistCounters[1024] string outer
+			/declare spellResistCountersIndex int outer
+			/varset spellResistCountersIndex 0
+	} 
+	/echo register_ResistCounter registering ${resistVariableName}
+	/declare ${resistCount} int outer 1
+	/varcalc spellResistCountersIndex ${spellResistCountersIndex}+1
+	/echo spellResistCountersIndex is now:${spellResistCountersIndex}
+ 	/varset spellResistCounters[${spellResistCountersIndex}] ${resistVariableName}
+
+
+/Return
 |----------------------------------------------------------------------------------------|
 |- Auto inventories items from your cursor. 											-|
 |- Alerts the user, and ends the macro, if there is no free inventory space available.	-|
