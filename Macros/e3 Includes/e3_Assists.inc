@@ -1170,7 +1170,7 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
           /continue
         }
 
-        |Skip of defiend IF isn't met
+        |Skip if defiend IF isn't met
         /if (!${Bool[${${ArrayName}[${i},${iIfs}]}]}) {
           /return
         } 
