@@ -898,12 +898,12 @@ SUB check_ResistCounters
       /for s 1 to ${spellResistCountersIndex}
       
         /varset nameOfCounter ${spellResistCounters[${s}]}
-	    /echo check_ResistCounterReset checking for defined ${nameOfCounter}
+	    /if (${Debug}) /echo check_ResistCounterReset checking for defined ${nameOfCounter}
 		/if (${Defined[${nameOfCounter}]}) {
-		  /echo check_ResistCounterReset deleting defined ${nameOfCounter}
+		  /if (${Debug}) /echo check_ResistCounterReset deleting defined ${nameOfCounter}
          /deletevar ${nameOfCounter}
         } else {
-			/echo check_ResistCounterReset there nothing defined for  ${nameOfCounter}
+			/if (${Debug}) /echo check_ResistCounterReset there nothing defined for  ${nameOfCounter}
 		}
       
       /next s
@@ -918,10 +918,10 @@ SUB register_ResistCounter(resistVariableName)
 			/declare spellResistCountersIndex int outer
 			/varset spellResistCountersIndex 0
 	} 
-	/echo register_ResistCounter registering ${resistVariableName}
+	/if (${Debug}) /echo register_ResistCounter registering ${resistVariableName}
 	/declare ${resistCount} int outer 1
 	/varcalc spellResistCountersIndex ${spellResistCountersIndex}+1
-	/echo spellResistCountersIndex is now:${spellResistCountersIndex}
+	/if (${Debug}) /echo spellResistCountersIndex is now:${spellResistCountersIndex}
  	/varset spellResistCounters[${spellResistCountersIndex}] ${resistVariableName}
 
 
