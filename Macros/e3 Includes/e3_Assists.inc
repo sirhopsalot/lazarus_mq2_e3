@@ -5,6 +5,7 @@
 |--------------------------------------------------------------------|
 #event Assist "<#1#> Assist on #2#"
 SUB event_Assist(line, ChatSender, int MobID)
+
 /if (${Debug} || ${Debug_Assists}) /echo |- event_Assist ==>
   /if (!${checkEventArgs[${ChatSender},${line},UZR,${MobID}]}) /return
   /varset MobID ${c_eventArgData}
@@ -138,7 +139,8 @@ SUB AssistOff
 	/if (${use_EPICBurns})           /varset use_EPICBurns FALSE
 
   /if (${Defined[${resistCount}]}) /deletevar ${resistCount}
-	/if (${Following}) /call AcquireFollow
+  /call check_ResistCounters
+  /if (${Following}) /call AcquireFollow
 
 /if (${Debug} || ${Debug_Assists}) /echo |- AssistOff -| <== [${Assisting}] || AssistTarget: [${AssistTarget}]
 /RETURN
@@ -391,6 +393,10 @@ SUB check_Nukes
 	  /declare s int local
     /declare m int local
     /declare assistToT int local
+    /declare HaveGiftOfManaBuff bool False local
+    /if (${Bool[${Me.Song[Gift of Mana].ID}]} || ${Bool[${Me.Song[Celestial Gift].ID}]} || ${Bool[${Me.Song[Celestial Boon].ID}]}) {
+        /varset HaveGiftOfManaBuff True
+    }
 
    /for s 1 to ${Nukes2D.Size[1]}
     /varset castIndex ${s}
@@ -427,35 +433,83 @@ SUB check_Nukes
           /if (${Debug} || ${Debug_Assists}) /echo setting lastSuccessfulCast to ${lastSuccessfulCast} because noburn and rotate defined
           /varset lastSuccessfulCast ${Nukes2D[${castIndex},${iCastName}]}
         } else {
-          /if (${Debug} || ${Debug_Assists}) /echo \ay skipping cast of ${Nukes2D[${castIndex},${iCastName}]}, i am burning and /NoBurn is set
+          /if (${Debug} || ${Debug_Assists}) /echo skipping cast of ${Nukes2D[${castIndex},${iCastName}]}, i am burning and /NoBurn is set
           /goto :skipCast
         }
       }
       | if /rotate is defined, and the current array index was the last successful cast, skip to next index
-      /if (${Nukes2D[${castIndex},${iCastName}].Equal[${lastSuccessfulCast}]} && ${Nukes2D[${castIndex},${iRotate}]} && ${Nukes2D.Size[1]} > 1) {
-        /if (${Debug} || ${Debug_Assists}) /echo skipping cast of ${Nukes2D[${castIndex},${iCastName}]} /rotate is defined
-        /goto :skipCast
+    /if (${Nukes2D[${castIndex},${iCastName}].Equal[${lastSuccessfulCast}]} && ${Nukes2D[${castIndex},${iRotate}]} && ${Nukes2D.Size[1]} > 1) {
+      /if (${Debug} || ${Debug_Assists}) /echo skipping cast of ${Nukes2D[${castIndex},${iCastName}]} /rotate is defined
+      |need to check if any of our other spells can cast, if not, we can ignore this rotate
+      /declare otherSpellsReady bool local
+      /varset otherSpellsReady FALSE
+      /declare currentCastName string local
+      /varset currentCastName ${Nukes2D[${castIndex},${iCastName}]}
+      /declare i int local
+      /for i 1 to ${Nukes2D.Size[1]}
+        |if not the currently casting spell, lets check if they are ready to cast.          
+        /if (!${Nukes2D[${i},${iCastName}].Equal[${currentCastName}]}) {
+          /call check_Ready "Nukes2D" ${i}
+          /if (${c_Ready} && ${Nukes2D[${i},${iIfs}]}) {
+            /if (${Bool[${Nukes2D[${castIndex},${iGiftOfMana}]}]}) {
+              |its specified to use gift of mana, well do we have it?
+              /if (${HaveGiftOfManaBuff}) {
+                /varset otherSpellsReady TRUE
+                /if (${Debug} || ${Debug_Assists}) /echo other spells ready allowing the skip
+                /break
+              }
+            } else {
+              /varset otherSpellsReady TRUE
+              /if (${Debug} || ${Debug_Assists}) /echo other spells ready allowing the skip
+              /break
+            }
+          }
+        }
+      /next i
+      |if others spells are ready to cast, its ok to skip this.
+        /if (${otherSpellsReady}) {
+            /if (${Debug} || ${Debug_Assists}) /echo calling skipcast
+          /goto :skipCast
+        } else {
+          /if (${Debug} || ${Debug_Assists}) /echo no other spell ready, allowing the current rotate spell to cast.
+        }  
       }
-      | if i have Gift Of Mana find a spell with /GoM
-      /if (${Bool[${Me.Song[Gift of Mana].ID}]}) {
+
+    | if i have Gift Of Mana find a spell with /GoM, that is ready
+      /if (${HaveGiftOfManaBuff}) {
+        /if (${Debug} || ${Debug_Assists}) /echo have gift of mana, selecting GOM spell flag
         /for m 1 to ${Nukes2D.Size[1]}
           /if (${Nukes2D[${m},${iGiftOfMana}]}) {
-            /varset castIndex ${m}
-            /varset lastSuccessfulCast 0
+          
+            /call check_Ready "Nukes2D" ${m}
+            /if (${c_Ready}) {
+              /if (${Debug} || ${Debug_Assists}) /echo found a ready spell for GOM
+              /varset castIndex ${m}
+              /varset lastSuccessfulCast 0
+              /break
+            } 
           }
         /next m
       }
+      |if this is a spell with /GoM, yet we don't have GoM buff, skip this spell.
+      /if (!${HaveGiftOfManaBuff} && ${Bool[${Nukes2D[${castIndex},${iGiftOfMana}]}]} ) {
+          | we do not have gift of mana, make sure our current index is not a GOM spell, if so skip it
+          /if (${Debug} || ${Debug_Assists}) /echo skipping gift of mana spell ${Nukes2D[${castIndex},${iCastName}]}
+          /varset lastSuccessfulCast 0
+          /goto :skipcast
+      }
+
       |if i have aggro and /noaggro is set, skip the spell
       /if (${Nukes2D[${castIndex},${iNoAggro}]}) {
         /if (${Me.TargetOfTarget.CleanName.Equal[${Me.CleanName}]}) {
-          /if (${Debug} || ${Debug_Assists}) /echo \ay skipping cast of ${Nukes2D[${castIndex},${iCastName}]}, i have aggro and /noaggro is set
+          /if (${Debug} || ${Debug_Assists}) /echo skipping cast of ${Nukes2D[${castIndex},${iCastName}]}, i have aggro and /noaggro is set
           /goto :skipCast
         }
       }
       |only cast if my aggro is greater than PctAggro and the target is a Named
       /if (${Nukes2D[${castIndex},${iPctAggro}]} > 0) {
         /if (${Me.PctAggro} < ${Nukes2D[${castIndex},${iPctAggro}]} || !${Target.Named}) {
-          /if (${Debug} || ${Debug_Assists}) /echo \ay skipping cast of ${Nukes2D[${castIndex},${iCastName}]}, my aggro ${Me.PctAggro} is < PctAggro ${Nukes2D[${castIndex},${iPctAggro}]}
+          /if (${Debug} || ${Debug_Assists}) /echo skipping cast of ${Nukes2D[${castIndex},${iCastName}]}, my aggro ${Me.PctAggro} is < PctAggro ${Nukes2D[${castIndex},${iPctAggro}]}
           /if (${Debug} || ${Debug_Assists}) /echo ${Nukes2D[${castIndex},${iPctAggro}]} ${Me.PctAggro} < ${Nukes2D[${castIndex},${iPctAggro}]} !${Target.Named}
           /goto :skipCast
         }
@@ -464,7 +518,7 @@ SUB check_Nukes
       | if i have spell damage reduction recourse and the mob has more than 25% health or i have < 10% mana, skip cast.  cast anyway if i have GoM to avoid losing it
       /if (${Me.Buff[Weave of Weakness].ID} || ${Me.Buff[Flames of Weakness].ID}) {
         /if ((${Target.PctHPs} > 25 || ${Me.PctMana} < 10) && !${Bool[${Me.Song[Gift of Mana].ID}]} && !${use_QUICKBurns} && !${use_LONGBurns} && !${use_FULLBurns}) {
-          /if (${Debug} || ${Debug_Assists}) /echo \ay skipping cast of ${Nukes2D[${castIndex},${iCastName}]}, i have spell damage reduction
+          /if (${Debug} || ${Debug_Assists}) /echo skipping cast of ${Nukes2D[${castIndex},${iCastName}]}, i have spell damage reduction
           /goto :skipCast
         }
       }
@@ -474,18 +528,24 @@ SUB check_Nukes
 	  
       /call check_Ready "Nukes2D" ${castIndex}
 	  
-	  /if (${Debug} || ${Debug_Assists}) {
-		/echo Checking Nuke ${Nukes2D[${castIndex},${iIfs}]}
-		/echo Mana ${check_Mana["Nukes2D",${castIndex}]}
-		/echo Target  ${AssistTarget}
-		/echo Cast index ${castIndex}
-		/echo Check Distance ${check_Distance[${AssistTarget},${Nukes2D[${s},${iMyRange}]}]}
-		/echo Range ${Nukes2D[${s},${iMyRange}]}
-	  }
+      /if (${Debug} || ${Debug_Assists}) {
+      /echo Checking Nuke ${Nukes2D[${castIndex},${iIfs}]}
+      /echo Mana ${check_Mana["Nukes2D",${castIndex}]}
+      /echo Target  ${AssistTarget}
+      /echo Cast index ${castIndex}
+      /echo Check Distance ${check_Distance[${AssistTarget},${Nukes2D[${s},${iMyRange}]}]}
+      /echo Range ${Nukes2D[${s},${iMyRange}]}
+      }
 	  
       /if (${c_Ready} && ${Nukes2D[${castIndex},${iIfs}]}) {
         /if (${check_Mana["Nukes2D",${castIndex}]}) {
           /if (${check_Distance[${AssistTarget},${Nukes2D[${s},${iMyRange}]}]}) {
+
+             /if (${Select[${Me.Class.ShortName},CLR,DRU,SHM]}) {
+     
+               /varset Nukes2D[${castIndex},${iSubToRun}] check_HealCasting_DuringDetrimental
+           
+            }
             /call e3_Cast ${AssistTarget} "Nukes2D" "${castIndex}"
           }
         }
@@ -624,6 +684,10 @@ SUB cast_longTermSpells(int spellTarget, string ArrayName)
     /if (${c_Ready}) {
       /if (${check_Mana[${ArrayName},${s}]}) {
         /if (${check_Distance[${spellTarg},${${ArrayName}[${s},${iMyRange}]}]}) {
+    
+            /if (${Select[${Me.Class.ShortName},CLR,DRU,SHM]}) {
+               /varset ${ArrayName}[${s},${iSubToRun}] check_HealCasting_DuringDetrimental
+            }
           /call e3_Cast ${spellTarg} "${ArrayName}" "${s}"
         } else {
           /if (${Debug} || ${Debug_Assists}) /echo ${spellTarg} out of range for ${${ArrayName}[${s},${iMyRange}]} ${${ArrayName}[${s},${iCastName}]}
@@ -926,13 +990,228 @@ SUB DoTs_OnCommand
         /if (!${Bool[${Spawn[id ${targetID}].Type.NotEqual[Corpse]}]}) {
           /call RemoveArrayElement DoT_Targets ${DoT_Targets[${i}]}
         } else {
-          /call cast_longTermSpells "${targetID}" "Command_DoTs2D"
+          |/call cast_longTermSpells "${targetID}" "Command_DoTs2D"
+          |Ewiclip MOD: New method for DoTs
+          /call cast_damageOverTimeSpells ${targetID} "Command_DoTs2D"
         }
       }
     /if (!${ActionTaken} && ${Defined[DoT_Targets]}) /next i
   }
 /if (${Debug} || ${Debug_Assists}) /echo <== DoT_OnCommand -|
 /RETURN
+
+|--------------------------------------|
+| -- Ewiclip MOD: New Method for DoTs -|
+|--------------------------------------|
+
+SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
+
+/declare i int local
+/declare iSpellSwap int local 0
+/declare spellTimer string local
+|${${ArrayName}[${i},${iCastName}]}        --> strSpellName
+|${${ArrayName}[${i},${iAllowSpellSwap}]} --> 0/1 
+|${${ArrayName}[${i},${iNoEarlyRecast}]}  --> 0/1
+|${${ArrayName}[${i},${iNoStack}]}        --> 0/1
+|${${ArrayName}[${i},${iTriggerSpell}]}   --> 0/strSpellName
+|${${ArrayName}[${i},${iIfs}]}            --> /noaprse string
+|${${ArrayName}[${i},${iMinMana}]}        --> int 
+|${${ArrayName}[${i},${iSpellGem}]}        --> int 
+
+/for i 1 to ${${ArrayName}.Size[1]}
+    /doevents DoTsOff
+    |make sure we have the right target    
+   
+    |make sure our target is not a corpse
+    /if (!${Bool[${Spawn[id ${TargetID}].Type.NotEqual[Corpse]}]}) {
+      /return
+    }
+
+    |setups for resist counters and spellRetry timers
+    /varset spellTimer spellTimer_${TargetID}_${ArrayName}_${i}
+		/varset resistCount resist_${TargetID}_${ArrayName}_${i}
+    |Is there a spell timer configured for this spell and target? if so, skip this   
+    /if (${Defined[${spellTimer}]}) {
+		  /if (${${spellTimer}}) {
+        |/echo skipping ${spellTimer}
+        /continue
+      }
+    }
+    | -- Rules that tell us to skip the DoT we're on and evaluate off the next DoT.
+    |Skip if /MinMana|%% is set and my mana percentage is below the defined amount in the parameter
+    /if (!${${ArrayName}[${i},${iMinMana}]} > ${Me.PctMana}) {
+      /continue
+    }
+    |Skip of defiend IF isn't met
+    /if (!${${ArrayName}[${i},${iIfs}]}) {
+      /continue
+    }
+    |verify the spell we want to use is actulaly ready
+    /if (!(${Me.ItemReady[${${ArrayName}[${i},${iCastName}]}]} || ${Me.SpellReady[${${ArrayName}[${i},${iCastName}]}]} || ${Me.AltAbilityReady[${${ArrayName}[${i},${iCastName}]}]})) {
+       /continue
+    }
+    |Change the target here, as we need the correct target if using TimeLeftOnMySpell
+    /if (${Bool[${Target.ID} != ${TargetID}]}) {
+      /if (${Debug} || ${Debug_Assists})  /echo changing target to ${TargetID}
+      /target id ${TargetID}
+      /delay 2
+    }
+    |Skip if /NoEarlyRecast is set and the mob has this spell from me
+    /if (${TimeLeftOnMySpell[${${ArrayName}[${i},${iCastName}]}]} > 0 && ${${ArrayName}[${i},${iNoEarlyRecast}]}) {
+      /continue
+    }
+    |Skip if /NoStack is set and ANYONE (including myself) have already casted this on the NPC
+    /if (${${ArrayName}[${i},${iNoStack}]} && (${Bool[${Target.Buff[${FindItem[=${${ArrayName}[${i},${iCastName}]}].Spell}]}]} || ${Bool[${Target.Buff[=${${ArrayName}[${i},${iCastName}]}]}]})) {
+      /continue
+    }
+    |Skip if /TriggerSpell|SpellName is set and both the spell and TriggerSpell are already on the NPC from me
+    /if (${Bool[${${ArrayName}[${i},${iTriggerSpell}]}]} && ${TimeLeftOnMySpell[${${ArrayName}[${i},${iTriggerSpell}]}]} > 4 && ${TimeLeftOnMySpell[${${ArrayName}[${i},${iCastName}]}]} > 4) {
+      /continue
+    }
+    |Skip if this spell is already on the NPC from me and has more than 4 seconds left on it. (This is item casts)
+    /if (${Bool[${FindItem[=${${ArrayName}[${i},${iCastName}]}]}]} && ${TimeLeftOnMySpell[${FindItem[=${${ArrayName}[${i},${iCastName}]}].Spell}]} > 4) {
+      /continue
+    }
+    |Skip if this spell is already on the NPC from me and has more than 4 seconds left on it. (This is spell casts)
+    /if (${TimeLeftOnMySpell[${${ArrayName}[${i},${iCastName}]}]} > 4 && !${Bool[${${ArrayName}[${i},${iTriggerSpell}]}]}) {
+      /continue
+    }
+ 
+
+    /if (!${Bool[${Me.Casting}]}) {
+
+     
+      |Cast the spell!
+      /call e3_Cast ${TargetID} ${ArrayName} ${i}
+      
+      /if (${Cast.Stored.Name.Equal[${${ArrayName}[${i},${iSpellName}]}]} && ${castReturn.Equal[CAST_RESIST]}) {
+       
+        /if (!${Defined[${resistCount}]}) {
+          |this will declare a resist counter as an int outer 1, so we can also keep track of it to delete it later.
+          /call register_ResistCounter ${resistCount}
+        
+        } else {
+          /varcalc ${resistCount} ${${resistCount}}+1
+          /if (${Debug} || ${Debug_Assists})  /echo incrementing resist counter to:${${resistCount}} for:${resistCount}
+          /if (${${resistCount}} >= ${${ArrayName}[${i},${iMaxTries}]}) {
+            /varset ${resistCount} 0
+            /call createTimer "${spellTimer}" "1m"
+        }
+      }
+      | If the spell did not take hold.
+      } else /if (${Cast.Stored.Name.Equal[${${ArrayName}[${i},${iSpellName}]}]} && ${castReturn.Equal[CAST_TAKEHOLD]} && !${Cast.Stored.Name.Equal[${spammableSpell}]}) {
+        /if (${Defined[${resistCount}]}) {
+           /varset ${resistCount} 0
+        }
+        |/echo creating spell timer for 3 min before retry
+        /call createTimer "${spellTimer}" "3m"
+        | If the target was immune.
+      } else /if (${Cast.Stored.Name.Equal[${${ArrayName}[${i},${iSpellName}]}]} && ${castReturn.Equal[CAST_IMMUNE]} && !${Cast.Stored.Name.Equal[${spammableSpell}]}) {
+        /if (${Defined[${resistCount}]}) {
+           /varset ${resistCount} 0
+        }
+        /call createTimer "${spellTimer}" "5m"
+      }
+      |Spell Swap Code Specifically for /AllowSpellSwap
+      |These spells will De-Mem and Re-Mem a new spell immediately after cast. /Gem|# is ignored for these spells. 
+      /if (${Bool[${Me.SpellInCooldown}]} && ${${ArrayName}[${i},${iAllowSpellSwap}]} && ${Bool[${Me.Book[${${ArrayName}[${i},${iCastName}]}]}]}) {
+        /for iSpellSwap 1 to ${${ArrayName}.Size[1]}
+          /if (${TimeLeftOnMySpell[${${ArrayName}[${iSpellSwap},${iCastName}]}]} > 18 || ${Bool[${Me.Gem[${${ArrayName}[${iSpellSwap},${iCastName}]}]}]} || !${Bool[${Me.Book[${${ArrayName}[${iSpellSwap},${iCastName}]}]}]} || !${${ArrayName}[${iSpellSwap},${iAllowSpellSwap}]}) {
+            /continue
+          }
+              |After /MemSpell the book will automatically close. However, while in combat this command sometimes fails to start the first time we send it.
+              |We put this into a loop to ensure "it as least tries" -- If the spell really does fail to mem it will exit on it's own and try again next cycle.
+              |/MemSpell {int WhereToMem} {String SpellToMem}
+              /while (!${Window[SpellBookWnd].Open}) {
+                /if (${GetEmptySpellGem[]} > 0) {
+                  /MemSpell ${GetEmptySpellGem[]} "${${ArrayName}[${iSpellSwap},${iCastName}]}" 
+                } else {
+                  /MemSpell ${Me.Gem[${${ArrayName}[${i},${iCastName}]}]} "${${ArrayName}[${iSpellSwap},${iCastName}]}" 
+                }
+              }
+              /break
+         /next iSpellSwap
+      } else {
+        |Code to mem any spell in any empty gem with /Gem|# as the preferred location. This only applies to spells that DO NOT have /AllowSpellSwap defined.
+        |/AllowSpellSwap spells are mem-shuffled with the code directly above this. And we ignore /Gem|# for those. 
+        |In E3, if no /Gem|# is defined it automatically assigns the ${DefaultGem} to that specific spell's ${iSpellGem} variable.
+        /if (${Bool[${Me.SpellInCooldown}]} && ${Bool[${Me.Book[${${ArrayName}[${i},${iCastName}]}]}]} && !${Bool[${${ArrayName}[${i},${iSpellSwap}]}]}) {
+          /for iSpellSwap 1 to ${${ArrayName}.Size[1]}
+            /if (!${Bool[${Me.Gem[${${ArrayName}[${iSpellSwap},${iCastName}]}]}]} && ${Bool[${Me.Book[${${ArrayName}[${iSpellSwap},${iCastName}]}]}]}) {
+              |After /MemSpell the book will automatically close. However, while in combat this command sometimes fails to start the first time we send it.
+              |We put this into a loop to ensure "it as least tries" -- If the spell really does fail to mem it will exit on it's own and try again next cycle.
+              |/MemSpell {int WhereToMem} {String SpellToMem}
+              /while (!${Window[SpellBookWnd].Open}) {
+                |If I join this IF with an else /if it causes a hard client crash. --- /break prevents it from sending 2 different MemSpells
+                /if (${${ArrayName}[${iSpellSwap},${iSpellGem}]} != ${DefaultGem}) {
+                  /MemSpell ${${ArrayName}[${iSpellSwap},${iSpellGem}]} "${${ArrayName}[${iSpellSwap},${iCastName}]}"
+                  /break
+                }
+                /if (${GetEmptySpellGem[]} > 0) {
+                  /MemSpell ${GetEmptySpellGem[]} "${${ArrayName}[${iSpellSwap},${iCastName}]}" 
+                } else {
+                  /MemSpell ${DefaultGem} "${${ArrayName}[${iSpellSwap},${iCastName}]}" 
+                }
+              }
+              /break
+            }
+          /next iSpellSwap
+        }
+      }
+      |End Spell Swap Code
+
+      |These checks are the same as above--but for the NEXT spell in the DoT array. This is so we don't QuickCast a spell that wouldn't be casted already.
+      /if (${i} < ${${ArrayName}.Size[1]} && ${Bool[${Me.Book[${${ArrayName}[${i},${iCastName}]}]}]} && !${Bool[${Me.Book[${${ArrayName}[${Math.Calc[${i}+1]},${iCastName}]}]}]}) {
+        
+        |Incrementing loop up 1 so we can check the next spell in sequence. 
+        /varcalc i ${i}+1
+        |Skip if /MinMana|%% is set and my mana percentage is below the defined amount in the parameter
+        /if (!${${ArrayName}[${i},${iMinMana}]} > ${Me.PctMana}) {
+          /continue
+        }
+
+        |Skip if defiend IF isn't met
+        /if (!${Bool[${${ArrayName}[${i},${iIfs}]}]}) {
+          /return
+        } 
+
+        |Skip if /NoEarlyRecast is set and the mob has this spell from me
+        /if (${TimeLeftOnMySpell[${${ArrayName}[${i},${iCastName}]}]} > 0 && ${${ArrayName}[${i},${iNoEarlyRecast}]}) {
+          /return
+        }
+
+        |Skip if /NoStack is set and ANYONE (including myself) have already casted this on the NPC
+        /if (${${ArrayName}[${i},${iNoStack}]} && (${Bool[${Target.Buff[${FindItem[=${${ArrayName}[${i},${iCastName}]}].Spell}]}]} || ${Bool[${Target.Buff[=${${ArrayName}[${i},${iCastName}]}]}]})) {
+          /return
+        }
+
+        |Skip if /TriggerSpell|SpellName is set and both the spell and TriggerSpell are already on the NPC from me
+        /if (${Bool[${${ArrayName}[${i},${iTriggerSpell}]}]} && ${TimeLeftOnMySpell[${${ArrayName}[${i},${iTriggerSpell}]}]} > 4 && ${TimeLeftOnMySpell[${${ArrayName}[${i},${iCastName}]}]} > 4) {
+          /return
+        }
+
+        |Skip if this spell is already on the NPC from me and has more than 4 seconds let on it. (This is item casts and not spells)
+        /if (${Bool[${FindItem[=${${ArrayName}[${i},${iCastName}]}]}]} && ${TimeLeftOnMySpell[${FindItem[=${${ArrayName}[${i},${iCastName}]}].Spell}]} > 4) {
+          /return
+        }
+
+        |Skip if this spell is already on the NPC from me and has more than 4 seconds let on it. (This is spell casts and not items)
+        /if (${TimeLeftOnMySpell[${${ArrayName}[${i},${iCastName}]}]} > 4 && !${Bool[${${ArrayName}[${i},${iTriggerSpell}]}]}) {
+          /return
+        }
+        /echo QuickCast:: ${${ArrayName}[${i},${iCastName}]}
+        /call e3_Cast ${TargetID} ${ArrayName} ${i} True
+      } else {
+        /return
+      }
+    }
+
+/next i
+
+/RETURN
+
+
+
 
 |----------------------------|
 |- Turns AE functions on.	  -|
@@ -1669,6 +1948,7 @@ Sub assist_Aliases
 
 |--------------------------------------------------------------------------------|
 Sub assist_Background_Events
+ 
   /if (${auto_AssistOn})    /call check_AutoAssist
   /if (${tankKillEngaged})  /call tankKill
   /doevents Assist
@@ -1704,3 +1984,44 @@ SUB event_debuffsOnAll(line)
     }
   /next i
 /RETURN
+
+|Ewiclip MOD: Function for returning if a spell gem is empty
+SUB GetEmptySpellGem
+  /declare i int local 
+  /for i 1 to ${Math.Calc[8+${Me.AltAbility[Mnemonic Retention].Rank}]}
+    /if (!${Bool[${Me.Gem[${i}]}]}) {
+      /RETURN ${i}
+    }
+  /next i
+/RETURN 0
+
+|----------------------------------------------------------------------|
+|- Ewiclip MOD: Function for returning duration of my spell on the NPC
+|- Return Seconds remaining for a buff on your target
+|----------------------------------------------------------------------|
+Sub TimeLeftOnMySpell(SpellName)
+  |${Target.BuffDuration[${${ArrayName}[${i},${iCastName}]} ]} -- Divide by 1000 to get seconds remaining on DoTName
+  |${Target.Buff[${${ArrayName}[${i},${iCastName}]} ].Caster}  -- Who casted this DoT?
+  |${Target.Buff[DoTName].ID) -- SpellID 
+  |${FindItem[DoTName].Spell.ID} -- Returns ID of spell on item correctly
+  
+  /declare SpellID string local 0
+  /declare ItemName string local
+  /declare BuffDuration int local 0
+
+  /if (${Bool[${FindItem[=${SpellName}]}]}) {
+    /varset SpellID ${FindItem[${SpellName}].Spell.ID}
+    /varset ItemName SpellName
+    /varset SpellName ${FindItem[${SpellName}].Spell}
+  } else {
+    /varset SpellID ${Spell[${SpellName}].ID}
+  }
+  
+  /declare iBuff int local 1
+  /for iBuff 1 to 100
+    /if ((${SpellName.Equal[${Target.Buff[${iBuff}]}]}) && ${SpellID.Equal[${Target.Buff[${iBuff}].ID}]} && ${Target.Buff[${iBuff}].Caster.Equal[${Me}]}) {
+      /varset BuffDuration ${Math.Calc[${Target.BuffDuration[${iBuff}]} / 1000]}
+      /break
+    }
+  /next iBuff
+/RETURN ${BuffDuration}
