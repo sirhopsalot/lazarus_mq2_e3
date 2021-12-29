@@ -43,6 +43,13 @@
 
 SUB e3_Setup(modeSelect)
 /if (${Debug}) /echo |- e3_Setup ==>
+
+	/if (${MacroQuest.Server.Equal[Project Lazarus]}) {
+		/declare serverNameForINI string outer Lazarus
+	} else {
+		/declare serverNameForINI string outer PEQTGC
+	}
+
   /declare reloadOnLoot bool outer FALSE
   /declare missingSpellItem string outer
   /declare numInventorySlots int outer 10
@@ -79,7 +86,16 @@ SUB e3_Setup(modeSelect)
     /beep
 		/endmacro
 	} else {
-		/declare Character_Ini string outer ${${IniMode}[${MacroData_Ini},File Paths,Bot Settings]}
+			/declare Character_Ini string outer ${${IniMode}[${MacroData_Ini},File Paths,Bot Settings]}\\${Me.CleanName}_${serverNameForINI}.ini
+			/if (!${Bool[${Ini[${Character_Ini}]}]} && ${Bool[${Ini[${Character_Ini.Replace[Lazarus,PEQTGC]}]}]}) {
+				/varset serverNameForINI PEQTGC
+				/varset Character_Ini ${Character_Ini.Replace[Lazarus,PEQTGC]}
+				/echo WARNING!!!!
+				/echo INI for ${Me.CleanName}_${serverNameForINI} does not exist but INI for PEQTGC does. Defaulting to ${Me.CleanName}_PEQTGC.ini
+				/delay 5s
+			}
+		}
+
 	}
 	|Create Ini files ========================================================================================================
 	/if (${Bool[${${IniMode}[${genSettings_Ini}]}]} && !${${IniMode}[${MacroData_Ini},e3 Build,Version].Equal[${macroVersion}]}) {
@@ -95,7 +111,7 @@ SUB e3_Setup(modeSelect)
     /delay 1s
   }
   | Generate Character_Ini.
-  /if (!${${IniMode}[${MacroData_Ini},${Me.CleanName}-PEQTGC,Bot_Ini version].Equal[${macroVersion}]} || !${Bool[${${IniMode}[${Character_Ini}]}]}) {
+  /if (!${${IniMode}[${MacroData_Ini},${Me.CleanName}-${serverNameForINI},Bot_Ini version].Equal[${macroVersion}]} || !${Bool[${${IniMode}[${Character_Ini}]}]}) {
     /delay 1s
     /call EVENT_make_CharacterSettingsIni
   }
@@ -141,7 +157,7 @@ SUB e3_Setup(modeSelect)
 SUB make_macroDataIni
 /if (${Debug}) /echo |- make_macroDataIni ==>
 	/noparse /ini "e3 Macro Inis\e3 Data.ini" "e3 Build" "Version"
-	/noparse /ini "e3 Macro Inis\e3 Data.ini" "File Paths" "Bot Settings" "e3 Bot Inis\${Me.CleanName}_PEQTGC.ini"
+	/noparse /ini "e3 Macro Inis\e3 Data.ini" "File Paths" "Bot Settings" "e3 Bot Inis"
 	/noparse /ini "e3 Macro Inis\e3 Data.ini" "File Paths" "General Settings" "e3 Macro Inis\General Settings.ini"
 	/noparse /ini "e3 Macro Inis\e3 Data.ini" "File Paths" "Advanced Settings" "e3 Macro Inis\Advanced Settings.ini"
 /if (${Debug}) /echo <== make_macroDataIni -|
@@ -238,7 +254,7 @@ SUB EVENT_make_CharacterSettingsIni
 		/if (${Bool[${macroSetups[${i}]}]}) /call ${macroSetups[${i}]}_CharacterSettings
 		/delay 2
 	/next i
-	/call WriteToIni "${MacroData_Ini},${Me.CleanName}-PEQTGC,Bot_Ini version" "${macroVersion}" 1
+	/call WriteToIni "${MacroData_Ini},${Me.CleanName}-${serverNameForINI},Bot_Ini version" "${macroVersion}" 1
 /if (${Debug}) /echo <== make_CharacterSettingsIni -|
 /RETURN	
 
