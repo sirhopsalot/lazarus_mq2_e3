@@ -109,6 +109,7 @@ SUB castQueuedSpells
 SUB castQueuedSpell(spellName, targetID)
 	/if (${DebugQueueCast}) /echo Casting queued ${spellName} on ${Spawn[id ${targetID}].Name} TargetID=${targetID}
 	/declare whatToCast string local
+	|Ewiclip -- Removed code that stopped spells with a ":" in the name from being castable.
 	/if (${Bool[${Me.Book[${spellName}]}]} || ${Bool[${Me.AltAbility[${spellName}]}]}) {
 		/if (${DebugQueueCast}) /echo Found spell or alt ability '${spellName}'
 		/varset whatToCast ${spellName}

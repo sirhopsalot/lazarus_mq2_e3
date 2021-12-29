@@ -36,7 +36,48 @@
 	/declare reagentCheckInterval int outer 60
 	/if (${Ini[${genSettings_Ini},Background,Reagent Check Interval (Min)].Length}) /varset reagentCheckInterval ${Ini[${genSettings_Ini},Background,Reagent Check Interval (Min)]}
 
+===============================================================================================================================================================================================
+===============================================================================================================================================================================================
 
+v5.1 r8 Change log:
+
+--------- Fixed:
+
+	- Fixed issue with Magicians not summoning Mod Rods unless they had spell casting haste AAs.
+	- Fixed issue with e3_casting not properly  using items.
+	- Fixed issue with unpauseTwist not getting called in e3_Casting.
+	- Fixed issue with /Rotate trying to cast abilities/spells that were on cooldown already.
+	- Fixed memory leak caused by resist check timers not getting removed when a player switched targets.
+	
+--------- Changed:
+	
+	- Old mod rods get automatically deleted before Magicians summon new mod rods.
+	- Healers will now interrupt detrimental spells and HoTs to cast direct heals on Tank & XTarget as needed.
+	- AutoSetPctAAExp is now defaulted to OFF
+	- Damage Over Time casting has been completely overhauled. (details below)
+	- Nukes defined with a /GoM flag will no longer pause if that specific nuke is on cooldown
+	- e3_Cast can now be called with an additional parameter to silence the echo received from a successful cast. (EX: /call e3_Cast ${TargetID} ${ArrayName} ${i} 1)
+	- e3 Data.ini no longer hardcodes a server name.
+	- Character INIs created while logged into Project Lazarus are now named "CharacterName_Lazarus" instead of "CharacterName_PEQTGC" (EX: Ewiclip_Lazarus.ini)
+		***NOTE: Project Lazarus players can continue to use INI files with PEQTGC in the name but new INIs are created with Lazarus in the name.***
+	- Project Lazarus "Gift of Mana" proc spells now work with the /GoM flag
+	
+--------- Added:
+
+	- New Loot Only Stackable Feature Added. Loot only stackable over N value. Optional flags for looting common or all trade skill items included, as well as the N value.
+	- TimeLeftOnMySpell(SpellName) function added -- returns seconds remaining for spells / items casted on the NPC by you. 
+	- GetEmptySpellGem function added -- returns an empty spell gem # if one exists
+	
+--------- Damage Over Time Changes:
+
+	- /AllowSpellSwap added : Allows DoTs to self-shuffle without getting stuck in a "mem -> demem -> mem" loop
+	- /TriggerSpell|SpellName added : Allows DoTs that put 2 Detrimental Effects on the NPC to recast if either the primary or secondary DoT is missing
+	- /NoEarlyRecast added : Allows you to define that a spell should NOT be recasted before it has worn off. (Think Splort/Splurt)
+	- /NoStack added : Allows you to skip this spell if anyone else has already casted it onto the NPC. (Most debuffs cannot be stacked from 2 people even if they have a DoT component)
+	- Damage Over Time spells now read the Target data instead of timer data for recasting.
+	- "QuickCast" feature added to allow items/AAs to cast immediately after spells without pausing for the universal cooldown. INIs need to define an item/AA immediately after a spell to take advantage of this.
+	- DoTs defined in the INI will automatically mem into open spell gems regardless of if the /Gem|# flag is passed or not.
+	
 ===============================================================================================================================================================================================
 ===============================================================================================================================================================================================
 

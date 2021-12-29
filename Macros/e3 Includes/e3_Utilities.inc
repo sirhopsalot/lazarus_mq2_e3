@@ -190,7 +190,7 @@ SUB ListToArray(ArrayName, Data, delimiter)
 SUB BuildSpellArray(ArrayName, NewArrayName)
   /if (${Debug}) /echo Array ${ArrayName} ${NewArrayName}
 	/if (!${Defined[SpellProp]}) {
-		/declare SpellProp[39] string outer 0
+		/declare SpellProp[43] string outer 0
 		/varset SpellProp[1] CastName
 		/varset SpellProp[2] CastType
 		/varset SpellProp[3] TargetType
@@ -222,13 +222,20 @@ SUB BuildSpellArray(ArrayName, NewArrayName)
 		/varset SpellProp[29] CastInvis
 		/varset SpellProp[30] SpellType
 		/varset SpellProp[31] CastTarget
-    /varset SpellProp[32] GiftOfMana
-    /varset SpellProp[33] CheckForID
-    /varset SpellProp[34] SpellID
+    	/varset SpellProp[32] GiftOfMana
+    	/varset SpellProp[33] CheckForID
+    	/varset SpellProp[34] SpellID
 		/varset SpellProp[35] PctAggro
 		/varset SpellProp[36] Zone
-    /varset SpellProp[37] MinSick
-    /varset SpellProp[38] Ifs
+    	/varset SpellProp[37] MinSick
+		|-- Ewiclip Mod--------------
+		|-- Properties for special DoT code.
+		/varset SpellProp[38] AllowSpellSwap
+		/varset SpellProp[39] NoEarlyRecast
+		/varset SpellProp[40] NoStack
+		/varset SpellProp[41] TriggerSpell
+		|----------------------------
+    	/varset SpellProp[42] Ifs
 	}
 
   /if (${Defined[${NewArrayName}]}) /deletevar ${NewArrayName}
@@ -267,13 +274,20 @@ SUB BuildSpellArray(ArrayName, NewArrayName)
 	/if (!${Defined[iCastInvis]})		/declare iCastInvis int outer 29
 	/if (!${Defined[iSpellType]})		/declare iSpellType int outer 30
 	/if (!${Defined[iCastTarget]})		/declare iCastTarget int outer 31
-  /if (!${Defined[iGiftOfMana]})		/declare iGiftOfMana int outer 32
-  /if (!${Defined[iCheckForID]})		/declare iCheckForID int outer 33
-  /if (!${Defined[iSpellID]})		/declare iSpellID int outer 34
-  /if (!${Defined[iPctAggro]})		/declare iPctAggro int outer 35
+  	/if (!${Defined[iGiftOfMana]})		/declare iGiftOfMana int outer 32
+  	/if (!${Defined[iCheckForID]})		/declare iCheckForID int outer 33
+  	/if (!${Defined[iSpellID]})		/declare iSpellID int outer 34
+  	/if (!${Defined[iPctAggro]})		/declare iPctAggro int outer 35
 	/if (!${Defined[iZone]})		/declare iZone int outer 36
-  /if (!${Defined[iMinSick]})		/declare iMinSick int outer 37
-  /if (!${Defined[iIfs]})		/declare iIfs int outer 38
+  	/if (!${Defined[iMinSick]})		/declare iMinSick int outer 37
+	|-- Ewiclip Mod--------------
+	|-- Properties for special DoT code.
+	/if (!${Defined[iAllowSpellSwap]})		/declare iAllowSpellSwap int outer 38
+	/if (!${Defined[iNoEarlyRecast]})		/declare iNoEarlyRecast int outer 39
+	/if (!${Defined[iNoStack]})		/declare iNoStack int outer 40
+	/if (!${Defined[iTriggerSpell]})		/declare iTriggerSpell int outer 41
+	|----------------------------
+  	/if (!${Defined[iIfs]})		/declare iIfs int outer 42
   
 	/declare i int local
 	/declare printAll bool local FALSE
@@ -647,6 +661,45 @@ SUB BuildSpellArray(ArrayName, NewArrayName)
       /varset	${NewArrayName}[${i},${iMinSick}] 0
     }
     /if (${printAll}) /echo Zone ${${NewArrayName}[${i},${iMinSick}]}
+
+	| get iAllowSpellSwap -- used in DoT casting to allow casters to shuffle a large number of DoTs
+	| DoTs defined with /AllowSpellSwap immediately de-mem after casting so another spell can be automatically memed in it's place
+	/if (${${ArrayName}[${i}].Find[/AllowSpellSwap]}) {
+		/varset ${NewArrayName}[${i},${iAllowSpellSwap}] 1
+	} else {
+		/varset ${NewArrayName}[${i},${iAllowSpellSwap}] 0
+	}
+	/if (${printAll}) /echo AllowSpellSwap ${${NewArrayName}[${i},${iAllowSpellSwap}]}		
+
+	| get iNoEarlyRecast -- used for DoTs like Splurt/Splort that you want to wear off before recasting
+	/if (${${ArrayName}[${i}].Find[/NoEarlyRecast]}) {
+		/varset ${NewArrayName}[${i},${iNoEarlyRecast}] 1
+	} else {
+		/varset ${NewArrayName}[${i},${iNoEarlyRecast}] 0
+	}
+	/if (${printAll}) /echo NoEarlyRecast ${${NewArrayName}[${i},${iNoEarlyRecast}]}		
+
+	| get NoStack -- used for DoTs/Debuffs that cannot be used form two people on 1 NPC at the same time. (DoTs with a debuff)
+	| Note: this was created for necromancer / druid epics on Project Lazarus.
+	/if (${${ArrayName}[${i}].Find[/NoStack]}) {
+		/varset ${NewArrayName}[${i},${iNoStack}] 1
+	} else {
+		/varset ${NewArrayName}[${i},${iNoStack}] 0
+	}
+	/if (${printAll}) /echo NoStack ${${NewArrayName}[${i},${iNoStack}]}	
+
+	| get TriggerSpell -- used for DoTs only. 
+	| Example: Main=Dread Pyre/TriggerSpell|Funeral Pyre of Kelador
+	| Dread Pyre will cast "Dread Pyre" AND "Funeral Pyre of Keldador" at the same time (custom spells)
+	| TriggerSpell check allows E3 to re-cast the spell "Dread Pyre" if either of these two DoTs are missing from the NPC.
+    /if (${${ArrayName}[${i}].Find[/TriggerSpell|]}) {
+      /call argueString TriggerSpell| "${${ArrayName}[${i}]}"
+      /varset ${NewArrayName}[${i},${iTriggerSpell}] ${c_argueString}
+    } else {
+      /varset	${NewArrayName}[${i},${iTriggerSpell}] 0
+    }
+    /if (${printAll}) /echo TriggerSpell ${${NewArrayName}[${i},${iTriggerSpell}]}
+
     | get iIfs - conditionals used in various places
     /if (${${ArrayName}[${i}].Find[/Ifs|]}) {
         /call argueString Ifs| "${${ArrayName}[${i}]}"
@@ -700,7 +753,7 @@ SUB RemoveSpellArrayElement(ArrayName, ArrayIndex)
 			/next p
 		/next n
 		/deletevar tempArray
-	}	else {
+	} else {
 	  /deletevar ${ArrayName}
 	}
 /if (${Debug}) /g <== RemoveSpellArrayElement -| ${Time}
@@ -811,7 +864,7 @@ SUB check_macroTimers
     /if (${Defined[${timerArray[${i}]}]}) {
 		  /if (!${${timerArray[${i}]}}) {
         /if (${Debug}) /echo Deleting timer: ${timerArray[${i}]}
-			  /varcalc SpentTimerCounter ${SpentTimerCounter} + 1
+			    /varcalc SpentTimerCounter ${SpentTimerCounter} + 1
 				/deletevar ${timerArray[${i}]}
 				/varset SpentTimerList ${SpentTimerList}${i},
 			}
@@ -826,6 +879,53 @@ SUB check_macroTimers
 	}
 /if (${Debug}) /echo <== check_macroTimers -|
 /RETURN
+|--------------------------------------------------------------------|
+|- Deletes spell resist counters thare are defined during combat	-|
+|--------------------------------------------------------------------|
+SUB check_ResistCounters
+
+
+   /if (!${Defined[spellResistCounters]}) {
+        /declare spellResistCounters[1024] string outer
+        /declare spellResistCountersIndex int outer
+        /varset spellResistCountersIndex 0
+  } 
+  |we are no longer in combat, so we can now clear all the values in the array and set the current index to 0
+  /if (!${Defined[DoT_Targets]} && ${spellResistCountersIndex} > 0) {
+
+      /declare s int local
+      /declare nameOfCounter string local
+      /for s 1 to ${spellResistCountersIndex}
+      
+        /varset nameOfCounter ${spellResistCounters[${s}]}
+	    /if (${Debug}) /echo check_ResistCounterReset checking for defined ${nameOfCounter}
+		/if (${Defined[${nameOfCounter}]}) {
+		  /if (${Debug}) /echo check_ResistCounterReset deleting defined ${nameOfCounter}
+         /deletevar ${nameOfCounter}
+        } else {
+			/if (${Debug}) /echo check_ResistCounterReset there nothing defined for  ${nameOfCounter}
+		}
+      
+      /next s
+    
+      /varset spellResistCountersIndex 0
+  }
+
+/Return
+SUB register_ResistCounter(resistVariableName)
+	/if (!${Defined[spellResistCounters]}) {
+			/declare spellResistCounters[1024] string outer
+			/declare spellResistCountersIndex int outer
+			/varset spellResistCountersIndex 0
+	} 
+	/if (${Debug}) /echo register_ResistCounter registering ${resistVariableName}
+	/declare ${resistCount} int outer 1
+	/varcalc spellResistCountersIndex ${spellResistCountersIndex}+1
+	/if (${Debug}) /echo spellResistCountersIndex is now:${spellResistCountersIndex}
+ 	/varset spellResistCounters[${spellResistCountersIndex}] ${resistVariableName}
+
+
+/Return
 |----------------------------------------------------------------------------------------|
 |- Auto inventories items from your cursor. 											-|
 |- Alerts the user, and ends the macro, if there is no free inventory space available.	-|
