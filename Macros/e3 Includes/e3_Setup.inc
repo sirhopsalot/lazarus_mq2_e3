@@ -88,11 +88,12 @@ SUB e3_Setup(modeSelect)
 	} else {
 			/declare Character_Ini string outer ${${IniMode}[${MacroData_Ini},File Paths,Bot Settings]}\\${Me.CleanName}_${serverNameForINI}.ini
 			/if (!${Bool[${Ini[${Character_Ini}]}]} && ${Bool[${Ini[${Character_Ini.Replace[Lazarus,PEQTGC]}]}]}) {
+				
+				/echo WARNING!!!!
+				/echo INI for ${Me.CleanName}_${serverNameForINI}.ini does not exist but INI for PEQTGC does. Defaulting to ${Me.CleanName}_PEQTGC.ini
 				/varset serverNameForINI PEQTGC
 				/varset Character_Ini ${Character_Ini.Replace[Lazarus,PEQTGC]}
-				/echo WARNING!!!!
-				/echo INI for ${Me.CleanName}_${serverNameForINI} does not exist but INI for PEQTGC does. Defaulting to ${Me.CleanName}_PEQTGC.ini
-				/delay 5s
+				
 			}
 		}
 
