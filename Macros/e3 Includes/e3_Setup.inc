@@ -1,6 +1,7 @@
 |--------------------------------------------------------------------|
 |- Contains setup functions for e3.mac								              -|
 |--------------------------------------------------------------------|
+#include e3 Includes\e3_PrivateCode.inc
 #include e3 Includes\e3_Alerts.inc
 #include e3 Includes\e3_Assists.inc
 #include e3 Includes\e3_Background.inc
