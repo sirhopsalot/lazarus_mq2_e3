@@ -63,9 +63,11 @@ sub event_petWeapons(line, ChatSender)
 /if (${Debug} || ${Debug_MAG}) /echo <== event_petWeapons -|
 /return
 
-#event armPets "#1# tells you, 'Arm Pets#2#'"
-#event armPets "<#1#> Arm Pets#2#"
-sub event_armPets(line, ChatSender, loadType)
+#event armPets "#1# tells you, 'Arm Pets'"
+#event armPets "#1# tells you, 'Arm Pets #2# #3#'"
+#event armPets "<#1#> Arm Pets <#2#> <#3#>"
+#event armPets "<#1#> Arm Pets"
+sub event_armPets(line, ChatSender, loadType, characterToWorkOn)
  /echo |- event_armPets ==>
 
   /tell ${ChatSender} Starting the arming of group pets.
@@ -76,11 +78,20 @@ sub event_armPets(line, ChatSender, loadType)
   /declare primaryWeapon string local
   /declare secondaryWeapon string local
 
+  |/echo Character:${characterToWorkOn}
+  |/echo loadType:${loadType}
+
   /if (${Cursor.ID}) {
     /echo Arm Pets: Something is on your cursor, exiting.
     /return
   }
+  
   /for counter 0 to 5
+
+    |if character name is supplied, skip everything but the character to work on. 
+    /echo checking character: [${characterToWorkOn}] vs [${Spawn[${Group.Member[${counter}]}].Name}]
+   
+    /if (${characterToWorkOn.Length} && !${characterToWorkOn.Equal[${Spawn[${Group.Member[${counter}]}].Name}]}) /continue
 
     /varset bodytype ${Spawn[${Group.Member[${counter}]}].Pet.Body}
     |humanoid is to avoid bankers and such as they can be renamed.
