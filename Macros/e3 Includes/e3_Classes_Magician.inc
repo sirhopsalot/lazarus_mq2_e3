@@ -89,7 +89,7 @@ sub event_armPets(line, ChatSender, loadType, characterToWorkOn)
   /for counter 0 to 5
 
     |if character name is supplied, skip everything but the character to work on. 
-    /echo checking character: [${characterToWorkOn}] vs [${Spawn[${Group.Member[${counter}]}].Name}]
+    |/echo checking character: [${characterToWorkOn}] vs [${Spawn[${Group.Member[${counter}]}].Name}]
    
     /if (${characterToWorkOn.Length} && !${characterToWorkOn.Equal[${Spawn[${Group.Member[${counter}]}].Name}]}) /continue
 
