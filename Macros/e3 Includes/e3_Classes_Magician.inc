@@ -70,20 +70,38 @@ sub event_petWeapons(line, ChatSender)
 sub event_armPets(line, ChatSender, loadType, characterToWorkOn)
  /echo |- event_armPets ==>
 
+
+  |first check that we have an empty slot
+  /declare BackSlotThatIsOpen int 0
+  /declare i int local
+  /for i 1 to 10
+  /if (!${Bool[${InvSlot[pack${i}].Item.ID}]}) {
+    /varset BackSlotThatIsOpen ${i}
+    /goto :bagslotcheckdone
+  }
+  /next i
+  :bagslotcheckdone
+  /if (${BackSlotThatIsOpen}==0) {
+    |no empty bag slot available
+    /tell ${ChatSender}  Arm Pets: No empty bag slot on mage. Exiting.
+    /goto :armpetend
+  } 
+
   /tell ${ChatSender} Starting the arming of group pets.
   |note for the weapons, you need na empty bag slot for this to work.
   /declare counter int local 0
   /declare bodytype string local
   /declare char_class string local
   /declare primaryWeapon string local
-  /declare secondaryWeapon string local
+  /declare secondaryWeapon string local 
 
   |/echo Character:${characterToWorkOn}
   |/echo loadType:${loadType}
 
   /if (${Cursor.ID}) {
     /echo Arm Pets: Something is on your cursor, exiting.
-    /return
+    /tell ${ChatSender}  Arm Pets: Error, check mage for detail.
+    /goto :armpetend
   }
   
   /for counter 0 to 5
@@ -95,19 +113,21 @@ sub event_armPets(line, ChatSender, loadType, characterToWorkOn)
 
     /varset bodytype ${Spawn[${Group.Member[${counter}]}].Pet.Body}
     |humanoid is to avoid bankers and such as they can be renamed.
-    /if (${Spawn[${Group.Member[${counter}]}].Pet.ID} && !${Spawn[${Group.Member[${counter}]}].Pet.Name.Find[familiar]} && !${bodytype.Find[Humanoid]}) {
+    /if (${Spawn[${Group.Member[${counter}]}].Pet.ID} && !${Spawn[${Group.Member[${counter}]}].Pet.Name.Find[familiar]} && ${Spawn[${Group.Member[${counter}]}].Pet.Level}>1) {
       
-      /echo working on ${Spawn[${Group.Member[${counter}]}].Name} 's pet
+      /echo Arm Pets: Working on ${Spawn[${Group.Member[${counter}]}].Name} 's pet
  
       /call summonUnpackAndGive ${Spawn[${Group.Member[${counter}]}].Pet.ID} "Grant Enibik's Heirlooms" "Folded Pack of Enibik's Heirlooms"
       /if (${Cursor.ID}) {
-         /echo Arm Pets: Something went wrong and something is on your cursor, exiting.
-        /return
+        /echo Arm Pets: Something went wrong and something is on your cursor, exiting.
+        /tell ${ChatSender}  Arm Pets: Error, check mage for detail.
+        /goto :armpetend
       }
       /call summonUnpackAndGive ${Spawn[${Group.Member[${counter}]}].Pet.ID} "Grant Spectral Plate" "Folded Pack of Spectral Plate"
       /if (${Cursor.ID}) {
-         /echo Arm Pets: Something went wrong and something is on your cursor, exiting.
-        /return
+        /echo Arm Pets: Something went wrong and something is on your cursor, exiting.
+        /tell ${ChatSender}  Arm Pets: Error, check mage for detail.
+        /goto :armpetend
       }
       |/echo the line to parse is:${loadType}
       /varset char_class ${Spawn[${Group.Member[${counter}]}].Class} 
@@ -150,8 +170,8 @@ sub event_armPets(line, ChatSender, loadType, characterToWorkOn)
           /varset secondaryWeapon "Summoned: Spear of Maliciousness"
       
          }
-
-      } else /if (${char_class.Find[Magician]}) {
+        |grouped mage/nec/enc here, will probably have to split out depending on new payloads
+      } else /if (${char_class.Find[Magician]} || ${char_class.Find[Necro]} || ${char_class.Find[Enchanter]}) {
          |/echo Arm Pet: Doing ${char_class} loadout
          /if (${loadType.Find[fire]}) {
 
@@ -170,25 +190,6 @@ sub event_armPets(line, ChatSender, loadType, characterToWorkOn)
       
          }
         
-      } else /if (${char_class.Find[Necro]}) {
-         |/echo Arm Pet: Doing ${char_class} loadout
-          /if (${loadType.Find[fire]}) {
-
-          /varset primaryWeapon "Summoned: Fist of Flame"
-          /varset secondaryWeapon "Summoned: Fist of Flame"
-
-         } else /if (${loadType.Find[ice]}) {
-           
-          /varset primaryWeapon "Summoned: Orb of Chilling Water"
-          /varset secondaryWeapon "Summoned: Orb of Chilling Water"
-           
-         } else {
-          
-          /varset primaryWeapon "Summoned: Mace of Temporal Distortion"
-          /varset secondaryWeapon "Summoned: Wand of Dismissal"
-      
-         }
-
       } else {
          |/echo Arm Pet: Doing Default ${char_class} loadout
          /varset primaryWeapon "Summoned: Wand of Dismissal"
@@ -201,15 +202,16 @@ sub event_armPets(line, ChatSender, loadType, characterToWorkOn)
       /call summonUnpackAndSelect ${Spawn[${Group.Member[${counter}]}].Pet.ID} "Grant Spectral Armaments" "Folded Pack of Spectral Armaments" ${primaryWeapon} ${secondaryWeapon}
 
       /if (${Cursor.ID}) {
-         /echo Arm Pets: Something went wrong and something is on your cursor, exiting.
-        /return
+        /echo Arm Pets: Something went wrong and something is on your cursor, exiting.
+        /tell ${ChatSender}  Arm Pets: Error, check mage for detail.
+        /goto :armpetend
       }
 
     }
     |/echo ${Spawn[${Group.Member[${counter}]}].Name} the ${Spawn[${Group.Member[${counter}]}].Class} has pet: ${Spawn[${Group.Member[${counter}]}].Pet.ID} which is ${bodytype}
   /next counter
   /tell ${ChatSender} Finished arming pets.
-
+:armpetend
 /if (${Debug} || ${Debug_MAG}) /echo <== event_armPets -|
 /return
 sub summonUnpackAndSelect(targetID, spellName, ItemName, primaryItem, secondaryItem)
@@ -227,6 +229,7 @@ sub summonUnpackAndSelect(targetID, spellName, ItemName, primaryItem, secondaryI
         
          /if (${Defined[armPetArray]}) /deletevar armPetArray
 
+        /delay 1s
         |/echo done casting, put in inventory
         /autoinventory
         /delay 1s
@@ -292,10 +295,11 @@ sub summonUnpackAndGive(targetID, spellName, ItemName)
         }
         
          /if (${Defined[armPetArray]}) /deletevar armPetArray
-
+        /delay 1s
         |/echo done casting, put in inventory
         /autoinventory
         /delay 3s !${Bool[${Cursor.ID}]}
+        /delay 1s
         |/echo unfolding the bag to cursor
         /ItemNotify "${ItemName}" rightmouseup
         /delay 3s
