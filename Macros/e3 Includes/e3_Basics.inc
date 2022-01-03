@@ -1891,8 +1891,11 @@ sub event_gimme(line, ChatSender, RequestedItem)
 	}
 	
 	/if ((${Cursor.ID} || ${platOnCursor}) && !${IsRequestedItemModShard}) {
-		/target pc ${ChatSender}
-    /delay 1s
+		
+    /Echo Gimmie: Getting target of requester
+    /target pc ${ChatSender}
+    /delay 10s ${Target.ID}==${Spawn[${ChatSender}].ID}
+
     /declare originalLoc string local ${Me.Loc}
 		/if (${DebugGimme}) /echo IsClose = ${Bool[${Math.Distance[${senderLoc}]}<20]}
 		/stick 12
