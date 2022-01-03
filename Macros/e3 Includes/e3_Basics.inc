@@ -1839,7 +1839,7 @@ sub event_gimme(line, ChatSender, RequestedItem)
 		/if (${Bool[${Me.Book[${RequestedItem}]}]} || ${Bool[${Me.AltAbility[${RequestedItem}]}]}) {
 
 			/if (${DebugGimme}) /echo casting "${RequestedItem}"
-			/call castSimpleSpell ${RequestedItem} ${Me.ID}
+			/call castSimpleSpell "${RequestedItem}" ${Me.ID}
      
     } else /if (${Bool[${Me.Book[Summon: ${RequestedItem}]}]}) {
 
@@ -1891,7 +1891,9 @@ sub event_gimme(line, ChatSender, RequestedItem)
 	}
 	
 	/if ((${Cursor.ID} || ${platOnCursor}) && !${IsRequestedItemModShard}) {
-		/declare originalLoc string local ${Me.Loc}
+		/target pc ${ChatSender}
+    /delay 1s
+    /declare originalLoc string local ${Me.Loc}
 		/if (${DebugGimme}) /echo IsClose = ${Bool[${Math.Distance[${senderLoc}]}<20]}
 		/stick 12
 		/while (${Math.Distance[${Spawn[${ChatSender}].Loc}]}>20) {
@@ -1933,10 +1935,11 @@ sub event_gimme(line, ChatSender, RequestedItem)
 sub castSimpleSpell(spellName, simpleTargetID)
 
   /if (${Defined[castSimpleSpellArray]}) /deletevar castSimpleSpellArray
-  /declare castSimpleSpellArray[1] string outer ${spellName}
+  /declare castSimpleSpellArray[1] string outer "${spellName}"
   /if (${castSimpleSpellArray.Size}) {
     |/echo building the spell array for heirlooms
     /call BuildSpellArray "castSimpleSpellArray" "castSimpleSpellArray2D"
+   
     /call e3_Cast ${simpleTargetID} "castSimpleSpellArray2D" 1 False
     /while (!${Select[${castReturn},CAST_SUCCESS]}) {
           /delay 1s
@@ -2089,6 +2092,7 @@ SUB check_Supply
 				}
 
 				/if (${supplyGem} == 0 || ${supplyGem} == NULL) { 
+           /echo Supply trying to get a:"${supplySpell}" 
            /call castSimpleSpell "${supplySpell}" ${Me.ID}
        	} else {
 					/casting "${supplySpell}" ${supplyGem}
