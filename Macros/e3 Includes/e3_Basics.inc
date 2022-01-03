@@ -1708,9 +1708,11 @@ Sub basics_Aliases
 |- Must add /doevents gimme to basics_Background_Events in e3_Basics.ini
 |-----------------------------------------------------------|
 #event gimme "#1# tells you, 'Gimme #2#'"
-|#event gimme "<#1#> Gimme #2#"
+#event gimme "<#1#> Gimme #2#"
+#event gimme "[#1#(msg)] Gimme #2#"
 sub event_gimme(line, ChatSender, RequestedItem)
-	/declare DebugGimme false
+
+  /declare DebugGimme false
 	/declare SummonSpellCast 
 	/if (${DebugGimme}) /echo |- event_gimme ==>
   /if (${Waiting4Rez}) /return
@@ -1720,12 +1722,12 @@ sub event_gimme(line, ChatSender, RequestedItem)
 	/if (${DebugGimme}) /echo ${senderLoc}
 	/if (${DebugGimme}) /echo Distance = ${Math.Distance[${senderLoc}]}
 	/if (${Math.Distance[${Spawn[${ChatSender}].Loc}]}>100) {
-		/tell ${ChatSender} You're too far away. Please move closer and ask again.
-		/return
+		/call notifyViaBCTell  ${ChatSender} "You're too far away. Please move closer and ask again."
+   	/return
 	}
 	/if (${Bool[${Cursor.ID}]} || ${medBreak} || ${Me.Invis} || ${Me.PctHPs} < 85 || ${Me.PctAggro} > 1 || ${Me.CombatState.Equal[COMBAT]} || ${Assisting} || ${Me.Moving} || ${Me.Combat}) {
-		/tell ${ChatSender} I'm busy
-		/return
+    /call notifyViaBCTell  ${ChatSender} "I'm busy"
+  	/return
 	}
 	/declare platOnCursor local false
 	/target pc ${ChatSender}
@@ -1740,13 +1742,13 @@ sub event_gimme(line, ChatSender, RequestedItem)
   }
 
   /if (!${GimmeSharing} && !${IsMyBot}) {
-    /tell ${ChatSender} I have disabled Gimme sharing, please seek your supplies elsewhere
+    /call notifyViaBCTell  ${ChatSender} "I have disabled Gimme sharing, please seek your supplies elsewhere"
     /return
   }
 
 	| check if the requestor can be reached
 	/if (!${Spawn[${ChatSender}].LineOfSight}) {
-		/tell ${ChatSender} Where are you? I don't see you. Please move closer if you want me to give you something.
+		/call notifyViaBCTell  ${ChatSender} "Where are you? I don't see you. Please move closer if you want me to give you something."
 		/delay 10
 		/return
 	}	
@@ -1754,7 +1756,7 @@ sub event_gimme(line, ChatSender, RequestedItem)
 	/if (${DebugGimme}) /echo RequestedItem IsModShard = ${Bool[${RequestedItem.Find[Modulation Shard]}]}
 	/declare IsRequestedItemModShard bool local ${Bool[${RequestedItem.Find[Modulation Shard]}]}
 	
-	/tell ${ChatSender} ${RequestedItem}, coming right up
+	/call notifyViaBCTell  ${ChatSender} "${RequestedItem}, coming right up"
 	/declare DiamondCoinName Diamond Coin
 	/declare DCName DC
 	/declare DiamondCoinsName Diamond Coins
@@ -1795,7 +1797,7 @@ sub event_gimme(line, ChatSender, RequestedItem)
 			/varset platOnCursor true
 		} else {
 			/delay 3s
-			/tell ${ChatSender} I'm all out of ${RequestedItem}
+			/call notifyViaBCTell  ${ChatSender} "I'm all out of ${RequestedItem}"
 		}
 	} else /if (${Bool[${FindItem[=${RequestedItem}]}]} && !${IsRequestedItemModShard}) {
 		/if (${DebugGimme}) /echo Found item ${RequestedItem}
@@ -1864,7 +1866,7 @@ sub event_gimme(line, ChatSender, RequestedItem)
 			
 		} else {
 			/delay 2s
-			/tell ${ChatSender} Spell ${RequestedItem} not found
+			/call notifyViaBCTell  ${ChatSender} "Spell ${RequestedItem} not found"
 			/varset SummoningItem false
 		}
 		/if (${SummoningItem}) {
@@ -1926,12 +1928,25 @@ sub event_gimme(line, ChatSender, RequestedItem)
 		/if (${Stick.Active}) /squelch /stick off
 		/if (${Math.Distance[${originalLoc}]}>20) /call MoveToLoc ${originalLoc} 50 20
 	} else /if (!${IsRequestedItemModShard}) {
-		/tell ${ChatSender} Sorry, I don't have a ${RequestedItem} and couldn't summon one for you. The spell/AA may be on cooldown.
+		/call notifyViaBCTell  ${ChatSender} "Sorry, I don't have a ${RequestedItem} and couldn't summon one for you. The spell/AA may be on cooldown."
 	} 
 	
 	
 /return
+sub notifyViaBCTell(targetToTell, messageToSend)
+  /declare IsTargetMyBot bool local False
+	/varset IsTargetMyBot ${Bool[${Select[${targetToTell}, ${NetBots.Client}]}]}		
 
+   /if (${IsTargetMyBot}) {
+
+      /bct ${targetToTell} ${messageToSend}
+
+    } else {
+  
+      /tell ${targetToTell} ${messageToSend}
+    }
+
+/return
 |--------------------------------------------------------------------------------------------|
 |- Used to call the e3_Cast for simple spells that cannot normally fail.                   	-|
 |--------------------------------------------------------------------------------------------|
@@ -2006,7 +2021,7 @@ SUB check_Gimme
 					/if (${Bool[${Spawn[pc ${gimmeCharacter}]}]}) {
 						/echo ==> Gimme: Hey ${gimmeCharacter} Gimme a ${gimmeItem}
 						/delay 1
-						/tell ${Gimmies[${i}].Arg[1,|]} Gimme ${gimmeItem}
+            /call notifyViaBCTell ${gimmeCharacter} "Gimme ${gimmeItem}"
 					}
 					/varset GimmeTimer${i} ${gimmeTimeout}
 					| Minimum of 10s delay between requests
