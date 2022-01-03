@@ -64,13 +64,24 @@ sub event_petWeapons(line, ChatSender)
 /return
 
 #event armPets "#1# tells you, 'Arm Pets'"
-#event armPets "#1# tells you, 'Arm Pets #2# #3#'"
-#event armPets "<#1#> Arm Pets <#2#> <#3#>"
-#event armPets "<#1#> Arm Pets"
-sub event_armPets(line, ChatSender, loadType, characterToWorkOn)
+#event armPets "#1# tells you, 'Arm Pets #2#'"
+|#event armPets "<#1#> Arm Pets <#2#> <#3#>"
+sub event_armPets(line, ChatSender, loadType)
  /echo |- event_armPets ==>
-
-
+  
+  /declare characterToWorkOn string local
+  
+  /if (${Bool[${loadType.Length}]}) {
+   /varset characterToWorkOn ${loadType.Token[2, ]}
+   /varset loadType ${loadType.Token[1, ]}
+   /if (${characterToWorkOn.Equal[NULL]}) {
+     |set to empty string
+     /varset characterToWorkOn  
+   }
+   |/echo LoadType:${loadType}
+   |/echo Character:${characterToWorkOn}
+  }
+  
   |first check that we have an empty slot
   /declare BackSlotThatIsOpen int 0
   /declare i int local
@@ -103,27 +114,26 @@ sub event_armPets(line, ChatSender, loadType, characterToWorkOn)
     /tell ${ChatSender}  Arm Pets: Error, check mage for detail.
     /goto :armpetend
   }
-  
+  |/echo got to for loop: ${characterToWorkOn.Length} : ${characterToWorkOn.Length}>0]}
   /for counter 0 to 5
-
     |if character name is supplied, skip everything but the character to work on. 
     |/echo checking character: [${characterToWorkOn}] vs [${Spawn[${Group.Member[${counter}]}].Name}]
    
-    /if (${characterToWorkOn.Length} && !${characterToWorkOn.Equal[${Spawn[${Group.Member[${counter}]}].Name}]}) /continue
-
+    /if (${characterToWorkOn.Length}>0 && !${characterToWorkOn.Equal[${Spawn[${Group.Member[${counter}]}].Name}]}) /continue
+    
     /varset bodytype ${Spawn[${Group.Member[${counter}]}].Pet.Body}
     |humanoid is to avoid bankers and such as they can be renamed.
     /if (${Spawn[${Group.Member[${counter}]}].Pet.ID} && !${Spawn[${Group.Member[${counter}]}].Pet.Name.Find[familiar]} && ${Spawn[${Group.Member[${counter}]}].Pet.Level}>1) {
       
       /echo Arm Pets: Working on ${Spawn[${Group.Member[${counter}]}].Name} 's pet
  
-      |/call summonUnpackAndGive ${Spawn[${Group.Member[${counter}]}].Pet.ID} "Grant Enibik's Heirlooms" "Folded Pack of Enibik's Heirlooms"
+      /call summonUnpackAndGive ${Spawn[${Group.Member[${counter}]}].Pet.ID} "Grant Enibik's Heirlooms" "Folded Pack of Enibik's Heirlooms"
       /if (${Cursor.ID}) {
         /echo Arm Pets: Something went wrong and something is on your cursor, exiting.
         /tell ${ChatSender}  Arm Pets: Error, check mage for detail.
         /goto :armpetend
       }
-      |/call summonUnpackAndGive ${Spawn[${Group.Member[${counter}]}].Pet.ID} "Grant Spectral Plate" "Folded Pack of Spectral Plate"
+      /call summonUnpackAndGive ${Spawn[${Group.Member[${counter}]}].Pet.ID} "Grant Spectral Plate" "Folded Pack of Spectral Plate"
       /if (${Cursor.ID}) {
         /echo Arm Pets: Something went wrong and something is on your cursor, exiting.
         /tell ${ChatSender}  Arm Pets: Error, check mage for detail.
