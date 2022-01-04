@@ -2660,7 +2660,7 @@ SUB ItemDeleteSummoned(ItemString)
 |---------------------------------------------------------------------------------|
 | Centralized area to call methods that will be called every event loop
 | Warning only put things that check very quickly if they should be called or not.
-| utting methods that have complex checks will slow everything down
+| putting methods that have complex checks will slow everything down
 |---------------------------------------------------------------------------------|
 Sub check_Basics
   /call check_ResistCounters
