@@ -2638,6 +2638,11 @@ SUB check_ItemDeleteSummoned
         /echo Trying to Deleting ${ItemToDelete}
         /call ClearCursor
         /delay 1s
+        |Found the issue of char disconnect. If you try and do a leftmouse up on an item and your casting
+        |the server will disconnect you.
+        /while (${Cast.Status.Find[C]}) {
+          /delay 1
+        }
         /itemnotify "${ItemToDelete}" leftmouseup
         /delay 10s ${Bool[${Cursor.ID}]}
         /if (${Bool[${Cursor.ID}]} &&  ${Cursor.Name.Find[Summoned:]}) /destroy
