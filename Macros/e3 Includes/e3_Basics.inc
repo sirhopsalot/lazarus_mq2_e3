@@ -1825,19 +1825,16 @@ sub event_gimme(line, ChatSender, RequestedItem)
 		/declare SummoningItem bool local true
 		/echo ${RequestedItem}
 		/if (${IsRequestedItemModShard}) {
-       /bc A request for Modulation shards has been made, please pause for a moment.
-       /delay 2s
-       /bc Deleting old Mulation Shards, watch your cursor.
+      /bc A request for Modulation shards has been made, please pause for a moment.
+      /delay 2s
+      /bc Deleting old Mulation Shards, watch your cursor.
 			|get rid of old mod rods, to remote then local
-		  /bca //itemnotify "${RequestedItem}" leftmouseup
-			/itemnotify "${RequestedItem}" leftmouseup
-			/delay 2s
-			|be sure to evaluate this on the client side using noparse
-			/noparse /bca //if (${Bool[${Cursor.ID}]} && ${Cursor.Name.Find[Summoned:]}) /destroy
-			/if (${Bool[${Cursor.ID}]} &&  ${Cursor.Name.Find[Summoned:]}) /destroy
-			/delay 2s
-			/call ClearCursor
-		}
+		  /bca //varset ItemDeleteSummoned ${RequestedItem}
+      /varset ItemDeleteSummoned ${RequestedItem}
+      /call check_ItemDeleteSummoned
+      /call ClearCursor
+		
+    }
 		/if (${Bool[${Me.Book[${RequestedItem}]}]} || ${Bool[${Me.AltAbility[${RequestedItem}]}]}) {
 
 			/if (${DebugGimme}) /echo casting "${RequestedItem}"
@@ -1881,11 +1878,9 @@ sub event_gimme(line, ChatSender, RequestedItem)
 		| and flush the other events that have piled up as this is a long casting spell
 		/if (${IsRequestedItemModShard}) {
       /bc Putting new Mulation Shards in bags.
-      /delay 1s
-			/bca //autoinventory
+     	/bca //varset ItemDeleteSummoned ClearCursor
       /call ClearCursor
-      /delay 2s
-      /doevents flush gimme
+	    /doevents flush gimme
       /bc Done with Modulation shards
 			/return
 		
@@ -1959,7 +1954,7 @@ sub castSimpleSpell(spellName, simpleTargetID)
     /call BuildSpellArray "castSimpleSpellArray" "castSimpleSpellArray2D"
    
     /call e3_Cast ${simpleTargetID} "castSimpleSpellArray2D" 1 False
-    /while (!${Select[${castReturn},CAST_SUCCESS]}) {
+    /while (${Select[${castReturn},CAST_FIZZLE]}) {
           /delay 1s
           /call e3_Cast  ${simpleTargetID} "castSimpleSpellArray2D" 1 False
     }
@@ -2101,11 +2096,9 @@ SUB check_Supply
             /bc A request for Modulation shards has been made, please pause for a moment. Starting in 4 seconds
             /delay 4s
             /bc Deleting old Mulation Shards, watch your cursor.
-            /bca //itemnotify "${supplyItem}" leftmouseup
-            /delay 2s
-            |be sure to evaluate this on the client side using noparse
-            /noparse /bca //if (${Bool[${Cursor.ID}]} && ${Cursor.Name.Find[Summoned:]}) /destroy
-            /if (${Bool[${Cursor.ID}]} &&  ${Cursor.Name.Find[Summoned:]}) /destroy
+            /bca //varset ItemDeleteSummoned ${supplyItem}
+            /varset ItemDeleteSummoned ${supplyItem}
+            /call check_ItemDeleteSummoned
             /delay 2s
 				}
 
@@ -2122,7 +2115,8 @@ SUB check_Supply
 				| If the item is a modulation shard, tell everyone to put it in their bag
 				/if (${supplyItem.Find[Modulation Shard]}) {
           	/bc Putting new Mulation Shards in bags.
-            /bca //autoinventory
+            /bca //varset ItemDeleteSummoned ClearCursor
+            /call ClearCursor
             |if people have bugged us for a shard as we deleted them all, flush out the event buffer
             /doevents flush gimme
             /bc Done with Modulation shards
@@ -2621,3 +2615,39 @@ SUB event_sendInstanceInvites(line, ChatSender)
 SUB event_outOfSomething(line, Something)
   /docommand ${ChatToggle} [${Me.Name}] I'm out of ${Something}!
 /return
+
+|----------------------------------------------------------------------------|
+| Used in the summoning/deleting of mod rods. Doing this way to try and avoid
+| character disconnect to character creation. ATM leading theory is 
+| doing things with raw /bca commands to autoinventory/destroy is causing it. 
+| This way we set the events of destroy/etc in the main e3 event loop so not 
+| doing out of bound things
+|----------------------------------------------------------------------------|
+SUB check_ItemDeleteSummoned
+
+    /if (!${Defined[ItemDeleteSummoned]}) /declare ItemDeleteSummoned string outer "READY"
+
+    /if (!${ItemDeleteSummoned.Equal[READY]} && ${ItemDeleteSummoned.Find[Summoned:]}) {
+        
+        /declare ItemToDelete string local ${ItemDeleteSummoned}
+        /varset ItemDeleteSummoned READY
+
+        /if (!${Bool[${FindItem[=${ItemToDelete}]}]}) {
+            /return
+        } 
+        /echo Trying to Deleting ${ItemToDelete}
+        /call ClearCursor
+        /delay 1s
+        /itemnotify "${ItemToDelete}" leftmouseup
+        /delay 10s ${Bool[${Cursor.ID}]}
+        /if (${Bool[${Cursor.ID}]} &&  ${Cursor.Name.Find[Summoned:]}) /destroy
+        
+       
+    } else /if (!${ItemDeleteSummoned.Equal[READY]} && ${ItemDeleteSummoned.Find[ClearCursor]}) {
+
+        /varset ItemDeleteSummoned READY
+        /call ClearCursor
+        
+    }
+
+/RETURN
