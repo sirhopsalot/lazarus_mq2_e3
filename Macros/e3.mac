@@ -27,6 +27,7 @@ SUB Main(modeSelect)
 /if (${Debug}) /echo |- MainLoop ==>
 		/varset ActionTaken FALSE
     /call check_ResistCounters
+    /call check_ItemDeleteSummoned
 		/call check_Active
 		/call check_Idle
     /call check_autoTribute
