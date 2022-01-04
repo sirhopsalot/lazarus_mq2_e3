@@ -1829,9 +1829,8 @@ sub event_gimme(line, ChatSender, RequestedItem)
       /delay 2s
       /bc Deleting old Mulation Shards, watch your cursor.
 			|get rid of old mod rods, to remote then local
-		  /bca //varset ItemDeleteSummoned ${RequestedItem}
-      /varset ItemDeleteSummoned ${RequestedItem}
-      /call check_ItemDeleteSummoned
+		  /bca //varset MethodCall_ItemDeleteSummoned ${RequestedItem}
+      /call check_ItemDeleteSummoned "${RequestedItem}"
       /call ClearCursor
 		
     }
@@ -1878,7 +1877,7 @@ sub event_gimme(line, ChatSender, RequestedItem)
 		| and flush the other events that have piled up as this is a long casting spell
 		/if (${IsRequestedItemModShard}) {
       /bc Putting new Mulation Shards in bags.
-     	/bca //varset ItemDeleteSummoned ClearCursor
+     	/bca //varset MethodCall_ItemDeleteSummoned ClearCursor
       /call ClearCursor
 	    /doevents flush gimme
       /bc Done with Modulation shards
@@ -2096,9 +2095,8 @@ SUB check_Supply
             /bc A request for Modulation shards has been made, please pause for a moment. Starting in 4 seconds
             /delay 4s
             /bc Deleting old Mulation Shards, watch your cursor.
-            /bca //varset ItemDeleteSummoned ${supplyItem}
-            /varset ItemDeleteSummoned ${supplyItem}
-            /call check_ItemDeleteSummoned
+            /bca //varset MethodCall_ItemDeleteSummoned ${supplyItem}
+            /call check_ItemDeleteSummoned "${supplyItem}"
             /delay 2s
 				}
 
@@ -2115,7 +2113,7 @@ SUB check_Supply
 				| If the item is a modulation shard, tell everyone to put it in their bag
 				/if (${supplyItem.Find[Modulation Shard]}) {
           	/bc Putting new Mulation Shards in bags.
-            /bca //varset ItemDeleteSummoned ClearCursor
+            /bca //varset MethodCall_ItemDeleteSummoned ClearCursor
             /call ClearCursor
             |if people have bugged us for a shard as we deleted them all, flush out the event buffer
             /doevents flush gimme
@@ -2616,21 +2614,31 @@ SUB event_outOfSomething(line, Something)
   /docommand ${ChatToggle} [${Me.Name}] I'm out of ${Something}!
 /return
 
-|----------------------------------------------------------------------------|
-| Used in the summoning/deleting of mod rods. Doing this way to try and avoid
-| character disconnect to character creation. ATM leading theory is 
-| doing things with raw /bca commands to autoinventory/destroy is causing it. 
-| This way we set the events of destroy/etc in the main e3 event loop so not 
-| doing out of bound things
-|----------------------------------------------------------------------------|
-SUB check_ItemDeleteSummoned
+|--------------------------------------------------------------------------------|
+| Used in the summoning/deleting of mod shards. Doing this way to try and avoid
+| character disconnect to character creation.  Doing an itemnotify while casting
+| a spell will cause the toon to disconnect so we try and avoid that. 
+| We want this quasi-"event" to fire in the normal event loop of e3 so the toon 
+| is not doing anythin else. However we also want it to fire for only the non mage 
+| party members while the mage will call this manually while in mid macro.
+| *Note* I don't particuarlly like doing it this way and I am aware of events :P.
+|---------------------------------------------------------------------------------|
+SUB check_ItemDeleteSummoned(ItemString)
 
-    /if (!${Defined[ItemDeleteSummoned]}) /declare ItemDeleteSummoned string outer "READY"
+    /if (!${Defined[MethodCall_ItemDeleteSummoned]}) /declare MethodCall_ItemDeleteSummoned string outer "READY"
 
-    /if (!${ItemDeleteSummoned.Equal[READY]} && ${ItemDeleteSummoned.Find[Summoned:]}) {
+    |check for a passed in varaible, if so , use it
+    /if (${ItemString.Length}>0) {
+        /varset MethodCall_ItemDeleteSummoned ${ItemString}
+    }
+
+    |has not been set, so nothing to do kick out
+    /if (${MethodCall_ItemDeleteSummoned.Equal[READY]}) /return
+
+    /if (${MethodCall_ItemDeleteSummoned.Find[Summoned:]}) {
         
-        /declare ItemToDelete string local ${ItemDeleteSummoned}
-        /varset ItemDeleteSummoned READY
+        /declare ItemToDelete string local ${MethodCall_ItemDeleteSummoned}
+        /varset MethodCall_ItemDeleteSummoned READY
 
         /if (!${Bool[${FindItem[=${ItemToDelete}]}]}) {
             /return
@@ -2639,20 +2647,31 @@ SUB check_ItemDeleteSummoned
         /call ClearCursor
         /delay 1s
         |Found the issue of char disconnect. If you try and do a leftmouse up on an item and your casting
-        |the server will disconnect you.
+        |the server will disconnect you. So doing this out of bound of E3's event loop is dangerous
         /while (${Cast.Status.Find[C]}) {
           /delay 1
         }
         /itemnotify "${ItemToDelete}" leftmouseup
         /delay 10s ${Bool[${Cursor.ID}]}
         /if (${Bool[${Cursor.ID}]} &&  ${Cursor.Name.Find[Summoned:]}) /destroy
-        
-       
-    } else /if (!${ItemDeleteSummoned.Equal[READY]} && ${ItemDeleteSummoned.Find[ClearCursor]}) {
 
-        /varset ItemDeleteSummoned READY
+    } else /if (${MethodCall_ItemDeleteSummoned.Find[ClearCursor]}) {
+        /varset MethodCall_ItemDeleteSummoned READY
         /call ClearCursor
-        
+    } else {
+        /varset MethodCall_ItemDeleteSummoned READY
     }
 
+
 /RETURN
+|---------------------------------------------------------------------------------|
+| Centralized area to call methods that will be called every event loop
+| Warning only put things that check very quickly if they should be called or not.
+| utting methods that have complex checks will slow everything down
+|---------------------------------------------------------------------------------|
+Sub check_Basics
+
+  /call check_ItemDeleteSummoned ""
+  /call check_ResistCounters
+
+/return
