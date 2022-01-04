@@ -1354,8 +1354,7 @@ SUB event_SwarmPets(line, ChatSender, int swarmTarget)
         /if (${c_Ready} && ${swarmPets2D[${i},${iIfs}]}) {
           /if (${check_Distance[${swarmTarget},${swarmPets2D[1,${iMyRange}]}]}) {
             /g SWARM-${swarmPets2D[${i},${iSpellName}]}
-				    /call e3_Cast ${swarmTarget} "swarmPets2D" "${i}"
-					  /delay 2s
+				    /call e3_Cast ${swarmTarget} "swarmPets2D" "${i}" 1
           }
         }
 			/next i
@@ -1750,18 +1749,24 @@ SUB assist_SpellArrays
 
   /if (${Me.Class.ShortName.Equal[MAG]}) {
 	/if (!${Defined[summonMoltenOrb]}) /declare summonMoltenOrb bool outer FALSE
-    /if (${Bool[${Me.AltAbility[Servant of Ro]}]})        /call BuildArray "swarmPets" "Servant of Ro"
-    /if (${Bool[${Me.AltAbility[Host of the Elements]}]}) /call BuildArray "swarmPets" "Host of the Elements"
-    /if (${Defined[MyNukes]}) {
-      /declare i int local
-      /for i 1 to ${MyNukes.Size}
-        /if (${MyNukes[${i}].Find[Lava Orb]}) /varset summonMoltenOrb TRUE
-      /next i
-    }
+  /if (${Bool[${Me.AltAbility[Servant of Ro]}]})        /call BuildArray "swarmPets" "Servant of Ro"
+  /if (${Bool[${Me.AltAbility[Host of the Elements]}]}) /call BuildArray "swarmPets" "Host of the Elements"
+
+  /if (${Defined[MyNukes]}) {
+    /declare i int local
+    /for i 1 to ${MyNukes.Size}
+      /if (${MyNukes[${i}].Find[Lava Orb]}) /varset summonMoltenOrb TRUE
+    /next i
+  }
+
   } else /if (${Me.Class.ShortName.Equal[NEC]}) {
     /if (${Bool[${Me.AltAbility[Swarm of Decay]}]}) /call BuildArray "swarmPets" "Swarm of Decay"
-    /if (${Bool[${Me.AltAbility[Wake the Dead]}]})  /call BuildArray "swarmPets" "Wake the Dead"
-	/if (${Bool[${Me.AltAbility[Wake the Dead]}]})  /call BuildArray "swarmPets" "Rise of Bones"
+	  /if (${Bool[${Me.AltAbility[Rise of Bones]}]})  /call BuildArray "swarmPets" "Rise of Bones"
+    /if (${Bool[${FindItem[Graverobber's Icon]}]}) /call BuildArray "swarmPets" "Graverobber's Icon"
+    /if (${Bool[${FindItem[Soulwhisper]}]}) /call BuildArray "swarmPets" "Soulwhisper"
+    /if (${Bool[${FindItem[Deathwhisper]}]}) /call BuildArray "swarmPets" "Deathwhisper"
+    |Ewiclip: Removing Wake The Dead -- It is known to cause zone crashing
+    |/if (${Bool[${Me.AltAbility[Wake the Dead]}]})  /call BuildArray "swarmPets" "Wake the Dead"
   } else /if (${Me.Class.ShortName.Equal[SHM]}) {
     /if (${Bool[${Me.AltAbility[Spirit Call]}]})    /call BuildArray "swarmPets" "Spirit Call"
     /if (${Bool[${FindItem[Shattered Gnoll Slayer]}]})    /call BuildArray "swarmPets" "Shattered Gnoll Slayer"
@@ -1771,6 +1776,7 @@ SUB assist_SpellArrays
     /if (${Bool[${Me.AltAbility[Song of Stone]}]})   /call BuildArray "swarmPets" "Song of Stone"
   } else /if (${Me.Class.ShortName.Equal[CLR]}) {
     /if (${Bool[${Me.AltAbility[Celestial Hammer]}]}) /call BuildArray "swarmPets" "Celestial Hammer"
+    /if (${Bool[${FindItem[Graverobber's Icon]}]}) /call BuildArray "swarmPets" "Graverobber's Icon"
   } else /if (${Me.Class.ShortName.Equal[ENC]}) {
     /if (${Bool[${Me.AltAbility[Doppelganger]}]}) {
       |/call BuildArray "swarmPets" "Doppelganger"
