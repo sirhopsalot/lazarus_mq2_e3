@@ -126,21 +126,21 @@ sub event_armPets(line, ChatSender, loadType)
     
     /if (${Spawn[${Group.Member[${counter}]}].Pet.ID} && !${Spawn[${Group.Member[${counter}]}].Pet.Name.Find[familiar]} && ${Spawn[${Group.Member[${counter}]}].Pet.Level}>1) {
       
-      /echo Arm Pets: Working on ${Spawn[${Group.Member[${counter}]}].Name} 's pet
-       /if (${Me.Book[Grant Enibik's Heirlooms]}) {
+      /bc Arm Pets: Working on ${Spawn[${Group.Member[${counter}]}].Name} 's pet
+      /if (${Me.Book[Grant Enibik's Heirlooms]}) {
+           /bc Arm Pets: Creating Heirlooms
            /call summonUnpackAndGive ${Spawn[${Group.Member[${counter}]}].Pet.ID} "Grant Enibik's Heirlooms" "Folded Pack of Enibik's Heirlooms"
       } 
       /if (${Cursor.ID}) {
-        /echo Arm Pets: Something went wrong and something is on your cursor, exiting.
-        /tell ${ChatSender}  Arm Pets: Error, check mage for detail.
+        /bc Arm Pets: Something went wrong and something is on your cursor, exiting.
         /goto :armpetend
       }
       /if (${Me.Book[Grant Spectral Plate]}) {
+        /bc Arm Pets: Creating Spectral Plate
         /call summonUnpackAndGive ${Spawn[${Group.Member[${counter}]}].Pet.ID} "Grant Spectral Plate" "Folded Pack of Spectral Plate"
       }
       /if (${Cursor.ID}) {
-        /echo Arm Pets: Something went wrong and something is on your cursor, exiting.
-        /tell ${ChatSender}  Arm Pets: Error, check mage for detail.
+        /bc Arm Pets: Something went wrong and something is on your cursor, exiting.
         /goto :armpetend
       }
       
@@ -228,12 +228,12 @@ sub event_armPets(line, ChatSender, loadType)
 
         }
 
-        /echo Selected Weapons are ${primaryWeapon} and ${secondaryWeapon}
+        /bc Arm Pets: Selected Weapons are ${primaryWeapon} and ${secondaryWeapon}
+        /bc Arm Pets: Creating Weapons
         /call summonUnpackAndSelect ${Spawn[${Group.Member[${counter}]}].Pet.ID} "Grant Spectral Armaments" "Folded Pack of Spectral Armaments" ${primaryWeapon} ${secondaryWeapon}
       }
       /if (${Cursor.ID}) {
-        /echo Arm Pets: Something went wrong and something is on your cursor, exiting.
-        /tell ${ChatSender}  Arm Pets: Error, check mage for detail.
+        /bc Arm Pets: Something went wrong and something is on your cursor, exiting.
         /goto :armpetend
       }
 
@@ -249,8 +249,7 @@ sub summonUnpackAndSelect(targetID, spellName, ItemName, primaryItem, secondaryI
       /if (${Defined[armPetArray]}) /deletevar armPetArray
       /declare armPetArray[1] string outer ${spellName}
       /if (${armPetArray.Size}) {
-        |/echo building the spell array for heirlooms
-
+      
         /call BuildSpellArray "armPetArray" "armPetArray2D"
         /call e3_Cast ${Me.ID} "armPetArray2D" 1 False
         /while (!${Select[${castReturn},CAST_SUCCESS]}) {
