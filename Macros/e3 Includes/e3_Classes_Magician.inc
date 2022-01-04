@@ -123,7 +123,7 @@ sub event_armPets(line, ChatSender, loadType)
     /if (${characterToWorkOn.Length}>0 && !${characterToWorkOn.Equal[${Spawn[${Group.Member[${counter}]}].Name}]}) /continue
     
     /varset bodytype ${Spawn[${Group.Member[${counter}]}].Pet.Body}
-    |humanoid is to avoid bankers and such as they can be renamed.
+    
     /if (${Spawn[${Group.Member[${counter}]}].Pet.ID} && !${Spawn[${Group.Member[${counter}]}].Pet.Name.Find[familiar]} && ${Spawn[${Group.Member[${counter}]}].Pet.Level}>1) {
       
       /echo Arm Pets: Working on ${Spawn[${Group.Member[${counter}]}].Name} 's pet
