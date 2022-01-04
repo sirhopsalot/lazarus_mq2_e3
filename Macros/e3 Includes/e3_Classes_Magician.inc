@@ -185,7 +185,7 @@ sub event_armPets(line, ChatSender, loadType)
             /varset primaryWeapon "Summoned: Orb of Chilling Water"
             /varset secondaryWeapon "Summoned: Spear of Maliciousness"
             
-          } else /if (${loadType.Find[2dispell]}) {
+          } else /if (${loadType.Find[2dispel]}) {
             
             /varset primaryWeapon "Summoned: Wand of Dismissal"
             /varset secondaryWeapon "Summoned: Wand of Dismissal"
@@ -209,7 +209,7 @@ sub event_armPets(line, ChatSender, loadType)
             /varset primaryWeapon "Summoned: Orb of Chilling Water"
             /varset secondaryWeapon "Summoned: Orb of Chilling Water"
             
-          } else /if (${loadType.Find[2dispell]}) {
+          } else /if (${loadType.Find[2dispel]}) {
             
             /varset primaryWeapon "Summoned: Wand of Dismissal"
             /varset secondaryWeapon "Summoned: Wand of Dismissal"
