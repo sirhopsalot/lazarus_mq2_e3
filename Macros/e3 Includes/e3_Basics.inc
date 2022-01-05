@@ -301,6 +301,13 @@ SUB EVENT_clickIt(line, ChatSender, eventParams)
     :retryClickDoor
     /delay ${clickDelay}
     /squelch /doortarget id ${closestDoorID}
+    
+    |casting while zoning has been reported to cause a problem
+    | If casting, dismount if mounted and call /stopcast
+    /if (${Cast.Status.Find[C]}) {
+      /if (${NetBots[${Me.Name}].Mounted}) /dismount
+      /stopcast
+    }
     /squelch /click left door
     /if (${MyZone}==${Zone.ID} && ${Math.Distance[${startingLoc}]} < 10) {
       /if (${clickTimer}) {
