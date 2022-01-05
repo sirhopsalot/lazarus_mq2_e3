@@ -304,7 +304,7 @@ SUB EVENT_clickIt(line, ChatSender, eventParams)
     
     |casting while zoning has been reported to cause a problem
     | If casting, dismount if mounted and call /stopcast
-    /if (${Cast.Status.Find[C]}) {
+    /if (${Cast.Status.Find[C]} || ${Me.Casting.ID}) {
       /if (${NetBots[${Me.Name}].Mounted}) /dismount
       /stopcast
     }
