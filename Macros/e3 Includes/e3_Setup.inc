@@ -139,6 +139,12 @@ SUB e3_Setup(modeSelect)
   /if (${${IniMode}[${advSettings_Ini},Turbo,${Me.Class.ShortName}].Length}) /declare classTurbo int outer ${${IniMode}[${advSettings_Ini},Turbo,${Me.Class.ShortName}]}
   /squelch /turbo ${classTurbo}
 
+	|Ewiclip: Adding auto-casting of Necromancer orb heals. 
+	/if (${Bool[${Ini[${Character_Ini},Heals]}]} && !${Bool[${Ini[${Character_Ini},Heals,Auto Cast Necro Heal Orbs (On/Off)]}]}) {
+		/call WriteToIni "${Character_Ini},Heals,Auto Cast Necro Heal Orbs (On/Off)" On
+	}
+
+
 	/echo e3 loaded - Turbo ${classTurbo}
 	
 	/if (${Debug}) {
