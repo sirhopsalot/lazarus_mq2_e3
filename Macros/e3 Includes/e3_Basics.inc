@@ -1952,13 +1952,18 @@ sub notifyViaBCTell(targetToTell, messageToSend)
 |--------------------------------------------------------------------------------------------|
 |- Used to call the e3_Cast for simple spells that cannot normally fail.                   	-|
 |--------------------------------------------------------------------------------------------|
-sub castSimpleSpell(spellName, simpleTargetID)
+sub castSimpleSpell(spellNameToBase, simpleTargetIDToBase)
+
+    /call castSimpleSpellBase "${spellNameToBase}" ${simpleTargetIDToBase} True
+
+/return
+sub castSimpleSpellBase(spellName, simpleTargetID, SkipParams)
 
   /if (${Defined[castSimpleSpellArray]}) /deletevar castSimpleSpellArray
-  /declare castSimpleSpellArray[1] string outer "${spellName}"
+  /declare castSimpleSpellArray[1] string outer ${spellName}
   /if (${castSimpleSpellArray.Size}) {
     |/echo building the spell array for heirlooms
-    /call BuildSpellArray "castSimpleSpellArray" "castSimpleSpellArray2D"
+    /call BuildSpellArrayBase "castSimpleSpellArray" "castSimpleSpellArray2D" ${SkipParams}
    
     /call e3_Cast ${simpleTargetID} "castSimpleSpellArray2D" 1 False
     /while (${Select[${castReturn},CAST_FIZZLE]}) {
@@ -2112,7 +2117,9 @@ SUB check_Supply
            /echo Supply trying to get a:"${supplySpell}" 
            /call castSimpleSpell "${supplySpell}" ${Me.ID}
        	} else {
-					/casting "${supplySpell}" ${supplyGem}
+           /echo Supply with Gem specific: ${supplySpell}/Gem|${supplyGem}
+           /call castSimpleSpellBase "${supplySpell}/Gem|${supplyGem}" ${Me.ID} False
+					 |/casting "${supplySpell}" ${supplyGem}
 				}
 				/delay 20s ${Cursor.ID}
         /call ClearCursor
