@@ -512,7 +512,7 @@ SUB check_Nukes
             /if (${c_Ready}) {
               /if (${Debug} || ${Debug_Assists}) /echo found a ready spell for GOM
               /varset castIndex ${m}
-              /bc CheckNukes_GOMBUFF: resetting  lastSuccessfulCast 
+              |/bc CheckNukes_GOMBUFF: resetting  lastSuccessfulCast 
               /varset lastSuccessfulCast 0
               /break
             } 
