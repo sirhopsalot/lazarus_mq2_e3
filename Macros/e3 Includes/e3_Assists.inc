@@ -387,20 +387,27 @@ SUB check_AutoAssist
 |- Casts direct damage spells on a specified target.	  -|
 |--------------------------------------------------------|
 SUB check_Nukes
+
 /if (${Debug} || ${Debug_Assists}) /echo |- check_Nukes ==>
 	/if (${Defined[Nukes2D]} && ${Assisting} && ${use_Nukes}) {
 	  /declare castIndex int local
 	  /declare s int local
     /declare m int local
     /declare assistToT int local
+    /declare typeOfCast string local 
     /declare HaveGiftOfManaBuff bool False local
     /if (${Bool[${Me.Song[Gift of Mana].ID}]} || ${Bool[${Me.Song[Celestial Gift].ID}]} || ${Bool[${Me.Song[Celestial Boon].ID}]}) {
         /varset HaveGiftOfManaBuff True
     }
 
    /for s 1 to ${Nukes2D.Size[1]}
+    
+    /varset typeOfCast  
+    
     /varset castIndex ${s}
     /if (${Debug} || ${Debug_Assists}) /echo ${s} ${castIndex} ${Nukes2D[${castIndex},${iCastName}]}
+
+    
 
     |allows use of druid/mage DS, etc, in nukes based on spellset. casts on assistTargets target
     /if (${Nukes2D[${castIndex},${iSpellType}].Find[Beneficial]}) {
@@ -419,6 +426,15 @@ SUB check_Nukes
         }
       }
     } else {
+
+      |When an item delay is applied to an entry, check to see if the delay is still active
+      |Check lower comment after the spell is cast for more information.
+      /if (${Defined[nukeSpellRecast_${Nukes2D[${castIndex},${iSpellID}]}]}) {
+        /if (${nukeSpellRecast_${Nukes2D[${castIndex},${iSpellID}]}}) {
+          |/bc check_nuke: skipping nukes as its timer isn't met yet:${Nukes2D[${castIndex},${iCastName}]} time left:${nukeSpellRecast_${Nukes2D[${castIndex},${iSpellID}]}}
+          /goto :skipCast
+        }
+      }
       | skip casting if a delay is defined and active
       /if (${Defined[castDelay${Nukes2D[${castIndex},${iCastID}]}]}) {
         /if (${castDelay${Nukes2D[${castIndex},${iCastID}]}}) {
@@ -439,7 +455,7 @@ SUB check_Nukes
       }
       | if /rotate is defined, and the current array index was the last successful cast, skip to next index
     /if (${Nukes2D[${castIndex},${iCastName}].Equal[${lastSuccessfulCast}]} && ${Nukes2D[${castIndex},${iRotate}]} && ${Nukes2D.Size[1]} > 1) {
-      /if (${Debug} || ${Debug_Assists}) /echo skipping cast of ${Nukes2D[${castIndex},${iCastName}]} /rotate is defined
+      /if (${Debug} || ${Debug_Assists}) /echo Possibly skipping cast of ${Nukes2D[${castIndex},${iCastName}]} /rotate is defined
       |need to check if any of our other spells can cast, if not, we can ignore this rotate
       /declare otherSpellsReady bool local
       /varset otherSpellsReady FALSE
@@ -449,26 +465,37 @@ SUB check_Nukes
       /for i 1 to ${Nukes2D.Size[1]}
         |if not the currently casting spell, lets check if they are ready to cast.          
         /if (!${Nukes2D[${i},${iCastName}].Equal[${currentCastName}]}) {
+          
           /call check_Ready "Nukes2D" ${i}
+          |When an item delay is applied to an entry, check to see if the delay is still active
+          |Check lower comment after the spell is cast for more information.
+          /if (${Defined[nukeSpellRecast_${Nukes2D[${i},${iSpellID}]}]}) {
+            /if (${nukeSpellRecast_${Nukes2D[${i},${iSpellID}]}}) {
+              /varset c_Ready FALSE
+            }
+          }
           /if (${c_Ready} && ${Nukes2D[${i},${iIfs}]}) {
-            /if (${Bool[${Nukes2D[${castIndex},${iGiftOfMana}]}]}) {
+            /if (${Bool[${Nukes2D[${i},${iGiftOfMana}]}]}) {
               |its specified to use gift of mana, well do we have it?
               /if (${HaveGiftOfManaBuff}) {
                 /varset otherSpellsReady TRUE
-                /if (${Debug} || ${Debug_Assists}) /echo other spells ready allowing the skip
+                /if (${Debug} || ${Debug_Assists}) /echo Another spell is defined as ready:${Nukes2D[${i},${iCastName}]}
                 /break
               }
             } else {
               /varset otherSpellsReady TRUE
-              /if (${Debug} || ${Debug_Assists}) /echo other spells ready allowing the skip
+              /if (${Debug} || ${Debug_Assists}) /echo Another spell is defined as ready:${Nukes2D[${i},${iCastName}]}
               /break
             }
           }
         }
       /next i
+   
+    
       |if others spells are ready to cast, its ok to skip this.
         /if (${otherSpellsReady}) {
-            /if (${Debug} || ${Debug_Assists}) /echo calling skipcast
+          /if (${Debug} || ${Debug_Assists}) /echo another spell is ready to cast
+           
           /goto :skipCast
         } else {
           /if (${Debug} || ${Debug_Assists}) /echo no other spell ready, allowing the current rotate spell to cast.
@@ -480,11 +507,12 @@ SUB check_Nukes
         /if (${Debug} || ${Debug_Assists}) /echo have gift of mana, selecting GOM spell flag
         /for m 1 to ${Nukes2D.Size[1]}
           /if (${Nukes2D[${m},${iGiftOfMana}]}) {
-          
+        
             /call check_Ready "Nukes2D" ${m}
             /if (${c_Ready}) {
               /if (${Debug} || ${Debug_Assists}) /echo found a ready spell for GOM
               /varset castIndex ${m}
+              /bc CheckNukes_GOMBUFF: resetting  lastSuccessfulCast 
               /varset lastSuccessfulCast 0
               /break
             } 
@@ -495,7 +523,6 @@ SUB check_Nukes
       /if (!${HaveGiftOfManaBuff} && ${Bool[${Nukes2D[${castIndex},${iGiftOfMana}]}]} ) {
           | we do not have gift of mana, make sure our current index is not a GOM spell, if so skip it
           /if (${Debug} || ${Debug_Assists}) /echo skipping gift of mana spell ${Nukes2D[${castIndex},${iCastName}]}
-          /varset lastSuccessfulCast 0
           /goto :skipcast
       }
 
@@ -546,9 +573,21 @@ SUB check_Nukes
                /varset Nukes2D[${castIndex},${iSubToRun}] check_HealCasting_DuringDetrimental
            
             }
+            /varset typeOfCast ${Nukes2D[${castIndex},${iCastType}]}
             /call e3_Cast ${AssistTarget} "Nukes2D" "${castIndex}"
           }
         }
+      }
+      
+
+      /if (${Select[${castReturn},CAST_SUCCESS]} && ${typeOfCast.Equal[Item]}) {
+          |when an item is click/cast, the server sends over the cooldown of said item
+          |so for a breif time between clicking there is an 'unkown' state where the items
+          |cooldown is still 0, even tho it isn't valid. Noticed this when using molten orbs.
+          |Adding a small delay to any item that is cast to prevent it from being a valid target
+          |on the next event cycle as event cycles in e3 are far faster than the server can send us
+          |the cooldown information
+          /call CreateTimer nukeSpellRecast_${Nukes2D[${castIndex},${iSpellID}]} "1s"
       }
       |if the nuke was succesful, see if there is a delay defined and create a timer which locks out all nukes for the duration
       /if (${Bool[${Nukes2D[${castIndex},${iDelay}]}]} && ${Select[${castReturn},CAST_SUCCESS]}) {

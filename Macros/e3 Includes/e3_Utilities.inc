@@ -290,7 +290,8 @@ SUB BuildSpellArray(ArrayName, NewArrayName)
   	/if (!${Defined[iIfs]})		/declare iIfs int outer 42
   
 	/declare i int local
-	/declare printAll bool local FALSE
+	/declare printAll bool local False
+	/declare printMin bool local False
 	|first loop through array to ensure i can identify all listed spells
 	/declare tmp_castname string local
 	/declare remove_index int local
@@ -330,7 +331,7 @@ SUB BuildSpellArray(ArrayName, NewArrayName)
 	/for i 1 to ${${ArrayName}.Size}
     | get SpellName
 		/varset ${NewArrayName}[${i},${iCastName}] ${${ArrayName}[${i}].Arg[1,/]}
-		/if (${printAll}) /echo CastName ${${NewArrayName}[${i},${iCastName}]}
+		/if (${printAll} || ${printMin}) /echo CastName ${${NewArrayName}[${i},${iCastName}]}
 
 		| get CastType
 		/if (${Bool[${Me.AltAbility[${${NewArrayName}[${i},${iCastName}]}].Spell}]}) {
@@ -344,7 +345,7 @@ SUB BuildSpellArray(ArrayName, NewArrayName)
 		} else {
       /varset ${NewArrayName}[${i},${iCastType}] Item
 		}
-    /if (${printAll}) /echo CastType ${${NewArrayName}[${i},${iCastType}]}
+    /if (${printAll}  || ${printMin}) /echo CastType ${${NewArrayName}[${i},${iCastType}]}
 		
 		| get TargetType
 		/if (${${NewArrayName}[${i},${iCastType}].Equal[Item]}) {
@@ -408,7 +409,7 @@ SUB BuildSpellArray(ArrayName, NewArrayName)
       /varset	${NewArrayName}[${i},${iDuration}] ${Spell[${${NewArrayName}[${i},${iCastName}]}].Duration}
     }
 
-		/if (${printAll}) /echo SpellDuration ${${NewArrayName}[${i},${iDuration}]}
+		/if (${printAll}  || ${printMin}) /echo SpellDuration ${${NewArrayName}[${i},${iDuration}]}
 		
 		| get RecastTime
 		/if (${${NewArrayName}[${i},${iCastType}].Equal[Item]}) {
@@ -418,7 +419,7 @@ SUB BuildSpellArray(ArrayName, NewArrayName)
 		} else /if (${${NewArrayName}[${i},${iCastType}].Equal[Spell]}) {
 			/varset	${NewArrayName}[${i},${iRecastTime}] ${Spell[${${NewArrayName}[${i},${iCastName}]}].RecastTime}			
 		} 
-		/if (${printAll}) /echo RecastTime ${${NewArrayName}[${i},${iRecastTime}]}
+		/if (${printAll}|| ${printMin}) /echo RecastTime ${${NewArrayName}[${i},${iRecastTime}]}
 
 		| get RecoveryTime
 		/if (${${NewArrayName}[${i},${iCastType}].Equal[Item]}) {
@@ -438,7 +439,7 @@ SUB BuildSpellArray(ArrayName, NewArrayName)
 		} else /if (${${NewArrayName}[${i},${iCastType}].Equal[Spell]}) {
 			/varset	${NewArrayName}[${i},${iMyCastTime}] ${Spell[${${NewArrayName}[${i},${iCastName}]}].MyCastTime}			
 		} 
-		/if (${printAll}) /echo ${NewArrayName} ${i}  MyCastTime ${${NewArrayName}[${i},${iMyCastTime}]}
+		/if (${printAll} || ${printMin}) /echo ${NewArrayName} ${i}  MyCastTime ${${NewArrayName}[${i},${iMyCastTime}]}
 		
 		| get MyRange
 		/if (${${NewArrayName}[${i},${iCastType}].Equal[Item]}) {
@@ -581,7 +582,7 @@ SUB BuildSpellArray(ArrayName, NewArrayName)
 			/call argueString Delay| "${${ArrayName}[${i}]}"
 			/varset ${NewArrayName}[${i},${iDelay}] ${c_argueString}
 		}
-		/if (${printAll}) /echo Delay ${${NewArrayName}[${i},${iDelay}]}		
+		/if (${printAll} || ${printMin}) /echo Delay ${${NewArrayName}[${i},${iDelay}]}		
 
 		| get CastID
 		/if (${${NewArrayName}[${i},${iCastType}].Equal[Item]}) {

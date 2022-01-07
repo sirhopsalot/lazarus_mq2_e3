@@ -139,7 +139,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 |  Casting
 :cast_spell
   |/if (${Me.Name.Equal[Lube]}) /gu Casting ${pendingCast} ${pendingCastID} ${Spawn[id ${targetID}].Name} ${targetID}
-	/if (!${StopEchos}) /echo Casting ${pendingCast} ${pendingCastID} ${Spawn[id ${targetID}].Name} ${targetID}
+	/if (!${StopEchos}) /echo Casting ${pendingCast} ${pendingCastID} ${Spawn[id ${targetID}].Name} ${targetID} in ${e3CastTime}
 	|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	|Use Disc
 	/if (${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Disc]}) {
@@ -153,7 +153,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 				/squelch /target id ${targetID}
 				/delay 5 ${Target.ID} == ${targetID}
 			}
-      /varset ActionTaken TRUE
+			/varset ActionTaken TRUE
 			/disc ${pendingCast}
 		}
 	|-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -197,12 +197,19 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 		}
     |/echo AT pendingCastID ${pendingCastID} pendingType ${pendingType}" "-targetid|${targetID}"
 	/varset ActionTaken TRUE
+	
+
     /if (${${ArrayName}[${ArrayIndex},${iTargetType}].Equal[Self]}) {
 		/if (${Bool[${FindItem[=${pendingCast}]}]}) {
+
 			/useitem "${pendingCast}"
-			/delay 3
 			|set to a default good value unless overwritten for a reason
 			/varset castReturn CAST_SUCCESS
+			|Note when using /useitem, if the next 'cast' is a spell you need a 0.3 sec delay similar to bard songs.
+			|Possible optimizations to pass in to use the delay or not, but be warned, not using the delay
+			|and the spell is the next can get you to a point where your spell gems lock up and need to use an AA to fix.
+			/delay 3
+			
 
 		} else {
 			/casting "${pendingCastID}|${pendingType}"		
@@ -222,9 +229,14 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 			/next i_target
 			|/echo casting item "${pendingCast}" on ${targetID}
 			/useitem "${pendingCast}"
-			/delay 3
 			|set to a default good value unless overwritten for a reason
 			/varset castReturn CAST_SUCCESS
+			|Note when using /useitem, if the next 'cast' is a spell you need a 0.3 sec delay similar to bard songs.
+			|Possible optimizations to pass in to use the delay or not, but be warned, not using the delay
+			|and the spell is the next can get you to a point where your spell gems lock up and need to use an AA to fix.
+			/delay 3
+			|set to a default good value unless overwritten for a reason
+			
 		} else {
 			/casting "${pendingCastID}|${pendingType}" "-targetid|${targetID}"
 		}
@@ -352,6 +364,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
   /if (${Me.Class.ShortName.Equal[BRD]}) /varset resumeTwistDelay 5
   /if (${returnTwist})	/call unpauseTwist
 	/if (${Debug} || ${Debug_Casting})  /echo |- e3_Cast -| castReturn= ${Cast.Result} ${castReturn}
+
 |/varset Debug_Casting FALSE
 /return
 
