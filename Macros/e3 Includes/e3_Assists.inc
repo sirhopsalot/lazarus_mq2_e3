@@ -438,8 +438,7 @@ SUB check_Nukes
       | skip casting if a delay is defined and active
       /if (${Defined[castDelay${Nukes2D[${castIndex},${iCastID}]}]}) {
         /if (${castDelay${Nukes2D[${castIndex},${iCastID}]}}) {
-          /if (${Debug} || ${Debug_Assists}) 
-          /echo skipping nukes, /delay from previous cast
+          /if (${Debug} || ${Debug_Assists}) /echo skipping nukes, /delay from previous cast
           /return
         }
       }
@@ -495,11 +494,11 @@ SUB check_Nukes
     
       |if others spells are ready to cast, its ok to skip this.
         /if (${otherSpellsReady}) {
-            |/if (${Debug} || ${Debug_Assists}) /echo another spell is ready to cast
+          /if (${Debug} || ${Debug_Assists}) /echo another spell is ready to cast
            
           /goto :skipCast
         } else {
-          |/if (${Debug} || ${Debug_Assists}) /echo no other spell ready, allowing the current rotate spell to cast.
+          /if (${Debug} || ${Debug_Assists}) /echo no other spell ready, allowing the current rotate spell to cast.
         }  
       }
 
@@ -513,7 +512,7 @@ SUB check_Nukes
             /if (${c_Ready}) {
               /if (${Debug} || ${Debug_Assists}) /echo found a ready spell for GOM
               /varset castIndex ${m}
-              |/bc CheckNukes_GOMBUFF: resetting  lastSuccessfulCast 
+              /bc CheckNukes_GOMBUFF: resetting  lastSuccessfulCast 
               /varset lastSuccessfulCast 0
               /break
             } 
