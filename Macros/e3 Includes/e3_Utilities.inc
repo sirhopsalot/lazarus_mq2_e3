@@ -339,7 +339,10 @@ SUB BuildSpellArrayBase(ArrayName, NewArrayName, SkipParams)
 		
 	/next i
 
-	/declare isHealArray bool local ${Select[${ArrayName},tankHeals,importantHeals,allHeals,hotSpells,groupHeals,lifeSupport,petHeal,petHeals,lifeTaps,xtargetHeals]
+	/declare isHealArray bool local ${Select[${ArrayName},tankHeals,importantHeals,allHeals,hotSpells,groupHeals,lifeSupport,petHeal,petHeals,lifeTaps,xtargetHeals]}
+	|/echo checking array name: ${ArrayName}
+	|/echo isHealArray: ${isHealArray}
+	|/echo Skip Params: ${SkipParams}
 	/declare isCastTargetArray bool local ${Select[${ArrayName},BotBuffs,PetBuffs,CombatBuffs,cureTargets]}
 	/for i 1 to ${${ArrayName}.Size}
 		| get SpellName
@@ -441,8 +444,7 @@ SUB BuildSpellArrayBase(ArrayName, NewArrayName, SkipParams)
 					/endmacro
 				}
 			}		
-			|/if (${printAll}) /echo HealPct ${${NewArrayName}[${i},${iHealPct}]}
-
+		
 			| get Reagent
 			/if (${${ArrayName}[${i}].Find[/Reagent|]}) {
 				/call argueString Reagent| "${${ArrayName}[${i}]}"
@@ -652,12 +654,13 @@ SUB BuildSpellArrayBase(ArrayName, NewArrayName, SkipParams)
 
 	
 		|Print out debug information if requsted
-		/if (${printAll} || ${printMin}) {
+		/if (${printAll} || ${printMin} || ${isHealArray}) {
 	
 			/if (${printAll} || ${printMin}) /echo CastName ${${NewArrayName}[${i},${iCastName}]}
 			/if (${printAll}  || ${printMin}) /echo CastType ${${NewArrayName}[${i},${iCastType}]}
 			/if (${printAll}) /echo TargetType ${${NewArrayName}[${i},${iTargetType}]}
 			/if (${printAll}|| ${printMin}) /echo SpellGem ${${NewArrayName}[${i},${iSpellGem}]}
+			/if (${printAll}|| ${printMin}) /echo HealPct ${${NewArrayName}[${i},${iHealPct}]}
 			/if (${printAll}) /echo SubToRun ${${NewArrayName}[${i},${iSubToRun}]}
 			/if (${printAll}) /echo GiveUpTimer ${${NewArrayName}[${i},${iGiveUpTimer}]}
 			/if (${printAll}) /echo MaxTries ${${NewArrayName}[${i},${iMaxTries}]}
