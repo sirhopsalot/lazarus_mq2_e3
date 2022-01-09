@@ -1236,3 +1236,8 @@ SUB Build_Class_Ini(Ini_File)
 	/ini "${Ini_File}" Wizard "Wizard is for"
 /if (${Debug}) /echo |- Build_Class_Ini ==>
 /RETURN
+
+#event sendInstanceInvites "#1# tells you, 'dzadd'"
+SUB event_sendInstanceInvites(line, ChatSender)
+	/dzadd ${ChatSender}
+/return

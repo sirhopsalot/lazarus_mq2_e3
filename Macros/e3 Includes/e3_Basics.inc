@@ -2576,53 +2576,6 @@ SUB check_Forage
 /if (${Debug}) /echo <== check_Forage -|
 /RETURN
 
-|----------------------------------------------------------------------------|
-|- Sends instance invites to all those in your group or raid.
-|- Install Instructions:
-|-     Add this SUB to the bottom of e3 Includes/e3_Basics.inc
-|-     Add /doevents sendInstanceInvites to SUB basics_Background_Events
-|- Usage Instructions:
-|-     Use "/bc inst invite" on the toon in the instance
-|-     to send out instance invites.
-|----------------------------------------------------------------------------|
-#event sendInstanceInvites "<#1#> inst invite"
-SUB event_sendInstanceInvites(line, ChatSender)
-	/if (!${Me.Name.Equal[${ChatSender}]}) /return
-
-	/if (!${Me.InInstance}) {
-		/echo You are not in an instance.
-		/return
-	}
-	
-	/declare membersStr string local
-	
-	/if (${Raid.Members} == 0 && ${Group.Members} == 0) {
-		/echo You are not in a group or raid. Therefore, there is no one to invite.
-	} else /if (${Raid.Members} == 0 && ${Group.Members} > 0) {
-		/declare i int local
-		/for i 1 to ${Group.Members} {
-			/if (${Group.Member[${i}].Name.NotEqual[${ChatSender}]}) /varset membersStr ${membersStr} ${Group.Member[${i}].Name}
-		}
-		/next i
-	} else /if (${Raid.Members} > 0) {
-		/declare i int local
-		/for i 1 to ${Raid.Members} {
-			/if (${Raid.Member[${i}].Name.NotEqual[${ChatSender}]}) /varset membersStr ${membersStr} ${Raid.Member[${i}].Name}
-		}
-		/next i
-	} else {
-		/echo Unable to send instance invites to your group/raid members.
-		/return
-	}
-	
-	/if (${membersStr.Length} > 0) {
-		/echo Sending instance invites!
-		/say #inst invite ${membersStr}
-	} else {
-		/echo There are no group/raid members to send invites to.
-	}
-/return
-
 |** Warn you when a bot is out of food/drink **|
 #event outOfSomething "You are out of #1#."
 SUB event_outOfSomething(line, Something)
