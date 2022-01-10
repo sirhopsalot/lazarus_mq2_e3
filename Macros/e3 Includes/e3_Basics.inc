@@ -51,7 +51,7 @@ SUB EVENT_Follow(line, ChatSender, eventParams)
 |----------------------------------------------------------------------------------------------------|
 |- Engages follow plugins on specified follow targets.												-|
 |----------------------------------------------------------------------------------------------------|
-|- Uses NetAdvPath if the follow target is one of your bots, or MoveUtils, if its someone elses.	-|
+|- Uses NetAdvPath if the follow target is one of your bots, or MoveUtils, if its someone elses.	-|		
 |----------------------------------------------------------------------------------------------------|
 SUB AcquireFollow
 /if (${Debug} || ${Debug_Basics}) /echo |- AcquireFollow ==>
@@ -250,7 +250,7 @@ SUB EVENT_barkReturn(line, returnBark)
 #EVENT clickIt "#1# tells the group, 'Click It#2#'"
 #EVENT clickIt "#1# tell your party, 'Click It#2#'"
 SUB EVENT_clickIt(line, ChatSender, eventParams)
-  /declare debug_clickit bool local TRUE
+  /declare debug_clickit bool local FALSE
   /if (${line.Find[,]}) /varset line ${line.Left[${Math.Calc[${line.Find[,]}-1]}]} ${line.Right[-${line.Find[,]}]}
   /if (!${checkEventArgs[${ChatSender},${line},UZR,${eventParams}]}) /return
   /if (${c_eventArgChatSender.Equal[${Me}]}) /delay 2s
@@ -301,8 +301,14 @@ SUB EVENT_clickIt(line, ChatSender, eventParams)
     :retryClickDoor
     /delay ${clickDelay}
     /squelch /doortarget id ${closestDoorID}
+    
+    |casting while zoning has been reported to cause a problem
+    | If casting, dismount if mounted and call /stopcast
+    /if (${Cast.Status.Find[C]} || ${Me.Casting.ID}) {
+      /if (${NetBots[${Me.Name}].Mounted}) /dismount
+      /stopcast
+    }
     /squelch /click left door
-    /delay 5s
     /if (${MyZone}==${Zone.ID} && ${Math.Distance[${startingLoc}]} < 10) {
       /if (${clickTimer}) {
         /goto :retryClickDoor
@@ -855,15 +861,15 @@ SUB EVENT_FindSlot(line, ChatSender, SlotToFind)
   /if (${Select[${c_eventArgData},charm,leftear,head,face,rightear,neck,shoulder,arms,back,leftwrist,rightwrist,ranged,hands,mainhand,offhand,leftfinger,rightfinger,chest,legs,feet,waist,powersource,ammo, fingers, wrists, ears]}) {
 
      /if (${c_eventArgData.Equal[fingers]}) {
-        /g Fingers --- left: ${InvSlot[leftfinger].Item.ItemLink} right : ${InvSlot[rightfinger].Item.ItemLink}
+        /gu Fingers --- left: ${InvSlot[leftfinger].Item.ItemLink} right : ${InvSlot[rightfinger].Item.ItemLink}
      } else /if (${c_eventArgData.Equal[wrists]}) {
-        /g Wrists --- left: ${InvSlot[leftwrist].Item.ItemLink} right : ${InvSlot[rightwrist].Item.ItemLink}
+        /gu Wrists --- left: ${InvSlot[leftwrist].Item.ItemLink} right : ${InvSlot[rightwrist].Item.ItemLink}
      } else /if (${c_eventArgData.Equal[ears]}) {
-        /g Ears --- left: ${InvSlot[leftear].Item.ItemLink} right: ${InvSlot[rightear].Item.ItemLink}
+        /gu Ears --- left: ${InvSlot[leftear].Item.ItemLink} right: ${InvSlot[rightear].Item.ItemLink}
      } else /if (!${InvSlot[${c_eventArgData}].Item.ID}) {
-        /g ${c_eventArgData}: No Item Equipped
+        /gu ${c_eventArgData}: No Item Equipped
      } else {
-        /g ${c_eventArgData}: ${InvSlot[${c_eventArgData}].Item.ItemLink}
+        /gu ${c_eventArgData}: ${InvSlot[${c_eventArgData}].Item.ItemLink}
      }
 
   } else {
@@ -888,7 +894,7 @@ SUB EVENT_CountBots
 		/declare OutOfRangeCount int local
 		/declare OutOfZone string local
 		/declare OutOfZoneCount int local
-
+		
 		/for i 1 to ${NetBots.Counts}
 			/if (!${SpawnCount[pc ${NetBots.Client[${i}]}]}) {
 				/varset OutOfZone ${OutOfZone}${NetBots.Client[${i}]},
@@ -956,13 +962,13 @@ SUB EVENT_Swap_Items(line, IniEntry)
 		/declare i int local 1
 		/declare itemToSwap string local
 		/declare slotToSwap string local
-
+		
 		:SwapLoop
 		/if (${Debug} || ${Debug_Basics}) /echo |- EVENT_Swap_Items -| Swaploop.
-
+		
 		/varset itemToSwap ${Ini[${Character_Ini},Swap Items,${IniEntry}].Arg[${i},/].Arg[1,|]}
 		/varset slotToSwap ${Ini[${Character_Ini},Swap Items,${IniEntry}].Arg[${i},/].Arg[2,|]}
-
+		
 		| If I don't have the item in my inventory.
 		|/echo ${Ini[${Character_Ini},Swap Items,${IniEntry}].Arg[1,/].Length}
 		/if (!${FindItemCount[${itemToSwap}]}) {
@@ -1065,8 +1071,8 @@ SUB check_MedBreak
 			/docommand ${ChatToggle} Full Mana/Endurance, ending MedBreak.
 			/if (${Me.Sitting}) /stand
 			/varset medBreak FALSE
-			/varset medBreak_Hold FALSE
-			/if (${Ini[${Character_Ini},Assist Settings,Assist Type (Melee/Ranged/Off)].Length}) /call iniToVarV "${Character_Ini},Assist Settings,Assist Type (Melee/Ranged/Off)" AssistType string outer
+			/varset medBreak_Hold FALSE	
+			/if (${Ini[${Character_Ini},Assist Settings,Assist Type (Melee/Ranged/Off)].Length}) /call iniToVarV "${Character_Ini},Assist Settings,Assist Type (Melee/Ranged/Off)" AssistType string outer			
 		} else {
       /if (!${Me.Sitting} && !${Me.Casting.ID} && !${Me.Moving}) /sit
 		}
@@ -1146,7 +1152,7 @@ SUB EVENT_ClickYes(line, ChatSender, eventParams)
   /if (${miscTimer}) {
     /if (${Window[ConfirmationDialogBox].Open} || ${Window[LargeDialogWindow].Open}) /goto :clickButton
   }
-/if (${Debug} || ${Debug_Basics}) /echo <== EVENT_ClickYes -|
+/if (${Debug} || ${Debug_Basics}) /echo <== EVENT_ClickYes -|	
 /RETURN
 
 |--------------------------------------------------------|
@@ -1182,7 +1188,7 @@ SUB EVENT_gate(line, ChatSender)
     /casting "Gate" -maxtries|2
     /delay 3s !${Me.Casting.ID}
   }
-/RETURN
+/RETURN 
 
 |--------------------------------------------------------|
 |- Request evac from bots set to Evac_OnCommand.		-|
@@ -1332,7 +1338,7 @@ SUB EVENT_listGroups
 	} else {
 		/declare i int local 1
 		/declare e int local
-
+		
 		:next_groupListing
 
 		/if (${Ini[${Group_Ini}].Arg[${i},|].Arg[1,_].Find[${MacroQuest.Server}]}) {
@@ -1340,7 +1346,7 @@ SUB EVENT_listGroups
 			/echo --- Group: [${Ini[${Group_Ini}].Arg[${i},|].Arg[2,_]}] ---
 			| -Reset 'e' the group member counting variable.
 			/varset e 1
-
+			
 			:next_memberListing
 			| -Check that the entry is not a PLACEHOLDER.
 			/if (${Ini[${Group_Ini},${Ini[${Group_Ini}].Arg[${i},|]},${Ini[${Group_Ini},${Ini[${Group_Ini}].Arg[${i},|]}].Arg[${e},|]}].NotEqual[PLACEHOLDER]}) {
@@ -1599,10 +1605,10 @@ Sub basics_Background_Events
   /doevents gimme
   /doevents LinkLoot
   /doevents collect
-  /doevents collect2
-  /doevents collectall
   /doevents sendInstanceInvites
   /doevents manastoneToggle
+  /doevents outOfSomething
+  /doevents ItemDeleteSummoned
   /call check_StoneOn
 |		/varset event_counter 1
 |	} else {
@@ -1709,13 +1715,14 @@ Sub basics_Aliases
 |- will be given.
 |- Must add /doevents gimme to basics_Background_Events in e3_Basics.ini
 |-----------------------------------------------------------|
-#event gimme "#1# tells you, '#2# Gimme #3#'"
-#event gimme "#1# tells the group, 'Gimme #2#'"
-#event gimme "<#1#> #2# Gimme #3#"
-sub event_gimme(line, ChatSender, whoToGimme, RequestedItem)
-    /declare DebugGimme true
-    /if (${DebugGimme}) /echo |- event_gimme ==>
-  /if (${Me.Name.NotEqual[${whoToGimme}]}) /return
+#event gimme "#1# tells you, 'Gimme #2#'"
+#event gimme "<#1#> Gimme #2#"
+#event gimme "[#1#(msg)] Gimme #2#"
+sub event_gimme(line, ChatSender, RequestedItem)
+
+  /declare DebugGimme false
+	/declare SummonSpellCast 
+	/if (${DebugGimme}) /echo |- event_gimme ==>
   /if (${Waiting4Rez}) /return
   /if (${Bool[${Me.Buff[Resurrection Sickness]}]}) /return
 	/echo Gimme Event: ${ChatSender} has requested a ${RequestedItem}
@@ -1723,15 +1730,15 @@ sub event_gimme(line, ChatSender, whoToGimme, RequestedItem)
 	/if (${DebugGimme}) /echo ${senderLoc}
 	/if (${DebugGimme}) /echo Distance = ${Math.Distance[${senderLoc}]}
 	/if (${Math.Distance[${Spawn[${ChatSender}].Loc}]}>100) {
-		/tell ${ChatSender} You're too far away. Please move closer and ask again.
-		/return
+		/call notifyViaBCTell  ${ChatSender} "You're too far away. Please move closer and ask again."
+   	/return
 	}
 	/if (${Bool[${Cursor.ID}]} || ${medBreak} || ${Me.Invis} || ${Me.PctHPs} < 85 || ${Me.PctAggro} > 1 || ${Me.CombatState.Equal[COMBAT]} || ${Assisting} || ${Me.Moving} || ${Me.Combat}) {
-		/tell ${ChatSender} I'm busy
-		/return
+    /call notifyViaBCTell  ${ChatSender} "I'm busy"
+  	/return
 	}
 	/declare platOnCursor local false
-  /target pc ${ChatSender}
+	/target pc ${ChatSender}
 	/declare IsMyBot bool local ${Bool[${Select[${ChatSender}, ${NetBots.Client}]}]}
 
   /if (!${Defined[GimmeSharing]}) {
@@ -1743,29 +1750,28 @@ sub event_gimme(line, ChatSender, whoToGimme, RequestedItem)
   }
 
   /if (!${GimmeSharing} && !${IsMyBot}) {
-    /tell ${ChatSender} I have disabled Gimme sharing, please seek your supplies elsewhere
+    /call notifyViaBCTell  ${ChatSender} "I have disabled Gimme sharing, please seek your supplies elsewhere"
     /return
   }
 
 	| check if the requestor can be reached
 	/if (!${Spawn[${ChatSender}].LineOfSight}) {
-		/g ${ChatSender} Where are you? I don't see you. Please move closer if you want me to give you something.
+		/call notifyViaBCTell  ${ChatSender} "Where are you? I don't see you. Please move closer if you want me to give you something."
 		/delay 10
 		/return
-	}
-
+	}	
+	
 	/if (${DebugGimme}) /echo RequestedItem IsModShard = ${Bool[${RequestedItem.Find[Modulation Shard]}]}
 	/declare IsRequestedItemModShard bool local ${Bool[${RequestedItem.Find[Modulation Shard]}]}
-
-|	/tell ${ChatSender} ${RequestedItem}, coming right up
-  /g ${RequestedItem}, coming right up
+	
+	/call notifyViaBCTell  ${ChatSender} "${RequestedItem}, coming right up"
 	/declare DiamondCoinName Diamond Coin
 	/declare DCName DC
 	/declare DiamondCoinsName Diamond Coins
 	/declare DCRequested false
 	/if (${DCName.Equal[${RequestedItem}]} || ${DiamondCoinName.Equal[${RequestedItem}]} || ${DiamondCoinsName.Equal[${RequestedItem}]}) {
 		/varset RequestedItem ${DiamondCoinName}
-	}
+	}	
 	/if (${DebugGimme}) /echo IsMyBot = ${IsMyBot}
 	/if (${DebugGimme}) /echo RequestedItem = ${RequestedItem}
 	/if (${IsMyBot} && ${DiamondCoinName.Equal[${RequestedItem}]}) {
@@ -1776,7 +1782,7 @@ sub event_gimme(line, ChatSender, whoToGimme, RequestedItem)
 		/delay 5s ${Window[InventoryWindow].Open}
 		/notify InventoryWindow IW_Subwindows tabselect 5
 		/delay 1s
-		/notify InventoryWindow AltCurr_PointList listselect 4
+		/notify InventoryWindow AltCurr_PointList listselect 8
 		/delay 1s
 		/notify InventoryWindow IW_AltCurr_ReclaimButton leftmouseup
 		/delay 1s
@@ -1799,13 +1805,13 @@ sub event_gimme(line, ChatSender, whoToGimme, RequestedItem)
 			/varset platOnCursor true
 		} else {
 			/delay 3s
-			/g ${ChatSender} I'm all out of ${RequestedItem}
+			/call notifyViaBCTell  ${ChatSender} "I'm all out of ${RequestedItem}"
 		}
 	} else /if (${Bool[${FindItem[=${RequestedItem}]}]} && !${IsRequestedItemModShard}) {
 		/if (${DebugGimme}) /echo Found item ${RequestedItem}
 		/declare IsNoRent bool local ${Bool[${FindItem[=${RequestedItem}].NoRent}]}
 		/if (${DebugGimme}) /echo Item is NoRent = ${IsNoRent}
-		/if (${DebugGimme}) /echo IsMyBot = ${IsMyBot}
+		/if (${DebugGimme}) /echo IsMyBot = ${IsMyBot}		
 		/if (${IsNoRent} || ${IsMyBot}) {
 			/ItemNotify "${RequestedItem}" leftmouseup
 			/delay 2s ${Bool[${Cursor.ID}]}
@@ -1816,39 +1822,85 @@ sub event_gimme(line, ChatSender, whoToGimme, RequestedItem)
 		}
 	} else /if (${Bool[${FindItem[=Summoned: ${RequestedItem}]}]}) {
 		/ItemNotify "Summoned: ${RequestedItem}" leftmouseup
-		/delay 2s ${Bool[${Cursor.ID}]}
+		/delay 3s ${Bool[${Cursor.ID}]}
+    /delay 1s
+		
 	} else {
+	
 		/if (${DebugGimme}) /echo Summoning ${RequestedItem}
 		/declare RequestedItemString string local ${RequestedItem}
 		/declare RequestedItemStringWithoutSummoned string local ${RequestedItemString.Replace["Summoned: ",]}
 		/declare SummoningItem bool local true
 		/echo ${RequestedItem}
+		/if (${IsRequestedItemModShard}) {
+      /bc A request for Modulation shards has been made, please pause for a moment.
+      /delay 2s
+      /bc Deleting old Mulation Shards, watch your cursor.
+			|get rid of old mod rods, to remote then local
+		  /bca ItemDeleteSummoned ${RequestedItem}
+      /call ItemDeleteSummoned "${RequestedItem}"
+      /call ClearCursor
+		
+    }
 		/if (${Bool[${Me.Book[${RequestedItem}]}]} || ${Bool[${Me.AltAbility[${RequestedItem}]}]}) {
+
 			/if (${DebugGimme}) /echo casting "${RequestedItem}"
-			/casting "${RequestedItem}"
-		} else /if (${Bool[${Me.Book[Summon: ${RequestedItem}]}]}) {
+			/call castSimpleSpell "${RequestedItem}" ${Me.ID}
+     
+    } else /if (${Bool[${Me.Book[Summon: ${RequestedItem}]}]}) {
+
 			/if (${DebugGimme}) /echo casting "Summon: ${RequestedItem}"
-			/casting "Summon: ${RequestedItem}"
-		} else /if (${Bool[${Me.Book[${RequestedItemStringWithoutSummoned}]}]} || ${Bool[${Me.AltAbility[${RequestedItemStringWithoutSummoned}]}]}) {
-			/if (${DebugGimme}) /echo casting ${RequestedItemStringWithoutSummoned}
-			/casting "${RequestedItemStringWithoutSummoned}"
-		} else /if (${Bool[${RequestedItem.Find[Sanguine Mind Crystal]}]} && ${Bool[${Me.AltAbility[Sanguine Mind Crystal]}]}) {
+      /call castSimpleSpell "Summon: ${RequestedItem}" ${Me.ID}
+		
+		} else /if (${Bool[${Me.Book[Summon ${RequestedItemStringWithoutSummoned}]}]}) {
+		
+    	/if (${DebugGimme}) /echo casting "Summon ${RequestedItemStringWithoutSummoned}"
+      /call castSimpleSpell "Summon ${RequestedItemStringWithoutSummoned}" ${Me.ID}
+    	/varset SummonSpellCast "Summon ${RequestedItemStringWithoutSummoned}"
+		
+    } else /if (${Bool[${Me.Book[${RequestedItemStringWithoutSummoned}]}]} || ${Bool[${Me.AltAbility[${RequestedItemStringWithoutSummoned}]}]}) {
+		
+    	/if (${DebugGimme}) /echo casting ${RequestedItemStringWithoutSummoned}
+	    /call castSimpleSpell "${RequestedItemStringWithoutSummoned}" ${Me.ID}
+  
+  	} else /if (${Bool[${RequestedItem.Find[Sanguine Mind Crystal]}]} && ${Bool[${Me.AltAbility[Sanguine Mind Crystal]}]}) {
 			/if (${DebugGimme}) /echo casting Sanguine Mind Crystal
-			/casting "Sanguine Mind Crystal"
-		} else /if (${Bool[${RequestedItem.Find[Shuriken of Eternity]}]} && ${Bool[${FindItem[Ton Po's Mystical Pouch]}]}) {
-			/if (${DebugGimme}) /echo casting Ton Po's Mystical Pouch
-			/useitem "Ton Po's Mystical Pouch"
+
+      /call castSimpleSpell "Sanguine Mind Crystal" ${Me.ID}
+			
 		} else {
 			/delay 2s
-		|	/tell ${ChatSender} Spell ${RequestedItem} not found
-    	/g Spell ${RequestedItem} not found
+			/call notifyViaBCTell  ${ChatSender} "Spell ${RequestedItem} not found"
 			/varset SummoningItem false
 		}
-		/if (${SummoningItem}) /delay 10s ${Bool[${Cursor.ID}]}
+		/if (${SummoningItem}) {
+        |we delay 1 sec after cusror id says it has something due to timing issues
+        /delay 15s ${Bool[${Cursor.ID}]}
+        /delay 1s
+
+    } 
 		/if (${DebugGimme}) /echo Summoned ${RequestedItem} ${SummoningItem}
+		
+		| If the item is a modulation shard, tell everyone to put it in their bag
+		| and flush the other events that have piled up as this is a long casting spell
+		/if (${IsRequestedItemModShard}) {
+      /bc Putting new Mulation Shards in bags.
+     	/bca ItemDeleteSummoned ClearCursor
+      /call ClearCursor
+	    /doevents flush gimme
+      /bc Done with Modulation shards
+			/return
+		
+    }
 	}
+	
 	/if ((${Cursor.ID} || ${platOnCursor}) && !${IsRequestedItemModShard}) {
-		/declare originalLoc string local ${Me.Loc}
+		
+    /Echo Gimmie: Getting target of requester
+    /target pc ${ChatSender}
+    /delay 10s ${Target.ID}==${Spawn[${ChatSender}].ID}
+
+    /declare originalLoc string local ${Me.Loc}
 		/if (${DebugGimme}) /echo IsClose = ${Bool[${Math.Distance[${senderLoc}]}<20]}
 		/stick 12
 		/while (${Math.Distance[${Spawn[${ChatSender}].Loc}]}>20) {
@@ -1857,47 +1909,79 @@ sub event_gimme(line, ChatSender, whoToGimme, RequestedItem)
 		}
 		/if (${DebugGimme}) /echo Distance = ${Math.Distance[${senderLoc}]}
 		/if (${DebugGimme}) /echo IsClose = ${Bool[${Math.Distance[${senderLoc}]}<20]}
-    /delay ${Math.Rand[3]}
-    /click left target
-    /if (${DebugGimme}) /echo | ${Target.Name}
+		/click left target
 		/delay 3s ${Window[TradeWnd].Open}
-    /declare tradeTries int local 0
+		/declare tradeTries int local 0
 		/while (${Window[TradeWnd].Open} && ${tradeTries} < 2) {
-			/notify TradeWnd TRDW_Trade_Button leftmouseup
+			/notify TradeWnd TRDW_Trade_Button leftmouseup 
 			/delay 5
-			/bct ${Target.CleanName} //notify TradeWnd TRDW_Trade_Button leftmouseup
+			/bct ${Target.CleanName} //notify TradeWnd TRDW_Trade_Button leftmouseup 
 			/delay 1s
-      /varset tradeTries ${Math.Calc[${tradeTries} + 1]}
+			/varset tradeTries ${Math.Calc[${tradeTries} + 1]}
       /echo tradeTries=${tradeTries}
-		}
+	  }
     /if (${Window[TradeWnd].Open}) {
       /echo Cancelling the trade with ${ChatSender}
       /t ${ChatSender} Cancelling the trade. Please turn on auto accept trades using /plugin mq2autoaccepttrades.
-      /notify TradeWnd TRDW_Cancel_Button leftmouseup
+      /notify TradeWnd TRDW_Cancel_Button leftmouseup 
     }
 		/call ClearCursor
 		| Move back to original location
 		/if (${Stick.Active}) /squelch /stick off
 		/if (${Math.Distance[${originalLoc}]}>20) /call MoveToLoc ${originalLoc} 50 20
 	} else /if (!${IsRequestedItemModShard}) {
-	| /tell ${ChatSender} Sorry, I don't have a ${RequestedItem} and couldn't summon one for you. The spell/AA may be on cooldown.
-    /g Sorry, I don't have a ${RequestedItem} and couldn't summon one for you. The spell/AA may be on cooldown.
-	}
-	| If the item is a modulation shard, tell everyone to put it in their bag
-	/if (${IsRequestedItemModShard}) {
-		/bcaa //autoinventory
-	}
+		/call notifyViaBCTell  ${ChatSender} "Sorry, I don't have a ${RequestedItem} and couldn't summon one for you. The spell/AA may be on cooldown."
+	} 
+	
+	
 /return
+sub notifyViaBCTell(targetToTell, messageToSend)
+  /declare IsTargetMyBot bool local False
+	/varset IsTargetMyBot ${Bool[${Select[${targetToTell}, ${NetBots.Client}]}]}		
 
+   /if (${IsTargetMyBot}) {
+
+      /bct ${targetToTell} ${messageToSend}
+
+    } else {
+  
+      /tell ${targetToTell} ${messageToSend}
+    }
+
+/return
+|--------------------------------------------------------------------------------------------|
+|- Used to call the e3_Cast for simple spells that cannot normally fail.                   	-|
+|--------------------------------------------------------------------------------------------|
+sub castSimpleSpell(spellNameToBase, simpleTargetIDToBase)
+
+    /call castSimpleSpellBase "${spellNameToBase}" ${simpleTargetIDToBase} True
+
+/return
+sub castSimpleSpellBase(spellName, simpleTargetID, SkipParams)
+
+  /if (${Defined[castSimpleSpellArray]}) /deletevar castSimpleSpellArray
+  /declare castSimpleSpellArray[1] string outer ${spellName}
+  /if (${castSimpleSpellArray.Size}) {
+    |/echo building the spell array for heirlooms
+    /call BuildSpellArrayBase "castSimpleSpellArray" "castSimpleSpellArray2D" ${SkipParams}
+   
+    /call e3_Cast ${simpleTargetID} "castSimpleSpellArray2D" 1 False
+    /while (${Select[${castReturn},CAST_FIZZLE]}) {
+          /delay 1s
+          /call e3_Cast  ${simpleTargetID} "castSimpleSpellArray2D" 1 False
+    }
+    /if (${Defined[castSimpleSpellArray]}) /deletevar castSimpleSpellArray
+  }
+/return
 |----------------------------------------------------------------------------|
 |- Whenever nothing else is going on will check if the toon has all the items in the gimme list
 |- and request items it doesn't have from the target character
-|- Install Instructions:
-|- Add this SUB to the bottom of e3 Includes/e3_Basics.inc
-|- Add subroutine check for the appropriate classes in e3 Macro Inis/Advanced Settings.ini
-|-  ex:   ENC Function#10=check_Gimme
-|- Add the below setting to your character.ini
-|-  [Gimme]
+|- Install Instructions:                                   
+|- Add this SUB to the bottom of e3 Includes/e3_Basics.inc 
+|- Add subroutine check for the appropriate classes in e3 Macro Inis/Advanced Settings.ini                  
+|-  ex:   ENC Function#10=check_Gimme                     
+|- Add the below setting to your character.ini                       
+|-  [Gimme]                                                 
 |-  Gimme=CharacterName|ItemName|RetryTime
 |-  Gimme=CharacterName|ItemName|RetryTime
 |- Where the item is the item you want, the CharacterName is your supplier
@@ -1915,21 +1999,21 @@ SUB check_Gimme
   /if (${Bool[${Me.Buff[Resurrection Sickness]}]}) /return
 	/declare DebugCheckGimme local false
 	/if (!${Defined[GimmeEnabled]}) /declare GimmeEnabled bool outer ${Bool[${Ini[${Character_Ini},Gimme]}]}
-    /if (${GimmeEnabled} && !${Bool[${Cursor.ID}]} && !${medBreak} && !${Me.CombatState.Equal[DEBUFFED]} && !${Me.Invis} && ${Me.PctHPs} == 100 && ${Me.PctAggro} < 1 && !${Me.CombatState.Equal[COMBAT]} && !${Assisting} && !${Me.Moving} && !${Me.Combat}) {
+    /if (${GimmeEnabled} && !${Bool[${Cursor.ID}]} && !${medBreak} && !${Me.CombatState.Equal[DEBUFFED]} && !${Me.Invis} && ${Me.PctHPs} == 100 && ${Me.PctAggro} < 1 && !${Me.CombatState.Equal[COMBAT]} && !${Assisting} && !${Me.Moving} && !${Me.Combat}) {   
 		/if (!${Defined[Gimmies]}) /call IniToArrayV "${Character_Ini},Gimme,Gimme#" Gimmies
 		/if (!${Defined[gimmeCharacter]}) /declare gimmeCharacter string local NULL
 		/if (!${Defined[gimmeItem]}) /declare gimmeItem string local NULL
 		/if (!${Defined[gimmeTimeout]}) /declare gimmeTimeout timer local NULL
-		| Loop through the string, then loop through each of the items on that key
+		| Loop through the string, then loop through each of the items on that key		
 		/declare i int local
 		/declare IsTargetMyBot bool local false
 		/for i 1 to ${Gimmies.Size}
 			/varset gimmeCharacter ${Gimmies[${i}].Arg[1,|]}
 			/varset gimmeItem ${Gimmies[${i}].Arg[2,|]}
 			/varset gimmeTimeout ${Gimmies[${i}].Arg[3,|]}
-
+			
 			| If it's my bot, check if the target bot is available to gimme
-			/varset IsTargetMyBot ${Bool[${Select[${gimmeCharacter}, ${NetBots.Client}]}]}
+			/varset IsTargetMyBot ${Bool[${Select[${gimmeCharacter}, ${NetBots.Client}]}]}			
 			/if (${DebugCheckGimme}) /echo ${gimmeCharacter} IsTargetMyBot=${IsTargetMyBot}
 			/if (${IsTargetMyBot} && (!${Spawn[${gimmeCharacter}].LineOfSight} || ${Bool[${NetBots[${gimmeCharacter}].Casting}]} || ${NetBots[${gimmeCharacter}].Attacking} || ${NetBots[${gimmeCharacter}].Moving} || !${NetBots[${gimmeCharacter}].InZone})) {
 				/if (${DebugCheckGimme}) /echo ${gimmeCharacter} is busy
@@ -1944,7 +2028,7 @@ SUB check_Gimme
 					/if (${Bool[${Spawn[pc ${gimmeCharacter}]}]}) {
 						/echo ==> Gimme: Hey ${gimmeCharacter} Gimme a ${gimmeItem}
 						/delay 1
-						/tell ${Gimmies[${i}].Arg[1,|]} ${gimmeCharacter} Gimme ${gimmeItem}
+            /call notifyViaBCTell ${gimmeCharacter} "Gimme ${gimmeItem}"
 					}
 					/varset GimmeTimer${i} ${gimmeTimeout}
 					| Minimum of 10s delay between requests
@@ -1958,19 +2042,19 @@ SUB check_Gimme
 /RETURN
 
 |----------------------------------------------------------------------------|
-|- Whenever nothing else is going on it will check to see if the toon has all
-|- of the items in the supply list. If they don't, it will cast the spell to
+|- Whenever nothing else is going on it will check to see if the toon has all 
+|- of the items in the supply list. If they don't, it will cast the spell to 
 |- create the item.
-|- Install Instructions:
-|- Add this SUB to the bottom of e3 Includes/e3_Basics.inc
-|- Add subroutine check for the appropriate classes in e3 Macro Inis/Advanced Settings.ini
+|- Install Instructions:                                   
+|- Add this SUB to the bottom of e3 Includes/e3_Basics.inc 
+|- Add subroutine check for the appropriate classes in e3 Macro Inis/Advanced Settings.ini                  
 |-  ex:   MAG Function#10=check_Supply
 |- Add the below setting to your character.ini
-|-  [Supply]
+|-  [Supply]                                                 
 |-  Supply=ItemName|SpellName|RetryTime|GemSlot
 |-  Supply=ItemName|SpellName|RetryTime|GemSlot
 |- Where the item is the item you want, the spell name is the spell to cast to
-|- create that item (for AAs, use the alt id), retry time is how long to wait
+|- create that item (for AAs, use the alt id), retry time is how long to wait 
 |- before trying to create that item again if you don't have it, and gem slot
 |- is the gem you want to memorize the spell to. If the spell/AA doesn't need
 |- to be memorized, just leave the gem parameter blank.
@@ -1982,14 +2066,27 @@ SUB check_Supply
   /if (${Waiting4Rez}) /return
   /if (${Bool[${Me.Buff[Resurrection Sickness]}]}) /return
 	/if (!${Defined[SupplyEnabled]}) /declare SupplyEnabled bool outer ${Bool[${Ini[${Character_Ini},Supply]}]}
-    /if (${SupplyEnabled} && !${Bool[${Cursor.ID}]} && !${medBreak} && !${Me.CombatState.Equal[DEBUFFED]} && !${Me.Invis} && ${Me.PctMana} == 100 && ${Me.PctHPs} == 100 && ${Me.PctAggro} < 1 && !${Me.CombatState.Equal[COMBAT]} && !${Assisting} && !${Me.Moving} && !${Me.Combat}) {
-		/if (!${Defined[Supply]}) /call IniToArrayV "${Character_Ini},Supply,Supply#" Supply
+  
+  /if (!${SupplyEnabled}) /goto :endsupply
+  /if (${Bool[${Cursor.ID}]}) /goto :endsupply
+  /if (${Me.CombatState.Equal[DEBUFFED]}) /goto :endsupply
+  /if (${Me.CombatState.Equal[COMBAT]}) /goto :endsupply
+  /if (${Me.Invis}) /goto :endsupply
+  /if (${Me.Moving}) /goto :endsupply
+  /if (${Me.Combat}) /goto :endsupply
+  /if (${Assisting}) /goto :endsupply
+  /if (${Me.PctAggro} > 0) /goto :endsupply
+  
+  /if (${Me.PctMana} == 100 && ${Me.PctHPs} == 100 ) { 
+		
+    /if (!${Defined[Supply]}) /call IniToArrayV "${Character_Ini},Supply,Supply#" Supply
 		/declare i int local
 		/if (!${Defined[supplyItem]}) /declare supplyItem string local NULL
 		/if (!${Defined[supplySpell]}) /declare supplySpell string local NULL
 		/if (!${Defined[supplyTimeout]}) /declare supplyTimeout timer local NULL
 		/if (!${Defined[supplyGem]}) /declare supplyGem int local NULL
-		| Loop through the string, then loop through each of the items on that key
+	
+    | Loop through the string, then loop through each of the items on that key	
 		/for i 1 to ${Supply.Size}
 			/varset supplyItem ${Supply[${i}].Arg[1,|]}
 			/varset supplySpell ${Supply[${i}].Arg[2,|]}
@@ -2003,20 +2100,40 @@ SUB check_Supply
 				/delay 1
 				/declare previousSpell string local ${Me.Gem[${supplyGem}]}
 				| If no spell gem specified, use default set in casting
-				/if (${supplyGem} == 0 || ${supplyGem} == NULL) {
-					/casting "${supplySpell}"
-				} else {
-					/casting "${supplySpell}" ${supplyGem}
+
+
+        | If the item is a modulation shard, tell the group to delete their old ones
+				/if (${supplyItem.Find[Modulation Shard]}) {
+            |get rid of old mod rods, to remote then local
+            /bc A request for Modulation shards has been made, please pause for a moment. Starting in 4 seconds
+            /delay 4s
+            /bc Deleting old Mulation Shards, watch your cursor.
+            /bca ItemDeleteSummoned ${supplyItem}
+            /call ItemDeleteSummoned "${supplyItem}"
+            /delay 2s
 				}
-				/delay 12s ${Cursor.ID}
-				/while (${Cursor.ID}) {
-					/autoinv
-					/delay 1s
+
+				/if (${supplyGem} == 0 || ${supplyGem} == NULL) { 
+           /echo Supply trying to get a:"${supplySpell}" 
+           /call castSimpleSpell "${supplySpell}" ${Me.ID}
+       	} else {
+           /echo Supply with Gem specific: ${supplySpell}/Gem|${supplyGem}
+           /call castSimpleSpellBase "${supplySpell}/Gem|${supplyGem}" ${Me.ID} False
+					 |/casting "${supplySpell}" ${supplyGem}
 				}
+				/delay 20s ${Cursor.ID}
+        /call ClearCursor
+        /delay 1s
+  		  
 				| If the item is a modulation shard, tell everyone to put it in their bag
 				/if (${supplyItem.Find[Modulation Shard]}) {
-					/bcaa //autoinventory
-				}
+          	/bc Putting new Mulation Shards in bags.
+            /bca ItemDeleteSummoned ClearCursor
+            /call ClearCursor
+            |if people have bugged us for a shard as we deleted them all, flush out the event buffer
+            /doevents flush gimme
+            /bc Done with Modulation shards
+      	}
 				| Memorize the previous spell if needed
 				/if (${Bool[${previousSpell}]}) {
 					/delay 1s
@@ -2028,6 +2145,7 @@ SUB check_Supply
 			}
 		/next i
 	}
+  :endsupply
 	/if (${Debug}) /echo <== check_Supply -|
 /RETURN
 
@@ -2039,8 +2157,8 @@ SUB check_Supply
 |- Collect diamond coins, use /bc Collect DC
 |- Collect plat, use /bc Collect pp
 |- Collect Habanero Peppers, use /bc Collect Habanero Pepper
-|- Install Instructions:
-|- 1) Add this SUB to the bottom of e3 Includes/e3_Basics.inc
+|- Install Instructions:                                   
+|- 1) Add this SUB to the bottom of e3 Includes/e3_Basics.inc 
 |- 2) Add /doevents collect to Sub basics_Background_Events
 |- Add Alias (optional):
 |- /alias /collect /bc Collect
@@ -2051,158 +2169,25 @@ SUB event_collect(line, ChatSender, RequestedItem)
   /if (${Me.Name.Equal[${ChatSender}]}) {
     /declare i int local
     /for i 1 to ${Group.Members}
-      /tell ${Group.Member[${i}]} ${Group.Member[${i}]} Gimme ${RequestedItem}
+      /t ${Group.Member[${i}]} Gimme ${RequestedItem}
       /delay 4s
-    /next i
+    /next i 
   }
 /RETURN
 
-#event collect2 "<#1#> Collect2"
-SUB event_collect2(line, ChatSender)
-  /echo event_collect2
-  |/if (${Me.Name.Equal[${ChatSender}]}) {
-  |  /declare i int local
-  |  /declare items_array string outer
-  |  /varset items_array[0] "1"
-  |  /varset items_array[1] "2"
-  |  /varset items_array[2] "3"
-  |  /varset items_array[3] "4"
-  |  /varset items_array[4] "5"
-  |  /for i 1 to ${items_array[i]}
-  |    /g ${items_array[i]}
-  |    /delay 4s
-  |  /next i
-  |}
-/RETURN
-
-#event collectall "<#1#> Collectall #2#"
-SUB event_collectall(line, ChatSender, RequestedItem)
-  /if (${Me.Name.Equal[${ChatSender}]}) {
-    /declare i int local
-    /for i 1 to ${Group.Members}
-  | /t ${Group.Member[${i}]} Gimme ${RequestedItem}
-    /bc ${Group.Member[${i}]} Gimme Cobalt Ore
-    /delay 3s
-    /bc ${Group.Member[${i}]} ${Group.Member[${i}]} Gimme Uncut Jacinth
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Superb Silk
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Superb Animal Pelt
-    /delay 2s
-    /bc ${Group.Member[${i}]} Gimme Excellent Silk
-    /delay 2s
-    /bc ${Group.Member[${i}]} Gimme Tungsten Ore
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Superb Spinneret Fluid
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Uncut Black Sapphire
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Uncut Amethyst
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Uncut Goshenite
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Uncut Combine Star
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Raw Amber Nihilite
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Uncut Morganite
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Uncut Demantoid
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Uncut Alexandrite
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Uncut Jacinth
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Raw Shimmering Nihilite
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Raw Indigo Nihilite
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Fine Animal Pelt
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Nodding Blue Lily
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Excellent Spinneret Fluid
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Refined Grade AA Gormar Venom
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Refined Grade A Gormar Venom
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Refined Grade A Nigriventer Venom
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Shaped Shimmering Nihilite
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Fine Silk
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Excellent Animal Pelt
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Crude Silk
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Pristine Silk
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Pristine Animal Pelt
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Flawless Animal Pelt
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Rubicite Ore
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Rhenium Ore
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Concentrated Grade A Gormar Venom
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Magical Bark
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme War Boar Tusks
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Foul Smelling Liquid
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Taaffeite
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Concentrated Grade A Choresine Sample
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Lucidem
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Meldstone
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Uncut Combine Star
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Uncut Black Sapphire
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Staurolite
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Harmonagate
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Prestidigitase
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Blue Diamond
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Raw Crimson Nihilite
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Earth Mephit Blood
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Fire Mephit Blood
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Water Mephit Blood
-    /delay 3s
-    /bc ${Group.Member[${i}]} Gimme Air Mephit Blood
-    /delay 3s
-    /g Done bye!
-    /delay 10s
-  /next i
-  }
-/RETURN
 |------------------------------------------------------------------------|
-|- LinkLoot event
-|- Written by Psychosis of Project Lazarus
-|- Additional help from Grok and Kreegoth
+|- LinkLoot event 
+|- Written by Psychosis of Project Lazarus								
+|- Additional help from Grok and Kreegoth								
 |- e3 integration by Sirhopsalot
-|- Install Instructions:
+|- Install Instructions:   
 |- Place this function in e3_Basics.inc
 |- add /doevents LinkLoot to basics_Background_Events in e3_Basics.inc
 |- Usage:
 |- /bc LinkLoot bag channel
 |- /bc LinkLoot 1 2 // this would link all contents of bag 1 to Raid
 |- Alias Shortcut:
-|- /alias /LinkLoot /bc LinkLoot
+|- /alias /LinkLoot /bc LinkLoot 
 |- Alias Usage: /LinkLoot 1 1
 |------------------------------------------------------------------------|
 #EVENT LinkLoot "<#1#> LinkLoot #2# #3#"
@@ -2236,7 +2221,7 @@ SUB EVENT_LinkLoot(line, chatSender, bag, channel)
 		}
 	/next varname
 	/declare a int 1
-	/declare b ${itemlist.Count[|]}
+	/declare b ${itemlist.Count[|]}	
 	/if (${DebugLinkLoot}) /echo {itemlist.Count[|]} = ${itemlist.Count[|]}
 
 	/if (${Channel} == 1) {
@@ -2370,7 +2355,7 @@ SUB EVENT_LinkLoot(line, chatSender, bag, channel)
 		}
 	}
 	/if (${Channel} == 3) {
-		/if (${b} == 10) {
+		/if (${b} == 10) {	
 			/bc Linking Bag [#${Bag}] to Guild
 			/gu -- ITEMS IN BAG [#${Bag}] --
 			/gu	${itemlist_stack.Token[1,"|"]}x ${itemlist.Token[1,"|"]} - ${itemlist_stack.Token[2,"|"]}x ${itemlist.Token[2,"|"]} - ${itemlist_stack.Token[3,"|"]}x ${itemlist.Token[3,"|"]}
@@ -2447,9 +2432,9 @@ SUB EVENT_LinkLoot(line, chatSender, bag, channel)
   Enable/disable manastone for one character: /t characterName stone toggle
   Enable/disable manastone for all characters: /bc stone toggle
   Enable/disable manastone for the group: /g stone toggle
-
-  Install Instructions:
-  1) Add this SUB and check_StoneOn to the bottom of e3 Includes/e3_Basics.inc
+  
+  Install Instructions:                                   
+  1) Add this SUB and check_StoneOn to the bottom of e3 Includes/e3_Basics.inc 
   2) Add /doevents manastoneToggle to Sub basics_Background_Events
   3) Add /call check_StoneOn to Sub basics_Background_Events
   Add Alias (optional):
@@ -2497,23 +2482,18 @@ SUB check_StoneOn
   /if (!${Defined[corruptedManastoneTimer]}) {
     /declare corruptedManastoneTimer timer outer 0
   }
-
+  
   /if (${stoneOn} && ${HasCorruptedManastone}) {
     /if (${Me.PctMana} < 100 && ${Me.PctHPs} > 70 && ${Me.ItemReady[Corrupted Manastone]} && ${corruptedManastoneTimer} == 0) {
       /itemnotify "Corrupted Manastone" rightmouseup
       /varset corruptedManastoneTimer 62
     }
   }
-
+  
   /declare i int local
   | hit the stone 10 times
-  /for i 1 to 50
-    /if (${stoneOn} && ${HasManastone} && ${Me.PctMana} < 100 && ${Me.PctHPs} > 50) {
-      /itemnotify manastone rightmouseup
-      /itemnotify manastone rightmouseup
-      /itemnotify manastone rightmouseup
-      /itemnotify manastone rightmouseup
-      /itemnotify manastone rightmouseup
+  /for i 1 to 10
+    /if (${stoneOn} && ${HasManastone} && ${Me.PctMana} < 100 && ${Me.PctHPs} > 70) {
       /itemnotify manastone rightmouseup
     }
   /next i
@@ -2584,7 +2564,7 @@ SUB check_Forage
 	/declare DebugForage false
 	/if (${DebugForage}) /echo Forage On = ${Select[${Ini[${Character_Ini},Misc,AutoForage]}, On]}
 	/if (!${Defined[ForageOn]}) /declare ForageOn string outer ${Select[${Ini[${Character_Ini},Misc,AutoForage]}, On]}
-    /if (${ForageOn} && ${Me.AbilityReady[Forage]} && !${medBreak} && !${Me.CombatState.Equal[DEBUFFED]} && !${Me.Invis} && (${Me.MaxMana} == 0 || ${Me.PctMana} == 100) && ${Me.PctHPs} == 100 && ${Me.PctAggro} < 1 && !${Me.CombatState.Equal[COMBAT]} && !${Assisting}) {
+    /if (${ForageOn} && ${Me.AbilityReady[Forage]} && !${medBreak} && !${Me.CombatState.Equal[DEBUFFED]} && !${Me.Invis} && (${Me.MaxMana} == 0 || ${Me.PctMana} == 100) && ${Me.PctHPs} == 100 && ${Me.PctAggro} < 1 && !${Me.CombatState.Equal[COMBAT]} && !${Assisting}) {   
 		/echo == Foraging ==
 		/doability forage
 		/delay 2s ${Bool[${Cursor.ID}]}
@@ -2596,80 +2576,59 @@ SUB check_Forage
 /if (${Debug}) /echo <== check_Forage -|
 /RETURN
 
-|----------------------------------------------------------------------------|
-|- Sends instance invites to all those in your group or raid.
-|- Install Instructions:
-|-     Add this SUB to the bottom of e3 Includes/e3_Basics.inc
-|-     Add /doevents sendInstanceInvites to SUB basics_Background_Events
-|- Usage Instructions:
-|-     Use "/bc inst invite" on the toon in the instance
-|-     to send out instance invites.
-|----------------------------------------------------------------------------|
-#event sendInstanceInvites "<#1#> inst invite"
-SUB event_sendInstanceInvites(line, ChatSender)
-	/if (!${Me.Name.Equal[${ChatSender}]}) /return
-
-	/if (!${Me.InInstance}) {
-		/echo You are not in an instance.
-		/return
-	}
-
-	/declare membersStr string local
-
-	/if (${Raid.Members} == 0 && ${Group.Members} == 0) {
-		/echo You are not in a group or raid. Therefore, there is no one to invite.
-	} else /if (${Raid.Members} == 0 && ${Group.Members} > 0) {
-		/declare i int local
-		/for i 1 to ${Group.Members} {
-			/if (${Group.Member[${i}].Name.NotEqual[${ChatSender}]}) /varset membersStr ${membersStr} ${Group.Member[${i}].Name}
-		}
-		/next i
-	} else /if (${Raid.Members} > 0) {
-		/declare i int local
-		/for i 1 to ${Raid.Members} {
-			/if (${Raid.Member[${i}].Name.NotEqual[${ChatSender}]}) /varset membersStr ${membersStr} ${Raid.Member[${i}].Name}
-		}
-		/next i
-	} else {
-		/echo Unable to send instance invites to your group/raid members.
-		/return
-	}
-
-	/if (${membersStr.Length} > 0) {
-		/echo Sending instance invites!
-		/say #inst invite ${membersStr}
-	} else {
-		/echo There are no group/raid members to send invites to.
-	}
+|** Warn you when a bot is out of food/drink **|
+#event outOfSomething "You are out of #1#."
+SUB event_outOfSomething(line, Something)
+  /docommand ${ChatToggle} [${Me.Name}] I'm out of ${Something}!
 /return
-SUB check_HCUR
-  /if (${Me.Class.ShortName.Equal[SHM]} && ${Bool[${Me.SpellInCooldown}]}) {
-    /while (${Bool[${Me.SpellInCooldown}]}) {
-      /delay 1
-    }
-  }
-  /if (${Me.Class.ShortName.Equal[RNG]} && ${Bool[${Me.SpellInCooldown}]}) {
-    /while (${Bool[${Me.SpellInCooldown}]}) {
-      /delay 1
-    }
-  }
-  /if (${Assisting} && ${Me.SpellReady[Abashi's Disempowerment]} && (${Target.Buff[Regeneration].ID} || ${Target.Buff[Scream of Hate Recourse].ID} || ${Target.Buff[Bond of Death Recourse].ID} || ${Target.Buff[Terror Leech Recourse].ID} || ${Target.Buff[Valor of Marr].ID})) {
-    /cast ${Me.Gem[Abashi's Disempowerment]}
-  }
-  /if (${Assisting} && ${Me.SpellReady[Abashi's Disempowerment]} && (${Target.Buff[Regeneration].ID} || ${Target.Buff[Scream of Hate Recourse].ID} || ${Target.Buff[Bond of Death Recourse].ID} || ${Target.Buff[Terror Leech Recourse].ID} || ${Target.Buff[Valor of Marr].ID})) {
-    /cast ${Me.Gem[Nature's Balance]}
-  }
-  /if (${Assisting} && ${Me.ItemReady[Abashi's Rod of Disempowerment]} && (${Target.Buff[Regeneration].ID} || ${Target.Buff[Scream of Hate Recourse].ID} || ${Target.Buff[Bond of Death Recourse].ID} || ${Target.Buff[Terror Leech Recourse].ID} || ${Target.Buff[Valor of Marr].ID})) {
-    /useitem "Abashi's Rod of Disempowerment"
-  }
+
+|--------------------------------------------------------------------------------|
+| Used in the summoning/deleting of mod shards. Doing this way to try and avoid
+| character disconnect to character creation.  Doing an itemnotify while casting
+| a spell will cause the toon to disconnect so we try and avoid that. 
+| We want this "event" to fire in the normal event loop of e3 so the toon 
+| is not doing anythin else. However we also want it to fire for only the non mage 
+| party members while the mage will call this manually while in mid macro.
+|---------------------------------------------------------------------------------|
+#event ItemDeleteSummoned "<#1#> #2# ItemDeleteSummoned #3#"
+SUB event_ItemDeleteSummoned(line, ChatSender, MyName, ItemString)
+
+  /call ItemDeleteSummoned "${ItemString}"
+
+/return
+SUB ItemDeleteSummoned(ItemString)
+
+  |didn't want to make ClearCusors its own event so shoved it in here for now.
+  /if (${ItemString.Find[ClearCursor]}) {
+        /call ClearCursor
+        /return
+  } 
+
+   /if (${ItemString.Find[Summoned:]}) {
+    
+        /if (!${Bool[${FindItem[=${ItemString}]}]}) {
+            /return
+        } 
+        /echo Trying to Deleting ${ItemString}
+        /call ClearCursor
+        /delay 1s
+        |Found the issue of char disconnect. If you try and do a leftmouse up on an item and your casting
+        |the server will disconnect you. So doing this out of bound of E3's event loop is dangerous
+        /while (${Cast.Status.Find[C]}) {
+          /delay 1
+        }
+        /itemnotify "${ItemString}" leftmouseup
+        /delay 10s ${Bool[${Cursor.ID}]}
+        /if (${Bool[${Cursor.ID}]} &&  ${Cursor.Name.Find[Summoned:]}) /destroy
+
+    } 
+
 /RETURN
-|-----------------------------------------------------------|
-|- Uses Manastone whenever nothing else is going on to     -|
-|- bring mana up to 50% while HP is above 70%              -|
-|- A horse is helpful for max rate stone usage             -|
-|- Install Instructions:                                   -|
-|- Add this SUB to the bottom of e3 Includes/e3_Basics.inc -|
-|- Add subroutine check for the appropriate classes        -|
-|- in e3 Macro Inis/Advanced Settings.ini                  -|
-|-  ex:   MAG Function#10=check_Manastone                  -|
-|-----------------------------------------------------------|
+|---------------------------------------------------------------------------------|
+| Centralized area to call methods that will be called every event loop
+| Warning only put things that check very quickly if they should be called or not.
+| putting methods that have complex checks will slow everything down
+|---------------------------------------------------------------------------------|
+Sub check_Basics
+  /call check_ResistCounters
+/return

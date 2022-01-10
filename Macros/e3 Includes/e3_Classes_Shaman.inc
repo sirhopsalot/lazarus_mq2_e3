@@ -12,7 +12,7 @@ SUB check_Canni
           /call check_Ready "canniSpells2D" ${s}
           /if (${c_Ready}) {
             /if (${check_Mana["canniSpells2D",${s}]}) {
-            	/if (!${canniSpells2D[${s},${iCastName}].Equal[Cannibalization]} || ${Me.CurrentHPs} > 6600) {
+            	/if (!${canniSpells2D[${s},${iCastName}].Equal[Cannibalization]} || ${Me.CurrentHPs} > 2000) {
 								/if (${canniSpells2D[${s},${iMinHP}]} <= ${Me.PctHPs}) {
               		/call e3_Cast ${Me.ID} "canniSpells2D" ${s}
                 }
@@ -30,7 +30,7 @@ Sub SHM_Setup
 /if (${Debug}) /echo |- SHM_Setup ==>
 	/call iniToVarV "${Character_Ini},Shaman,Auto-Canni (On/Off)" AutoCanni bool outer
 	/call IniToArrayV "${Character_Ini},Shaman,Canni#" canniSpells
-  	/if (${canniSpells.Size}) /call BuildSpellArray "canniSpells"	"canniSpells2D"
+  	/if (${canniSpells.Size}) /call BuildSpellArray "canniSpells"	"canniSpells2D"	
 /if (${Debug}) /echo <== SHM_Setup -|
 /return
 |----------------------------------------------------------------------------|

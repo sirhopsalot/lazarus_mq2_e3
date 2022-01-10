@@ -26,7 +26,8 @@ SUB Main(modeSelect)
 :MainLoop
 /if (${Debug}) /echo |- MainLoop ==>
 		/varset ActionTaken FALSE
-		/call check_Active
+    /call check_Basics
+ 		/call check_Active
 		/call check_Idle
     /call check_autoTribute
     /if (${currentZone} != ${Zone.ID})  /call check_Zone
