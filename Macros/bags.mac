@@ -1,0 +1,19 @@
+Sub Main(gemNumber, delay)
+
+	:Loop
+	/if (${Cursor.ID}) /autoinv
+	/doevents
+	/delay 9000
+	/if (!${Me.SpellReady[${gemNumber}]}) {
+	  /tell etsy Bags?
+		/goto :Loop
+	} else {
+		/tell etsy Bags?
+		/goto :Loop
+	}
+
+/return
+
+Sub Event_OutOfStuff
+/endmacro
+/return

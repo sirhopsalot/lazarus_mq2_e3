@@ -1,0 +1,8 @@
+#turbo
+
+Sub Main
+    :loop
+        /useitem "Lucky Coin"
+        /delay 2s
+        /autoinv
+        /goto :loop

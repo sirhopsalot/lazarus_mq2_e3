@@ -1,0 +1,133 @@
+| # orig @author - FZLives
+| # Creamo rework
+| # Auto COH's
+| The following #define specifies which channel announcements made by this macro go to. It should always
+| be /gu, except when working on this macro, in which case it can be changed to /echo or /tell <charactername>
+| in order to cut back on /gu spam.
+#define    /announce    /g
+| Set the following define to the number of DeciSeconds (tenths of a second) of no activity
+| to wait before automatically dropping from a group.
+#define    IdleTimerDS        100
+| If a group member is within CoHOutsideOfRadius units of the Mage running this macro, it's assumed
+| that they've already been CoH'd, and will not be CoH'd again.
+#define CoHOutsideOfRadius    50
+| If you want this macro to CoH only characters who are a member of the casting Mage's guild, set the
+| following #define to TRUE.
+#define CoHGuildiesOnly    FALSE
+
+#define cohSpellGem 8
+
+Sub Main
+    | This /delay 1 should be the first line of any macro that may be launched by another macro. MQ2 bug work-around.
+    /delay 1
+    /if (!${Plugin[MQ2Cast].Name.Length}) {
+		/popup MQ2Cast which is not loaded, ending macro
+		/announce I require MQ2Cast which is not loaded, ending macro
+		/endmacro
+	}
+	/if (!${FindItem[Chiseled Jade Figurine].Item[1].Name.Equal[Wayfarers Brotherhood Emblem]}) {
+		/echo I don't have the LDON charm, I can't coth with this macro
+	}
+    /announce COH activated in ${Zone.Name}.
+
+    :SubMainLoop
+        /if (${Me.Grouped}) {
+            /if ( !${Defined[timerIdleAutoDisband]} ) {
+                /declare timerIdleAutoDisband timer outer IdleTimerDS
+            } else /if ( ${timerIdleAutoDisband} == 0 ) {
+                /popup Everyone is cothed or close enough!
+                /end
+            }
+        }
+		/if (${Me.CombatState.Equal[COMBAT]}) {
+			/popup CoH Bot is in combat, this is no bueno
+			/announce CoH Bot is in combat, this is no bueno
+			/delay 3s
+		}
+        /doevents GroupInviteFrom
+        /delay 1
+		/if (${Me.Grouped}) /call CoHGroup
+    /goto :SubMainLoop
+/return
+
+
+Sub CoHGroup
+	/declare iGroupMemberCOH  int local
+	/declare iCoHsPerformed   int local
+	/declare grouplist string local
+	/for iGroupMemberCOH 1 to ${Group.Members}
+		/varset grouplist ${grouplist}${Group.Member[${iGroupMemberCOH}].CleanName},
+	/next iGroupMemberCOH
+	/announce CoHing ${grouplist}
+
+	:COHGroupLoop
+		/varset iCoHsPerformed 0
+		/for iGroupMemberCOH 1 to ${Group.Members}
+			|/echo CoH ${Group.Member[${iGroupMemberCOH}].CleanName} ${iGroupMemberCOH} ${sGroupMembersAlreadyCoHd} ${Bool[${sGroupMembersAlreadyCoHd.Find[${Group.Member[${iGroupMemberCOH}].CleanName},]}]}
+			/if (${Select[${Group.Member[${iGroupMemberCOH}].Type},PC]} == 1 && !${Bool[${sGroupMembersAlreadyCoHd.Find[${Group.Member[${iGroupMemberCOH}].CleanName},]}]} ) {
+				/delay 5
+				/call PerformCoHOnTarget "${Group.Member[${iGroupMemberCOH}].CleanName}"
+				/if ( ${Select[${Macro.Return},TRUE]} ) {
+					/varcalc iCoHsPerformed  ${iCoHsPerformed} + 1
+				}
+			}
+		/next iGroupMemberCOH
+	/if ( ${iCoHsPerformed} >= 1 ) {
+		/goto :COHGroupLoop
+	}
+/return
+
+Sub PerformCoHOnTarget(string sTargetName)
+    /declare iGroupMember    int        local
+    /declare iCoHTargetID    int        local    0
+    | I am always Group.Member[0], so start with index 1.
+    /for iGroupMember 1 to ${Group.Members}
+    /if ( ${Group.Member[${iGroupMember}].CleanName.Equal[${sTargetName}]} ) {
+        /varset iCoHTargetID  ${Group.Member[${iGroupMember}].ID}
+    } else {
+        /next iGroupMember
+    }
+    | If we get to this point and iCoHTargetID is still zero, it means that sTargetName is not in my group.
+    /if ( ${iCoHTargetID} == 0 ) {
+        /echo ${sTargetName} is not in my group. How the heck did they manage to fire this event? Possibly said "/g me" then immediately disbanded?
+        | Return false to indicate that sTargetName was not CoH'd.
+        /return FALSE
+    }
+    | Now, make sure that sTargetName is a valid CoH target...
+    /if ( ${Select[${Spawn[id ${iCoHTargetID}].Type},PC]} != 1 ) {
+        /echo Cannot find PC ${sTargetName} ${iCoHTargetID} CoH target just died and became a corpse.
+        /return FALSE
+    } else /if ( ${Spawn[id ${iCoHTargetID}].Distance} < CoHOutsideOfRadius ) {
+        | Seems that the target has already been CoH'd. No need to waste the time (and a Pearl) doing it again.
+        /return FALSE
+    } else {
+        | Ok, all of the pre-conditions are met. Let's actually attempt to perform a CoH. But first, make sure we're ready and able to cast
+        | the CoH spell successfully...
+            | Alright! If we got to this point, it appears that we have a valid target, and are ready to cast CoH on him/her.
+            | First, get the right person on target...
+            /squelch /target pc id ${iCoHTargetID}
+            /delay 2s ${Target.ID} == ${iCoHTargetID}
+            /if ( ${Target.ID} != ${iCoHTargetID} ) {
+                /g Sorry, ${Spawn[id ${iCoHTargetID}].CleanName}. I can't target you for CoH for some reason. Lag, perhaps?
+                /return FALSE
+            }
+
+				/itemnotify ${FindItem[Chiseled Jade Figurine].InvSlot} rightmouseup
+				/delay 13s
+
+            | Should put in a check for the "There are no heroes here" message, or whatever it is.
+			/if (${Target.Distance} < 30) {
+				/g Successfully CoH'd ${Spawn[id ${iCoHTargetID}].CleanName}.
+				/if ( !${Defined[sGroupMembersAlreadyCoHd]} ) {
+					/declare sGroupMembersAlreadyCoHd string outer ${Spawn[id ${iCoHTargetID}].CleanName},
+				} else {
+					/varset sGroupMembersAlreadyCoHd ${sGroupMembersAlreadyCoHd}${Spawn[id ${iCoHTargetID}].CleanName},
+				}
+				/delay 1
+				/return TRUE
+				/if (${Defined[timerIdleAutoDisband]}) /varset timerIdleAutoDisband    IdleTimerDS
+			} else {
+				/return FALSE
+			}
+    }
+/return FALSE
