@@ -1,0 +1,47 @@
+
+Sub Main
+	| load EQBC if needed
+	/if (!${Plugin[mq2eqbc].Name.NotEqual[NULL]}) {
+		/echo [SETUP] Loading MQ2EQBC...
+		/plugin mq2eqbc
+	}
+        /delay 1s ${Plugin[mq2eqbc].Name.NotEqual[NULL]}
+        /if (!${Plugin[mq2eqbc].Name.NotEqual[NULL]}) {
+		/echo [SETUP] MQ2EQBC.dll has failed to load, ending script!
+  		/end
+	}
+	
+	| enabling EQBC Autoconnect
+	/echo [SETUP] enabling EQBC AutoConnect
+	/bccmd set autoconnect on
+
+	|connecting to EQBC server
+	/if (!${EQBC.Connected}) {
+		/echo [SETUP] Connecting to EQBC Server...
+		/bccmd connect 127.0.0.1 2112		
+	}
+	/delay 5s ${EQBC.Connected}
+        /if (!${EQBC.Connected}) {
+		/echo [SETUP] MQ2EQBC Was unable to connect, ending script!
+  		/end
+	}
+
+
+	| load Netbots if needed
+	/if (!${Plugin[mq2netbots].Name.NotEqual[NULL]}) {
+		/plugin mq2netbots
+		/echo [SETUP] Loading MQ2Netbots...
+	}
+        /delay 1s ${Plugin[mq2netbots].Name.NotEqual[NULL]}
+        /if (!${Plugin[mq2netbots].Name.NotEqual[NULL]}) {
+		/echo [SETUP] MQ2Netbots.dll has failed to load, ending script!
+  		/end
+	}
+
+	| turn grab/send on
+	/echo [SETUP] Enabling netbots reporting...
+ 	/netbots grab on
+	/netbots send on
+
+	/echo [SETUP] All done!
+/return

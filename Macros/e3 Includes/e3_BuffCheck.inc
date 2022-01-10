@@ -4,8 +4,8 @@
 SUB check_Buffs
 	/if (${Debug} || ${Debug_BuffCheck}) /echo |- buffCheck ==>
 	/if (${BuffCheck} && !${ActionTaken} && !${activeTimer} && !${rebuffTimer}) {
-		/if (!${idle} && ${BuffCombatCheck} && !${Me.Moving} && ${Assisting})	/call buffBots "CombatBuffs2D"
-		/if (${procBuff} && !${idle} && !${Me.Moving} && ${Assisting}) /call buffProcs
+		/if (!${idle} && ${BuffCombatCheck} && !${Me.Moving})	/call buffBots "CombatBuffs2D"
+		/if (${procBuff} && !${idle} && !${Me.Moving}) /call buffProcs
 		/if (${Defined[auraSpells2D]} && (${auraCombat} || ${Me.CombatState.NotEqual[COMBAT]}) && !${Me.Moving}) /call checkAuras
 		/if (${Defined[InstantBuffs2D]})		/call buffBots "InstantBuffs2D"
 		/if (!${combatTimer} && ${Me.CombatState.NotEqual[COMBAT]} && !${Assisting} && !${Me.Moving} && ${BuffCheck}) {
@@ -28,7 +28,7 @@ SUB buffBots(ArrayName)
 	/declare buffTargetID		int local
 	/declare buffTarget			string local
 	/declare buffSpellID		int local
-	/declare buffCheckForID		int local	
+	/declare buffCheckForID		int local
 	/declare buffSpellName		string local
 	/declare buffCheckForName	string local
 	/declare currentBuffs		string local
@@ -47,12 +47,12 @@ SUB buffBots(ArrayName)
 		/varset buffTargetID ${Spawn[=${${ArrayName}[${s},${iCastTarget}]}].Pet.ID}
 		/varset buffTarget ${${ArrayName}[${s},${iCastTarget}]}
 	}
-		
+
 	/varset buffSpellName		${${ArrayName}[${s},${iSpellName}]}
 	/varset buffSpellID			${${ArrayName}[${s},${iSpellID}]}]
 	/varset buffCheckForName	${${ArrayName}[${s},${iCheckFor}]}
 	/varset buffCheckForID		${${ArrayName}[${s},${iCheckForID}]}
-		
+
   /if (!${Bool[${NetBots[${buffTarget}].ID}]}) /goto :skipBuff
 
   /if (${Select[${buffSpellID},8001,8002,8000,8003]}) {
@@ -114,8 +114,8 @@ SUB buffBots(ArrayName)
         } else /if (${Debug} || ${Debug_BuffCheck}) /echo ~Bot is not in group for groupbuff~
       } else /if (${Debug} || ${Debug_BuffCheck}) /echo ~Bot has checkFoR buff~
     } else /if (${Debug} || ${Debug_BuffCheck}) /echo ~Bot has buff or short buff~
-  } 
-    
+  }
+
   :skipBuff
   /doevents Follow
   /doevents Stop
@@ -155,7 +155,7 @@ SUB meleeCombatBuffs(ArrayName, int s)
 /RETURN
 
 |--------------------------------------------------------|
-|- Casts Proc Buffs (e.x: Panther, Mana Flare)          -|
+|- Casts Proc Buffs (e.x: Panther, Mana Flare           -|
 |--------------------------------------------------------|
 SUB buffProcs
 /if (${Debug} || ${Debug_BuffCheck}) /echo |- buffProcs ==>
@@ -164,7 +164,7 @@ SUB buffProcs
     /declare g int local
 
     /for s 1 to ${ProcBuffs2D.Size[1]}
-      /for g 0 to ${Math.Calc[${Group.GroupSize}-1]} | include 0 so you can self proc buff
+      /for g 1 to ${Math.Calc[${Group.GroupSize}-1]}
         /if (${Group.Member[${g}].ID}) {
           /if (${procBuffClass.Find[${Group.Member[${g}].Class.ShortName}]}) {
             /if (!${NetBots[${Group.Member[${g}]}].Buff.Find[${ProcBuffs2D[${s},${iSpellID}]}]} && !${NetBots[${Group.Member[${g}]}].Buff.Find[${ProcBuffs2D[${s},${iCheckFor}]} ]}) {
@@ -273,7 +273,7 @@ SUB event_castGroupBuffs(line, ChatSender)
   } else /if (${SpawnCount[=${buffTarget}]}) {
     /varset buffTarget ${Spawn[=${buffTarget}].ID}
   }
-  
+
   /declare s int local 1
   /declare buffAttempts int local 1
 
@@ -301,7 +301,7 @@ SUB event_castGroupBuffs(line, ChatSender)
 SUB event_BuffAll
 /if (${Debug} || ${Debug_BuffCheck}) /echo |- event_BuffAll ==>
 	/if (${Select[${Group.Leader},${Me}]}) /bc Buff me
-/if (${Debug} || ${Debug_BuffCheck}) /echo <== event_BuffAll -|	
+/if (${Debug} || ${Debug_BuffCheck}) /echo <== event_BuffAll -|
 /RETURN
 
 |----------------------------------------------------|
@@ -339,8 +339,8 @@ SUB EVENT_toggleCombatBuffs(line, ChatSender, buffSetting)
 		/varset buffSetting TRUE
 	} else /if (${buffSetting.Equal[off]}) {
 		/varset buffSetting FALSE
-	}	
-	/varset BuffCombatCheck ${buffSetting}	
+	}
+	/varset BuffCombatCheck ${buffSetting}
 	/docommand ${ChatToggle} BuffCombatCheck [${If[${BuffCombatCheck},ON,OFF]}]
 /if (${Debug} || ${Debug_BuffCheck}) /echo <== EVENT_toggleBuffs -|
 /RETURN
@@ -375,8 +375,8 @@ Sub buffCheck_Setup
   /if (${Me.Book[Aura of Divinity]}) /varset auraSpell Aura of Divinity
   /if (${Me.Book[Aura of the Grove]}) /varset auraSpell Aura of the Grove
   /if (${Me.Book[Aura of Life]}) /varset auraSpell Aura of Life
-  /if (${Me.Book[Beguiler's Aura]}) /varset auraSpell Beguiler's Aura
-  /if (${Me.Book[Illusionist's Aura]}) /varset auraSpell Illusionist's Aura
+  |/if (${Me.Book[Beguiler's Aura]}) /varset auraSpell Beguiler's Aura
+  |/if (${Me.Book[Illusionist's Aura]}) /varset auraSpell Illusionist's Aura
   /if (${Me.Book[Twincast Aura]}) /varset auraSpell Twincast Aura
   /if (${Me.Book[Holy Aura]}) /varset auraSpell Holy Aura
   /if (${Me.Book[Blessed Aura]}) /varset auraSpell Blessed Aura

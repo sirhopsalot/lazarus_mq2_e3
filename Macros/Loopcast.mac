@@ -1,27 +1,35 @@
 #event OutOfStuff "You are missing some required components."
 
 Sub Main(gemNumber, delay)
-	
+
 	:Loop
 	/if (${Cursor.ID}) /autoinv
 	/doevents
 	/if (${Me.PctMana} < 20) {
 		/sit on
-		/delay 15s
+		|/delay 105s
 		/goto :Loop
 	}
 	/delay ${delay}
 	/if (!${Me.SpellReady[${gemNumber}]}) {
 		/if (${Cursor.ID}) /autoinv
+	|	/cast 1 -targetid|${Pet.ID}
+	|	/delay 600s !${Me.Casting.ID}
+		/delay 1s !${Me.Casting.ID}
+		/delay 1s !${Me.Casting.ID}
 		/goto :Loop
 	} else {
-		/cast ${gemNumber}
-		/delay 10s !${Me.Casting.ID}
+	|	/cast 6 -targetid|${Pet.ID}
+	|	/delay 10s
+	|	/squelch /notify BuffWindow Buff${Math.Calc[${Me.Buff[Illusion: Dark Elf].ID}-1].Int} leftmouseup
+		/cast 6
+		/delay 5s !${Me.Casting.ID}
+		/delay 0s
 		/goto :Loop
 	}
 
 /return
 
-Sub Event_OutOfStuff 
-/endmacro 
+Sub Event_OutOfStuff
+/endmacro
 /return

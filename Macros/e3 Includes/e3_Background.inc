@@ -1,7 +1,7 @@
 |------------------------------------------------------------------------|
 |- Contains background functions that update e3 status and variables,	  -|
 |- along with many minimally invasive macro functions.					        -|
-|------------------------------------------------------------------------| 
+|------------------------------------------------------------------------|
 
 SUB check_Zone
 /if (${Debug} || ${Debug_Background}) /echo |- check_Zone ==>
@@ -45,11 +45,11 @@ SUB check_Gems
 		/memspellset ${Default_SpellSet}
 		:Memloop
 		/if (${Debug} || ${Debug_Background}) /echo |- check_Gems -| :Memloop
-		
+
 		/call Background_Events
 		/if (${Debug} || ${Debug_Background}) /echo spellsetMem_Timer = [${spellsetMem_Timer}]
 		/if (${Window[SpellBookWnd].Open} && ${spellsetMem_Timer}) /goto :Memloop
-		/if (${Me.Sitting}) /stand	
+		/if (${Me.Sitting}) /stand
 	}
 /if (${Debug} || ${Debug_Background}) /echo <== check_Gems -|
 /RETURN
@@ -108,11 +108,11 @@ SUB check_Idle
 
 |--------------------------------------------------------------------------------------------|
 |- Checks to see if your character is active, if so pauses macro loop                       -|
-|--------------------------------------------------------------------------------------------|			
+|--------------------------------------------------------------------------------------------|
 SUB check_Active
 /if (${Debug} || ${Debug_Background}) /echo |- check_Active ==>
 	| Check Cursor
-	/if (${Cursor.ID}) {	
+	/if (${Cursor.ID}) {
 		| Destroy badItems.
 		/if (${Defined[badItems]}) {
 			/if (${Select[${Cursor},${badItems}]} || ${Select[${Cursor.ID},${badItems}]}) {
@@ -126,7 +126,7 @@ SUB check_Active
 			/varset Old_cursorID ${Cursor.ID}
 		} else {
 			/if (!${cursorTimer}) /call clearCursor
-		}		
+		}
 		/varset activeTimer 5
 	} else {
 		/if (${Old_cursorID}) {
@@ -176,9 +176,10 @@ SUB check_Active
 
 |------------------------------------------------------------|
 |- loot, check exp allocation, announce exp	-|
-#event YourKill "You have gained #*#"
-#event YourKill "#*# party experience!"
-#event YourKill "You gained raid experience!"
+|#event YourKill "You have gained #*#"
+|#event YourKill "#*# party experience!"
+|#event YourKill "You gained raid experience!"
+#event YourKill "loot time"
 SUB Event_YourKill(line)
   /if (!${line.Find[raid]}) {
     /if (${Group}>1 && ${Me.Name.Equal[${Group.Leader}]}) {
@@ -354,7 +355,7 @@ Sub background_Setup
 	/declare Old_cursorID int outer 0
 	/declare rebuffTimer timer outer
 	/declare rebuffDelay int outer 3s
-	
+
 	/if (!${Defined[tributeZone]}) /declare tributeZone string global FALSE
   /if (!${Ini[${MacroData_Ini},File Paths,Tribute Settings].Length}) {
     /echo ERROR: Could not find designated file path for [Tribute Settings], please review [${MacroData_Ini}] and restart.
@@ -372,7 +373,7 @@ Sub background_Setup
 	/declare currentZone int outer 0
 
   /if (!${Defined[genSettings_Ini]}) /declare genSettings_Ini string outer ${${IniMode}[${MacroData_Ini},File Paths,General Settings]}
-	
+
 	| Add Tribute Settings File Path
 	/if (!${Ini[${MacroData_Ini},File Paths,Tribute Settings].Length}) /call WriteToIni "${MacroData_Ini},File Paths,Tribute Settings" "e3 Macro Inis\Tribute Settings.ini"
 	| Import itemTimers_Ini.

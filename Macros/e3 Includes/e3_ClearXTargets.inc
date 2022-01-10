@@ -33,7 +33,7 @@
 |--------------------------------------------------------------------------------|
 SUB clearXTargets_Setup
 	/declare ClearXTargetsOn bool outer FALSE
-	/declare ClearXTargetsDebug bool outer FALSE
+	/declare ClearXTargetsDebug bool outer TRUE
   /declare NumAggroTargets int outer 0
   /declare KeepAggroOn bool outer FALSE
 
@@ -93,12 +93,13 @@ SUB event_clearXTargets(line, ChatSender, args)
     /varset KeepAggroOn FALSE
   }
 
-  | toggle ClearXTargetsOn on/off 
+  | toggle ClearXTargetsOn on/off
   /if (!${ClearXTargetsOn}) {
     /varset ClearXTargetsOn TRUE
     | Disable follow to stop melee/ranged toons bouncing
     /stop
   	/echo ClearXTargets: Enabled ${ClearXTargetsOn}
+		/g ClearXTargets: Enabled ${ClearXTargetsOn}
   } else {
     /varset ClearXTargetsOn FALSE
 	  /echo ClearXTargets: Disabled
@@ -126,7 +127,7 @@ SUB event_nextTarget(line, ChatSender)
   /if (${Bool[${mobId}]} && ${Bool[${Spawn[${mobId}]}]}) {
     /if (${ClearXTargetsDebug}) /echo Assisting on Next Target ${Spawn[${mobId}].CleanName} TargetID=${mobId}
     /call TrueTarget ${mobId}
-    /stick id ${mobId} ${ClearXTargetStickDistance} uw
+|    /stick id ${mobId} ${ClearXTargetStickDistance} uw
     /delay 1
     /attack on
     /delay 1
@@ -147,18 +148,18 @@ SUB event_nextTarget(line, ChatSender)
 SUB event_faceTargetClearXTargets
 	/if (${Bool[${AssistTarget}]}) {
 		/doevent flush event_faceTargetClearXTargets
-		/if (${ClearXTargetsDebug}) /echo ClearXTargets: Changing face direction to target ${Spawn[id ${AssistTarget}].CleanName}
-		/face fast id ${AssistTarget}    
+|		/if (${ClearXTargetsDebug}) /echo ClearXTargets: Changing face direction to target ${Spawn[id ${AssistTarget}].CleanName}
+|		/face fast id ${AssistTarget}
 	}
 /RETURN
 
-| Re-stick if too far away msg   	            
+| Re-stick if too far away msg
 #event getCloserClearXTargets "Your target is too far away, get closer!"
 SUB event_getCloserClearXTargets
 	/if (${Bool[${AssistTarget}]}) {
 		/doevent flush event_getCloserClearXTargets
-		/if (${ClearXTargetsDebug}) /echo ClearXTargets: Re-sticking to target ${Spawn[id ${AssistTarget}].CleanName}
-		/stick id ${AssistTarget} 5 uw
+|		/if (${ClearXTargetsDebug}) /echo ClearXTargets: Re-sticking to target ${Spawn[id ${AssistTarget}].CleanName}
+|		/stick id ${AssistTarget} 5 uw
 	}
 /RETURN
 
@@ -180,8 +181,8 @@ SUB check_clearXTargets
   /if (!${ClearXTargetsOn}) /return
 
   | Check if can't see target and re-stick
-  /doevent faceTargetClearXTargets
-  /doevent getCloserClearXTargets
+|  /doevent faceTargetClearXTargets
+|  /doevent getCloserClearXTargets
 
   /if (!${Assisting} || ${Target.ID} == ${Me.ID}) {
     | If there are any aggro targets call Next Target
@@ -192,7 +193,7 @@ SUB check_clearXTargets
     }
 
   	| No target found, disable clearing
-    /varset ClearXTargetsOn FALSE    
+    /varset ClearXTargetsOn FALSE
     /echo ClearXTargets: XTargets Cleared, disabled Clear XTarget
     /if (${FollowAfterClearXTargets}) {
       | If set to follow after clearing
@@ -228,7 +229,7 @@ SUB event_rotateTarget(line, ChatSender)
         /if (${ClearXTargetsDebug}) /echo Searching for rotate target starting at xtarIndex = ${xtarIndex}
         /break
       }
-    /next i    
+    /next i
   } else {
     | Set the index to 1
     /varset xtarIndex 1
@@ -247,7 +248,7 @@ SUB event_rotateTarget(line, ChatSender)
   /if (${Bool[${mobId}]} && ${Bool[${Spawn[${mobId}]}]}) {
     /if (${ClearXTargetsDebug}) /echo Assisting on Next Rotate Target ${Spawn[${mobId}].CleanName} TargetID=${mobId}
     /call TrueTarget ${mobId}
-    /stick id ${mobId} ${ClearXTargetStickDistance} uw
+|    /stick id ${mobId} ${ClearXTargetStickDistance} uw
     /delay 1
     /attack on
     /delay 1

@@ -64,7 +64,7 @@ sub check_celestialRegen
         /varcalc groupSize ${groupSize} + 1
       }
     /next i
-    
+
     /if (${groupSize}) {
       /varcalc averageHP ${averageHP} / ${groupSize}
       /if (${averageHP} < ${celestialRegen_Pct})  /casting "Celestial Regeneration|alt" "-targetid|${Me.ID}" -maxtries|2
@@ -282,9 +282,7 @@ Sub BuildCorpseList
 Sub defineRezSpell
   /declare rezSpell string local
   /declare i int local
-  /if (${FindItem[Water Sprinkler of Nem Ankh].ID}) {
-    /varset rezSpell Water Sprinkler of Nem Ankh
-  } else /if (${Me.AltAbility[Blessing of Resurrection].ID}) {
+  /if (${Me.AltAbility[Blessing of Resurrection].ID}) {
     /varset rezSpell Blessing of Resurrection
   } else /if (${Me.Book[Spiritual Awakening]}) {
     /varset rezSpell Spiritual Awakening

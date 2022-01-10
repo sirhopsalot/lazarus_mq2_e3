@@ -1,0 +1,29 @@
+| - AutoMacro Example -|
+
+Sub Main
+	/delay 5s
+	/popup Check the "MQ" chat window for setup information.
+	/echo ======================================
+	/echo if you would like to automatically configure some of
+	/echo the more common basic settings read on. If not don't
+	/echo worry this message will only display once. 
+	/echo 
+	/echo First make sure EQBCServer.exe has been started.
+	/echo it is located in your regular Macroquest folder. 
+	/echo You may need to login to your MQEmulator.net 
+	/echo gold account with the following command:
+	/echo 
+	/echo -     /login <forum username> <forum password>
+	/echo 
+	/echo To quickly setup netbots and EQBC use:
+	/echo 
+	/echo -     /mac setup
+	/echo 
+	/echo Run these steps for each character. To display  
+	/echo this message again type:
+	/echo 
+	/echo -    /mac autoplay
+	/echo 
+	/echo ======================================
+	/automacro default 
+/return
