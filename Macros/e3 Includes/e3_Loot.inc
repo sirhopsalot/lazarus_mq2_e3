@@ -13,7 +13,7 @@ SUB Event_lootRelay(line, ChatSender, looting)
   /if (!${Defined[Auto_Loot]}) /declare Auto_Loot bool outer TRUE
   /if (!${Defined[LootOnly]}) /declare LootOnly bool outer FALSE
   /if (!${Defined[LootOnlyItem]}) /declare LootOnlyItem string outer
-  
+
   /if (!${Defined[LootOnlyStackableEnabled]}) {
     /declare LootOnlyStackableEnabled bool outer
     /varset LootOnlyStackableEnabled False
@@ -25,15 +25,16 @@ SUB Event_lootRelay(line, ChatSender, looting)
   /if (!${Defined[LootOnlyStackableTradeSkillsCommon]}) {
     /declare LootOnlyStackableTradeSkillsCommon bool outer
     /varset LootOnlyStackableTradeSkillsCommon False
-  } 
+  }
    /if (!${Defined[LootOnlyStackableTradeSkillsALL]}) {
     /declare LootOnlyStackableTradeSkillsALL bool outer
     /varset LootOnlyStackableTradeSkillsALL False
-  } 
+  }
 
   /if (${Select[${looting},on]}) {
     /varset Auto_Loot TRUE
     /varset LootOnly FALSE
+    /bc Looting Enabled
     /docommand ${ChatToggle} Looting Enabled
     /if (${Me.CombatState.NotEqual[Combat]} || ${combatLooting}) /call loot_Area
 
@@ -43,6 +44,7 @@ SUB Event_lootRelay(line, ChatSender, looting)
   } else {
     /varset Auto_Loot TRUE
     /varset LootOnly TRUE
+    /bc Looting Disabled
     /if (${Select[${looting},dc]}) {
       /varset looting Diamond Coin
     }
@@ -134,8 +136,10 @@ SUB loot_Area
 
   /if (${Following}) {
     /call AcquireFollow
+    /g Done Looting
   } else {
     /call MoveToLoc ${startY} ${startX} 15 20
+    /g Done Looting
   }
   /docommand ${ChatToggle} ${Group.Leader} Looting Complete
   /if (${Debug} || ${Debug_Loot}) /echo <== loot_Area -|
@@ -182,7 +186,7 @@ SUB lootCorpse
 
     /delay 1s ${Corpse.Item[${i}].ID}
     |/if (${Debug} || ${Debug_Loot}) /echo itemID ${Corpse.Item[${i}].ID}
-  
+
     /if (${LootOnly}) {
       /if (${Corpse.Item[${i}].Name.Equal[${LootOnlyItem}]}) {
         /varset lootSetting Keep
@@ -191,11 +195,11 @@ SUB lootCorpse
       }
     } else /if (${LootOnlyStackableEnabled}) {
 
-      |Stackable check code      
+      |Stackable check code
       /if (${Corpse.Item[${i}].Stackable}) {
 
         /echo Loot Only Stackable: value of item=${Corpse.Item[${i}].Value} vs setting=${LootOnlyStackableValueGreater}
-        
+
         /varset lootSetting Skip
         /varset importantItem FALSE
 
@@ -225,21 +229,21 @@ SUB lootCorpse
         |end items that are tackable but have no vendor value.
 
         |Loot tradeskill items if configured to do so.
-        
+
         /if (!${importantItem}) {
 
             /if (${Corpse.Item[${i}].Value} >=${LootOnlyStackableValueGreater} ) {
               /varset importantItem True
               /echo Loot Only Stackable:Keeping item ${Corpse.Item[${i}].Name} as its value is above or equal to threshhold
-            } 
+            }
         }
-        
+
         /if (!${importantItem} && ${LootOnlyStackableTradeSkillsALL} && ${Corpse.Item[${i}].Tradeskills}) {
 
-          |We loot all trade skills 
+          |We loot all trade skills
             /varset importantItem TRUE
             /echo Loot Only Stackable:Keeping item ${Corpse.Item[${i}].Name} as its a tradeskill item and we are set to loot all tradeskills.
-        } 
+        }
         |/echo common trades skill var setting = ${LootOnlyStackableTradeSkillsCommon}
         /if (!${importantItem} && ${LootOnlyStackableTradeSkillsCommon}) {
 
@@ -256,7 +260,7 @@ SUB lootCorpse
           /if (${importantItem}) {
             /echo Loot Only Stackable:Keeping item ${Corpse.Item[${i}].Name} as its a common tradeskill item.
           }
-          
+
         }
 
         /if (${importantItem}) {
@@ -267,8 +271,8 @@ SUB lootCorpse
         |not stackable, but stackable setting set so simply skip
         /varset lootSetting Skip
       }
-      
-      
+
+
     } else {
       |Default loot ini check
       /call get_lootSetting ${i} 0
@@ -371,9 +375,9 @@ SUB get_lootSetting(invSlot, itemSlot)
 	/varset lootSetting
 	| If the item is not in a bag
 	/if (!${Bool[${itemSlot}]}) {
-		|/echo invSlot variable: ${invSlot} 
+		|/echo invSlot variable: ${invSlot}
 		| Reset itemName if it contains a ':'.  ':'s cause errors when reading from the ini, because they act as a delimiter, just like '='s
-|		/echo ${Corpse.Item[${invSlot}].Name}		
+|		/echo ${Corpse.Item[${invSlot}].Name}
 		/varset itemName ${Corpse.Item[${invSlot}].Name}
 		/if (${itemName.Find[:]}) /varset itemName ${itemName.Replace[:,;]}
     /if (${itemName.Find[,]}) {
@@ -384,7 +388,7 @@ SUB get_lootSetting(invSlot, itemSlot)
 		/varset itemValue ${Corpse.Item[${invSlot}].Value}
     	/varset itemRawValue ${Corpse.Item[${invSlot}].Value}
     	/varset itemValue ${If[${Bool[${itemValue.Left[${Math.Calc[${itemValue.Length} - 3].Int}]}]},${itemValue.Left[${Math.Calc[${itemValue.Length} - 3].Int}]}p,]}${If[${Bool[${itemValue.Mid[${Math.Calc[${itemValue.Length} - 2].Int}]}]},${itemValue.Mid[${Math.Calc[${itemValue.Length} - 2].Int}]}g,]}${If[${Bool[${itemValue.Mid[${Math.Calc[${itemValue.Length} - 1].Int}]}]},${itemValue.Mid[${Math.Calc[${itemValue.Length} - 1].Int}]}s,]}${If[${Bool[${itemValue.Right[1]}]},${itemValue.Right[1]}c,]}
-		
+
 		| Set ini variables like stack size, (C), (ND) etc.
 		/varset iniEntryVariables ${If[${Corpse.Item[${invSlot}].Stackable},(${Corpse.Item[${invSlot}].StackSize}),]}${If[${Corpse.Item[${invSlot}].NoDrop},(ND),]}${If[${Corpse.Item[${invSlot}].Lore},(L),]}${If[${Corpse.Item[${invSlot}].Container},(C),]}
 		| Check for a Loot_Ini entry
@@ -441,14 +445,14 @@ SUB loot_Handle(int slotNum, handle)
 		/if (${handle.Equal[destroy]}) {
 			:destroy_Item
 			/destroy
-			| If the destroy attempt was unsuccessful, try again.	
+			| If the destroy attempt was unsuccessful, try again.
 			/if (${Cursor.ID} && ${lootTimer}) /goto :destroy_Item
 		| Else, keep the item.
 		} else {
 			/call ClearCursor
 			/echo Succesfully looted ${slotNum}
 		}
-	| Else, if loot attempt was unsuccessful, try again.		
+	| Else, if loot attempt was unsuccessful, try again.
 	} else {
 		| Click yes on confirmation box.
 		/if (${Window[ConfirmationDialogBox].Open}) {
@@ -474,7 +478,7 @@ SUB EVENT_checkLootSetting(line, itemName)
     /varset itemToCheck ${Macro.Return}
   }
 	/declare i int local 1
-	
+
 	:check_Loot_Ini
 	/if (!${Ini[${Loot_Ini},${itemToCheck.Left[1]}].Arg[${i},|].Arg[1,${If[${Ini[${Loot_Ini},${itemToCheck.Left[1]}].Arg[${i},|].Find[~]},~,(]}].Equal[${itemToCheck}]}) {
 		/varcalc i ${i} + 1
@@ -503,7 +507,7 @@ SUB EVENT_updateLootSetting(line, ChatSender, itemName, iniSetting)
       /varset itemToCheck ${Macro.Return}
     }
 		/declare i int local 1
-		
+
 		:check_Loot_Ini
 		/if (!${Ini[${Loot_Ini},${itemToCheck.Left[1]}].Arg[${i},|].Arg[1,${If[${Ini[${Loot_Ini},${itemToCheck.Left[1]}].Arg[${i},|].Find[~]},~,(]}].Equal[${itemToCheck}]}) {
 			/varcalc i ${i} + 1
