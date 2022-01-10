@@ -62,6 +62,355 @@ sub event_petWeapons(line, ChatSender)
   |/varset Debug_MAG FALSE
 /if (${Debug} || ${Debug_MAG}) /echo <== event_petWeapons -|
 /return
+
+#event armPets "#1# tells you, 'Arm Pets'"
+#event armPets "#1# tells you, 'Arm Pets #2#'"
+|#event armPets "<#1#> Arm Pets <#2#> <#3#>"
+sub event_armPets(line, ChatSender, loadType)
+ /echo |- event_armPets ==>
+  
+  /declare characterToWorkOn string local
+  
+  /if (${Bool[${loadType.Length}]}) {
+   /varset characterToWorkOn ${loadType.Token[2, ]}
+   /varset loadType ${loadType.Token[1, ]}
+   /if (${characterToWorkOn.Equal[NULL]}) {
+     |set to empty string
+     /varset characterToWorkOn  
+   }
+   |/echo LoadType:${loadType}
+   |/echo Character:${characterToWorkOn}
+  }
+  
+  |first check that we have an empty slot
+  /declare BackSlotThatIsOpen int 0
+  /declare i int local
+  /for i 1 to 10
+  /if (!${Bool[${InvSlot[pack${i}].Item.ID}]}) {
+    /varset BackSlotThatIsOpen ${i}
+    /goto :bagslotcheckdone
+  }
+  /next i
+  :bagslotcheckdone
+  /if (${BackSlotThatIsOpen}==0) {
+    |no empty bag slot available
+    /tell ${ChatSender}  Arm Pets: No empty bag slot on mage. Exiting.
+    /goto :armpetend
+  } 
+ 
+
+  /tell ${ChatSender} Starting the arming of group pets.
+  |note for the weapons, you need na empty bag slot for this to work.
+  /declare counter int local 0
+  /declare bodytype string local
+  /declare char_class string local
+  /declare primaryWeapon string local
+  /declare secondaryWeapon string local 
+
+  |/echo Character:${characterToWorkOn}
+  |/echo loadType:${loadType}
+
+  /if (${Cursor.ID}) {
+    /echo Arm Pets: Something is on your cursor, exiting.
+    /tell ${ChatSender}  Arm Pets: Error, check mage for detail.
+    /goto :armpetend
+  }
+  |/echo got to for loop: ${characterToWorkOn.Length} : ${characterToWorkOn.Length}>0]}
+  /for counter 0 to 5
+    |if character name is supplied, skip everything but the character to work on. 
+    |/echo checking character: [${characterToWorkOn}] vs [${Spawn[${Group.Member[${counter}]}].Name}]
+   
+    /if (${characterToWorkOn.Length}>0 && !${characterToWorkOn.Equal[${Spawn[${Group.Member[${counter}]}].Name}]}) /continue
+    
+    /varset bodytype ${Spawn[${Group.Member[${counter}]}].Pet.Body}
+    
+    /if (${Spawn[${Group.Member[${counter}]}].Pet.ID} && !${Spawn[${Group.Member[${counter}]}].Pet.Name.Find[familiar]} && ${Spawn[${Group.Member[${counter}]}].Pet.Level}>1) {
+      
+      /bc Arm Pets: Working on ${Spawn[${Group.Member[${counter}]}].Name} 's pet
+      /if (${Me.Book[Grant Enibik's Heirlooms]}) {
+           /bc Arm Pets: Creating Heirlooms
+           /call summonUnpackAndGive ${Spawn[${Group.Member[${counter}]}].Pet.ID} "Grant Enibik's Heirlooms" "Folded Pack of Enibik's Heirlooms"
+      } 
+      /if (${Cursor.ID}) {
+        /bc Arm Pets: Something went wrong and something is on your cursor, exiting.
+        /goto :armpetend
+      }
+      /if (${Me.Book[Grant Spectral Plate]}) {
+        /bc Arm Pets: Creating Spectral Plate
+        /call summonUnpackAndGive ${Spawn[${Group.Member[${counter}]}].Pet.ID} "Grant Spectral Plate" "Folded Pack of Spectral Plate"
+      }
+      /if (${Cursor.ID}) {
+        /bc Arm Pets: Something went wrong and something is on your cursor, exiting.
+        /goto :armpetend
+      }
+      
+      /if (${Me.Book[Grant Spectral Armaments]}) {
+        |/echo the line to parse is:${loadType}
+        /varset char_class ${Spawn[${Group.Member[${counter}]}].Class} 
+        /if (${char_class.Find[Shadow Knight]}) {
+          
+          |/echo Arm Pet: Doing ${char_class} loadout
+          
+          /if (${loadType.Find[fire]}) {
+
+            /varset primaryWeapon "Summoned: Fist of Flame"
+            /varset secondaryWeapon "Summoned: Spear of Maliciousness"
+
+          } else /if (${loadType.Find[ice]}) {
+            
+            /varset primaryWeapon "Summoned: Orb of Chilling Water"
+            /varset secondaryWeapon "Summoned: Spear of Maliciousness"
+            
+          } else /if (${loadType.Find[2dispel]}) {
+            
+            /varset primaryWeapon "Summoned: Wand of Dismissal"
+            /varset secondaryWeapon "Summoned: Wand of Dismissal"
+
+          } else {
+            
+            /varset primaryWeapon "Summoned: Wand of Dismissal"
+            /varset secondaryWeapon "Summoned: Spear of Maliciousness"
+        
+          }
+        
+        } else /if (${char_class.Find[Druid]}) {
+          |/echo Arm Pet: Doing ${char_class} loadout
+          /if (${loadType.Find[fire]}) {
+
+            /varset primaryWeapon "Summoned: Fist of Flame"
+            /varset secondaryWeapon "Summoned: Spear of Maliciousness"
+
+          } else /if (${loadType.Find[ice]}) {
+            
+            /varset primaryWeapon "Summoned: Orb of Chilling Water"
+            /varset secondaryWeapon "Summoned: Spear of Maliciousness"
+            
+          } else /if (${loadType.Find[2dispel]}) {
+            
+            /varset primaryWeapon "Summoned: Wand of Dismissal"
+            /varset secondaryWeapon "Summoned: Wand of Dismissal"
+
+          } else {
+            
+            /varset primaryWeapon "Summoned: Wand of Dismissal"
+            /varset secondaryWeapon "Summoned: Spear of Maliciousness"
+        
+          }
+          |grouped mage/nec/enc here, will probably have to split out depending on new payloads
+        } else /if (${char_class.Find[Magician]} || ${char_class.Find[Necro]} || ${char_class.Find[Enchanter]}) {
+          |/echo Arm Pet: Doing ${char_class} loadout
+          /if (${loadType.Find[fire]}) {
+
+            /varset primaryWeapon "Summoned: Fist of Flame"
+            /varset secondaryWeapon "Summoned: Fist of Flame"
+
+          } else /if (${loadType.Find[ice]}) {
+            
+            /varset primaryWeapon "Summoned: Orb of Chilling Water"
+            /varset secondaryWeapon "Summoned: Orb of Chilling Water"
+            
+          } else /if (${loadType.Find[2dispel]}) {
+            
+            /varset primaryWeapon "Summoned: Wand of Dismissal"
+            /varset secondaryWeapon "Summoned: Wand of Dismissal"
+
+          } else {
+            
+            /varset primaryWeapon "Summoned: Mace of Temporal Distortion"
+            /varset secondaryWeapon "Summoned: Wand of Dismissal"
+        
+          }
+          
+        } else {
+          |/echo Arm Pet: Doing Default ${char_class} loadout
+          /varset primaryWeapon "Summoned: Wand of Dismissal"
+          /varset secondaryWeapon "Summoned: Spear of Maliciousness"
+
+        }
+
+        /bc Arm Pets: Selected Weapons are ${primaryWeapon} and ${secondaryWeapon}
+        /bc Arm Pets: Creating Weapons
+        /call summonUnpackAndSelect ${Spawn[${Group.Member[${counter}]}].Pet.ID} "Grant Spectral Armaments" "Folded Pack of Spectral Armaments" ${primaryWeapon} ${secondaryWeapon}
+      }
+      /if (${Cursor.ID}) {
+        /bc Arm Pets: Something went wrong and something is on your cursor, exiting.
+        /goto :armpetend
+      }
+
+    }
+    |/echo ${Spawn[${Group.Member[${counter}]}].Name} the ${Spawn[${Group.Member[${counter}]}].Class} has pet: ${Spawn[${Group.Member[${counter}]}].Pet.ID} which is ${bodytype}
+  /next counter
+  /tell ${ChatSender} Finished arming pets.
+:armpetend
+/if (${Debug} || ${Debug_MAG}) /echo <== event_armPets -|
+/return
+sub summonUnpackAndSelect(targetID, spellName, ItemName, primaryItem, secondaryItem)
+
+      /if (${Defined[armPetArray]}) /deletevar armPetArray
+      /declare armPetArray[1] string outer ${spellName}
+      /if (${armPetArray.Size}) {
+      
+        /call BuildSpellArray "armPetArray" "armPetArray2D"
+        /call e3_Cast ${Me.ID} "armPetArray2D" 1 False
+        /while (!${Select[${castReturn},CAST_SUCCESS]}) {
+             /call e3_Cast ${Me.ID} "armPetArray2D" 1 False
+        }
+        /if (${Defined[armPetArray]}) /deletevar armPetArray
+
+        /delay 1s
+        |/echo done casting, put in inventory
+        /call ClearCursor
+        /delay 1s
+        |/echo unfolding the bag to cursor
+        /ItemNotify "${ItemName}" rightmouseup
+        /delay 4s 
+        /call ClearCursor
+        /delay 1s
+        /itemnotify "${primaryItem}" leftmouseup
+        /delay 5s ${Bool[${Cursor.ID}]}
+        /if (!${Cursor.ID}) {
+          /echo summonUnpackAndSelect: Could not load parimary item to cursor, exiting
+          /return
+        }
+
+        |/echo getting the target of the pet
+        /call TrueTarget ${targetID}
+        /if (${Target.ID} && ${Target.Distance}>19) /call MoveToLoc ${Target.Y} ${Target.X} 50 15
+
+
+        |/echo giving primary item to pet
+        /call giveItemOnCursorToTarget
+        /if (${Cursor.ID}) {
+          /echo summonUnpackAndSelect: Something went wrong and something is on your cursor, exiting.
+          /return
+        }
+
+        |check to see if we have a 2ndary item
+        /if (!${Bool[${FindItem[${secondaryItem}]}]}) {
+         
+         |we don't have the 2ndary item in this pack, summon the pack again and try again
+         |now delete the object
+          /itemnotify "Pouch of Quellious" leftmouseup
+          /delay 5s ${Bool[${Cursor.ID}]}
+          /if (${Cursor.Name.Find[Pouch of Quellious]}) {
+            /destroy
+          } else {
+            /echo summonUnpackAndSelect: Could not destroy bag, exiting
+            /return
+          }
+           /if (${Defined[armPetArray]}) /deletevar armPetArray
+          /declare armPetArray[1] string outer ${spellName}
+          /call BuildSpellArray "armPetArray" "armPetArray2D"
+          /call e3_Cast ${Me.ID} "armPetArray2D" 1 False
+          /while (!${Select[${castReturn},CAST_SUCCESS]}) {
+              /call e3_Cast ${Me.ID} "armPetArray2D" 1 False
+          }
+          /if (${Defined[armPetArray]}) /deletevar armPetArray
+          /delay 1s
+          |/echo done casting, put in inventory
+          /call ClearCursor
+          /delay 1s
+          |/echo unfolding the bag to cursor
+          /ItemNotify "${ItemName}" rightmouseup
+          /delay 4s 
+          /call ClearCursor
+          /delay 1s
+          /call TrueTarget ${targetID}
+        } 
+       
+        |2ndary item
+        /itemnotify "${secondaryItem}" leftmouseup
+        /delay 5s ${Bool[${Cursor.ID}]}
+        
+        /if (!${Cursor.ID}) {
+          /echo summonUnpackAndSelect: Could not load parimary item to cursor, exiting
+          /return
+        }
+
+        
+        |/echo giving secondary item to pet
+        /call giveItemOnCursorToTarget
+        /if (${Cursor.ID}) {
+          /echo summonUnpackAndSelect: Something went wrong and something is on your cursor, exiting.
+          /return
+        }
+      
+        |now delete the object
+        /itemnotify "Pouch of Quellious" leftmouseup
+        /delay 5s ${Bool[${Cursor.ID}]}
+        /if (${Cursor.Name.Find[Pouch of Quellious]}) {
+           /destroy
+        } else {
+          /echo summonUnpackAndSelect: Could not destroy bag, exiting
+          /return
+        }
+
+      }
+
+/return
+sub summonUnpackAndGive(targetID, spellName, ItemName)
+
+     /if (${Defined[armPetArray]}) /deletevar armPetArray
+      /declare armPetArray[1] string outer ${spellName}
+      /if (${armPetArray.Size}) {
+        |/echo building the spell array for heirlooms
+
+        /call BuildSpellArray "armPetArray" "armPetArray2D"
+        /call e3_Cast ${Me.ID} "armPetArray2D" 1 False
+        /while (!${Select[${castReturn},CAST_SUCCESS]}) {
+             /call e3_Cast ${Me.ID} "armPetArray2D" 1 False
+        }
+        
+         /if (${Defined[armPetArray]}) /deletevar armPetArray
+        /delay 1s
+        |/echo done casting, put in inventory
+        /autoinventory
+        /delay 3s !${Bool[${Cursor.ID}]}
+        /delay 1s
+        |/echo unfolding the bag to cursor
+        /ItemNotify "${ItemName}" rightmouseup
+        /delay 3s
+        |/echo getting the target of the pet
+        /call TrueTarget ${targetID}
+        /if (${Target.ID} && ${Target.Distance}>19) /call MoveToLoc ${Target.Y} ${Target.X} 50 15
+        /call giveItemOnCursorToTarget
+        /if (${Cursor.ID}) {
+          /echo summonUnpackAndGive: Something went wrong and something is on your cursor, exiting.
+          /return
+        }
+      }
+
+/return
+sub giveItemOnCursorToTarget()
+
+    /if (${Defined[retryWeapTimer]}) /deletevar retryWeapTimer
+    /declare retryWeapTimer timer local 10s
+
+    |/echo trying to trade heirloom pack to pet
+    :OpenTrade_Loop
+    
+    /click left target
+    /delay 3s ${Window[GiveWnd].Open}
+    /if (!${Window[GiveWnd].Open}) {
+        /if (${retryWeapTimer} && ${Cursor.ID}) {
+          /goto :OpenTrade_Loop
+        } else {
+          /echo Failed to open trade with ${Target.CleanName}.
+        }
+    } else {
+        :WaitAccept_Loop
+        /notify GiveWnd GVW_Give_Button LeftMouseUp
+        /delay 1s !${Window[GiveWnd].Open}
+        /if (${Window[GiveWnd].Open}) {
+          /if (${retryWeapTimer}) {
+            /goto :WaitAccept_Loop
+          } else {
+            /echo Failed to open trade with ${Target.CleanName}.
+          }
+        }
+      }
+
+/return
 |----------------------------------------------------------------------------|
 SUB give_PetsWeapons(autoWeap)
   /declare p int local
@@ -335,6 +684,7 @@ SUB MAG_Background_Events
 **|
   /doevents auto_coh
   /doevents petWeapons
+  /doevents armPets
 /RETURN
 
 |----------------------------------------------------------------------------|

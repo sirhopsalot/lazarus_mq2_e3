@@ -1,6 +1,7 @@
 |--------------------------------------------------------------------|
 |- Contains setup functions for e3.mac								              -|
 |--------------------------------------------------------------------|
+#include e3 Includes\e3_PrivateCode.inc
 #include e3 Includes\e3_Alerts.inc
 #include e3 Includes\e3_Assists.inc
 #include e3 Includes\e3_Background.inc
@@ -49,17 +50,18 @@ SUB e3_Setup(modeSelect)
 	} else {
 		/declare serverNameForINI string outer PEQTGC
 	}
+	/declare reloadOnLoot bool outer FALSE
+	/declare missingSpellItem string outer
+	/declare numInventorySlots int outer 10
+	/call BuildSpellArrayDefinedValues
 
-  /declare reloadOnLoot bool outer FALSE
-  /declare missingSpellItem string outer
-  /declare numInventorySlots int outer 10
 	/if (${modeSelect.Equal[Debug]}) /varset Debug TRUE
 	| The file path for e3 Data.ini will still need to be updated in corresponding includes because you must use /noparse to write variables to inis.
 	/declare MacroData_Ini string outer e3 Macro Inis\e3 Data.ini
 	/call check_Plugins
 	/echo Loading e3 v${macroVersion}...
 	| create a macro data
-   /if (!${${IniMode}[${MacroData_Ini}].Length}) {
+	/if (!${${IniMode}[${MacroData_Ini}].Length}) {
 		/echo Welcome to e3! preforming first time setup...
 		/call make_macroDataIni
 	}
@@ -88,8 +90,8 @@ SUB e3_Setup(modeSelect)
 	} else {
 			/declare Character_Ini string outer ${${IniMode}[${MacroData_Ini},File Paths,Bot Settings]}\\${Me.CleanName}_${serverNameForINI}.ini
 			/if (!${Bool[${Ini[${Character_Ini}]}]} && ${Bool[${Ini[${Character_Ini.Replace[Lazarus,PEQTGC]}]}]}) {
-				/echo WARNING!!!!
-				/echo INI for ${Me.CleanName}_${serverNameForINI}.ini does not exist but INI for PEQTGC does. Defaulting to ${Me.CleanName}_PEQTGC.ini
+				|/echo WARNING!!!!
+				|/echo INI for ${Me.CleanName}_${serverNameForINI}.ini does not exist but INI for PEQTGC does. Defaulting to ${Me.CleanName}_PEQTGC.ini
 				/varset serverNameForINI PEQTGC
 				/varset Character_Ini ${Character_Ini.Replace[Lazarus,PEQTGC]}
 			}
@@ -137,6 +139,13 @@ SUB e3_Setup(modeSelect)
   |Set Turbo per class based on configuration
   /if (${${IniMode}[${advSettings_Ini},Turbo,${Me.Class.ShortName}].Length}) /declare classTurbo int outer ${${IniMode}[${advSettings_Ini},Turbo,${Me.Class.ShortName}]}
   /squelch /turbo ${classTurbo}
+
+	|Ewiclip: Adding auto-casting of Necromancer orb heals. 
+	/if (${Bool[${Ini[${Character_Ini},Heals]}]} && !${Bool[${Ini[${Character_Ini},Heals,Auto Cast Necro Heal Orbs (On/Off)]}]}) {
+		/call WriteToIni "${Character_Ini},Heals,Auto Cast Necro Heal Orbs (On/Off)" On
+	}
+
+	
 
 	/echo e3 loaded - Turbo ${classTurbo}
 	

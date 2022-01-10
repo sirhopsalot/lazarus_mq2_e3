@@ -81,6 +81,13 @@ SUB heal_tanks
 
 	/if (${Bool[${currentBot}]}) {
 		/call e3_Cast ${NetBots[${currentBot}].ID} "tankHeals2D" ${currentSpellIndx}
+		/if (${UseNecroHealOrbs} && ${Target.PctHPs} < 90) {
+			/if (${Me.ItemReady[Orb of Shadows]}) {
+				/call castSimpleSpell "Orb of Shadows" ${NetBots[${currentBot}].ID}
+			} else /if (${Me.ItemReady[Orb of Souls]}) {
+				/call castSimpleSpell "Orb of Souls" ${NetBots[${currentBot}].ID}
+			}
+		}
 	}	
 	
 /if (${Debug} || ${Debug_Heals}) /echo <== heal_tanks -|
@@ -120,7 +127,6 @@ SUB heal_importantBots
 		/varset importantHeals2D[${currentSpellIndx},${iSubToRun}] check_TankAndXTargetNeedHeal
 		|-Our cast may have been interrupted so need to do a quick check on heals
 		/call e3_Cast ${NetBots[${currentBot}].ID} "importantHeals2D" ${currentSpellIndx}
-
 		/if (${castReturn.Equal[CAST_INTERRUPTED]}) {
 			/call heal_tanks
 			/call heal_xtargets
@@ -220,6 +226,13 @@ SUB heal_xtargets
 
 	/if (${Bool[${currentBot}]}) {
 		/call e3_Cast ${Me.XTarget[${currentBot}].ID} "xtargetHeals2D" ${currentSpellIndx}	
+		/if (${UseNecroHealOrbs} && ${Target.PctHPs} < 90) {
+			/if (${Me.ItemReady[Orb of Shadows]}) {
+				/call castSimpleSpell "Orb of Shadows" ${NetBots[${currentBot}].ID}
+			} else /if (${Me.ItemReady[Orb of Souls]}) {
+				/call castSimpleSpell "Orb of Souls" ${NetBots[${currentBot}].ID}
+			}
+		}
 	}
 /if (${Debug} || ${Debug_Heals}) /echo <== heal_xtargets -|
 /RETURN
@@ -861,6 +874,9 @@ SUB heal_Setup
   /declare hotImportant bool outer FALSE
   /declare hotAll bool outer FALSE
   /declare hotPets bool outer FALSE
+  /declare UseNecroHealOrbs bool outer FALSE
+
+
 
   /call ListToArray "hotTankNoStack"		  "${hotTankNoStackStr}"		  ","
   /call ListToArray "hotImportantNoStack" "${hotImportantNoStackStr}" ","
@@ -891,6 +907,7 @@ SUB heal_SpellArrays
     /call IniToArrayV "${Character_Ini},Heals,Pet Heal#"              petHeals
     /call IniToArrayV "${Character_Ini},Heals,Heal Over Time Spell#"  hotSpells
     /call IniToArrayV "${Character_Ini},Heals,Group Heal#"            groupHeals
+	/if (${Bool[${Ini[${Character_Ini},Heals,Auto Cast Necro Heal Orbs (On/Off)]}]}) /call iniToVarV "${Character_Ini},Heals,Auto Cast Necro Heal Orbs (On/Off)" UseNecroHealOrbs bool outer
   }
 |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|
 | lets healers break invis to cast heal
@@ -982,6 +999,7 @@ SUB heal_CharacterSettings
 		/call WriteToIni "${Character_Ini},Heals,All Heal"
 		/call WriteToIni "${Character_Ini},Heals,XTarget Heal"
 		/call WriteToIni "${Character_Ini},Heals,Pet Heal"
+		/call WriteToIni "${Character_Ini},Heals,Auto Cast Necro Heal Orbs (On/Off)" "On"
     /if (${Select[${Me.Class.ShortName},CLR,DRU,PAL,SHM]}) /call WriteToIni "${Character_Ini},Heals,Heal Over Time Spell"
     /if (${Select[${Me.Class.ShortName},CLR,DRU,PAL]})	/call WriteToIni "${Character_Ini},Heals,Group Heal"
     |/if (${Select[${Me.Class.ShortName},CLR,SHM]}) /call WriteToIni "${Character_Ini},Heals,;Group Hot" "Not Implemented"
