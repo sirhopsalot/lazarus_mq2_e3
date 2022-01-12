@@ -2,7 +2,7 @@
 | Now Cast
 |
 | Author: Rekka
-| This is for when you need something cast immediatly. Unless its a Tank heal,
+| This is for when you need something cast immediately. Unless its a Tank heal,
 | Important heal, or XTarget Heal in process. This will stop whatever is being cast.
 | by issuing an interrupt, which will kick out to the main event loop and then
 | the very next method called will be castNowSpells. 
@@ -13,10 +13,10 @@
 |--------------------------------------------------------------------------------|
 Sub NowCastDefinedValues
     |Create a circular queue with insert and pop methods
-    /declare nowSpellArrayQueue[5] string outer
+    /declare nowSpellArrayQueue[10] string outer
     /declare nowSpellArrayQueueIndexFront int outer 0
     /declare nowSpellArrayQueueIndexBack int outer -1
-    /declare nowSpellArrayQueueMax int outer 5
+    /declare nowSpellArrayQueueMax int outer 10
     /declare nowSpellArrayQueueCount int outer 0
  	/declare DebugNowCast bool outer FALSE
     |global variable to determine if this is a now cast spell while casting
@@ -73,6 +73,12 @@ SUB castNowSpells
             /call castNowSpell "${spellName}" ${spellTargetID}
             /if (!(${ActionTaken} && ${castReturn.Equal[CAST_SUCCESS]})) {
                 /echo NowCast: Failed to cast ${spellName} due to ${castReturn}
+            } else /if (${nowSpellArrayQueueCount}>0 ) {
+                |give times global cooldown if this is not an item
+                /if (!${Bool[${FindItemCount[=${spellName}]}]}) {
+		           /delay 15
+            	}	
+                
             }
         } else {
             /echo NowCast: Failed to cast ${spellName}, Spell/Ability/Item not ready or not found
