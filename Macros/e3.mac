@@ -47,8 +47,7 @@ SUB Main(modeSelect)
           /call ${mainLoop_Array[${i}]}
           |check to see if anything has been set to try and cast without an interrupt
           /doevents nowCast
-				  /doevents nowCastNoTarget
-          |check to see if we have spell(s) ready in nowCast that may have interrupted the above call
+				  |check to see if we have spell(s) ready in nowCast that may have interrupted the above call
           /call castNowSpells
         } 
       /if (!${ActionTaken}) /next i

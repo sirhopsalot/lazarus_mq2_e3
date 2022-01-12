@@ -31,7 +31,7 @@ Sub NowCast_CircularQueue_Insert(InsertValue)
     /varset nowSpellArrayQueueIndexBack ${Math.Calc[(${nowSpellArrayQueueIndexBack} + 1) % ${nowSpellArrayQueueMax}]}
     |Array indexes starting at 1 is stupid and the person should be flogged with a wet fish
     /declare arrayIndex int local ${Math.Calc[${nowSpellArrayQueueIndexBack}+1]}
-    |/if (${DebugNowCast}) /echo Addding with array index of ${arrayIndex} with value ${InsertValue}
+    |/echo Addding with array index of ${arrayIndex} with value ${InsertValue}
     /varset nowSpellArrayQueue[${arrayIndex}] ${InsertValue}
     /varcalc nowSpellArrayQueueCount ${nowSpellArrayQueueCount}+1
 
@@ -53,7 +53,7 @@ SUB castNowSpells
     /declare spellArgs string local 
     /declare spellName string local
     /declare spellTargetID int local
-
+    
     /while (${nowSpellArrayQueueCount}>0) {
         |get the value out of the queue
         /call NowCast_CircularQueue_Pop
@@ -72,7 +72,7 @@ SUB castNowSpells
         /if (${Me.SpellReady[${spellName}]} || ${Me.AltAbilityReady[${spellName}]} || ${Me.ItemReady[${spellName}]}) {
             /call castNowSpell "${spellName}" ${spellTargetID}
             /if (!(${ActionTaken} && ${castReturn.Equal[CAST_SUCCESS]})) {
-                /echo NowCast: Failed to cast ${spellName} due to ${castReturn}
+                /echo <NowCast>: Failed to cast ${spellName} due to ${castReturn}
             } else /if (${nowSpellArrayQueueCount}>0 ) {
                 |give times global cooldown if this is not an item
                 /if (!${Bool[${FindItemCount[=${spellName}]}]}) {
@@ -81,7 +81,7 @@ SUB castNowSpells
                 
             }
         } else {
-            /echo NowCast: Failed to cast ${spellName}, Spell/Ability/Item not ready or not found
+            /bc <NowCast>: Failed to cast ${spellName}, Spell/Ability/Item not ready or not found
         } 
     }
 /RETURN
@@ -101,32 +101,29 @@ SUB castNowSpell(spellName, targetID)
 	}
 /RETURN
 | Add a spell to the queue with no targetid
-#event nowCastNoTarget "<#1#> #2# nowCast #3#"
-#event nowCastNoTarget "[#1#(msg)]#2# nowCast #3#"
-SUB event_nowCastNoTarget(line, ChatSender, Caster, spellName)
-	/if (${Bool[${Caster}]} &&!${Me.Name.Equal[${Caster}]}) /return
+#event nowCast "<#1#> #2# nowCast #3#"
+#event nowCast "[#1#(msg)]#2# nowCast #3#"
+SUB event_nowCast(line, ChatSender, Caster, spellName)
+    /if (${Bool[${Caster}]} &&!${Me.Name.Equal[${Caster}]}) /return
+
+    /declare targetID int local ${Me.ID}
+    /declare spellIndexStart int local 0
+    /declare targetIDIndex int local 0
+
+    /if (${Bool[${spellName.Length}]}) {
+        /varset targetIDIndex ${spellName.Find[targetid]}
+        /if (${targetIDIndex}>0) {
+            /varset targetID ${spellName.Token[2,=]}
+            /varset spellName ${spellName.Left[${Math.Calc[${targetIDIndex}-2]}]}       
+        }
+    }
     /if (${nowSpellArrayQueueCount}==${nowSpellArrayQueueMax}) {
         /echo CastNow Queue is maxed, dropping ${spellName},${targetID}
         /return
     }
-    /call NowCast_CircularQueue_Insert "${spellName},${Me.ID}"
+    /call NowCast_CircularQueue_Insert "${spellName},${targetID}"
 	|c_SubToRun is used internally by e3_Cast, we are flaggint that if something was casting, we would like to interrupt 
     |once we leave this  e3_Casting should check the flag and then call an interrupt
     /if (!${g_CastNowSpellCasting}) /varset c_SubToRun FALSE
 /RETURN
-| Adds spells to the queue with a targetid
-#event nowCast "<#1#> #2# nowCast #3# targetid=#4#"
-#event nowCast "[#1#(msg)]#2# nowCast #3# targetid=#4#"
-SUB event_nowCast(line, ChatSender, Caster, spellName, targetID)
-    /if (${Bool[${Caster}]} &&!${Me.Name.Equal[${Caster}]}) /return
-    /if (${nowSpellArrayQueueCount}==${nowSpellArrayQueueMax}) {
-        /echo CastNow Queue is maxed, dropping ${spellName},${targetID}
-        /return
-    }
-    |/echo Appending Now casting with target ${spellName} on ${Spawn[${targetID}].CleanName}
-    /call NowCast_CircularQueue_Insert "${spellName},${targetID}"
 
-    |c_SubToRun is used internally by e3_Cast, we are flaggint that if something was casting, we would like to interrupt 
-    |once we leave this  e3_Casting should check the flag and then call an interrupt
-     /if (!${g_CastNowSpellCasting}) /varset c_SubToRun FALSE
-/RETURN

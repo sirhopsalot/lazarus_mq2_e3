@@ -283,7 +283,6 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
        			 /if (${Select[${ArrayName},tankHeals2D,importantHeals2D,xtargetHeals2D]}) /goto :cast_still_pending
 
 				/doevents nowCast
-				/doevents nowCastNoTarget
 				|check to see if now Cast has decided to interrupt the casting.
 				/if (!${g_CastNowSpellCasting} && (!${c_SubToRun} && ${Me.Casting.ID})) {
 							/if (${Debug} || ${Debug_Casting}) /echo nowCast called interrupt ${${ArrayName}[${ArrayIndex},${iSubToRun}]}
