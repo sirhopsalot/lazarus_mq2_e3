@@ -23,6 +23,7 @@
 #include e3 Includes\e3_Utilities.inc
 #include e3 Includes\e3_Wait4Rez.inc
 #include e3 Includes\e3_QueueCast.inc
+#include e3 Includes\e3_NowCast.inc
 #include e3 Includes\e3_ClearXTargets.inc
 
 #include e3 Includes\e3_Classes_Bard.inc
@@ -54,6 +55,7 @@ SUB e3_Setup(modeSelect)
 	/declare missingSpellItem string outer
 	/declare numInventorySlots int outer 10
 	/call BuildSpellArrayDefinedValues
+	/call NowCastDefinedValues
 
 	/if (${modeSelect.Equal[Debug]}) /varset Debug TRUE
 	| The file path for e3 Data.ini will still need to be updated in corresponding includes because you must use /noparse to write variables to inis.

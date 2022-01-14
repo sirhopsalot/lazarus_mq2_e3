@@ -38,6 +38,9 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 	/declare pendingType	string local
   /declare oldItem			string local
 	/declare i						int local
+	|this needs to be set to true every run, as its checked for interrupt method calls. Technically they set it to true every time they run, but best to 
+	|be sure this is reset.
+	/varset c_SubToRun TRUE
   |/varset Debug_Casting TRUE
 |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 | Checks to abort casting due to previous failures
@@ -249,6 +252,10 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 |- check for reasons to cancel casting
 		/if (${Cast.Status.Find[C]}) {
 		  |dont allow item swap/must equip interrupts to avoid crashes
+
+
+			
+
 		  /if (${oldItem.Length}) {
 		    /delay 1
 		    /goto :cast_still_pending
@@ -272,8 +279,18 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 				} else {
 				  /delay 1
 				}
-				|this will make tank and important heals ignore everything but subToRun
-       			 /if (${Select[${ArrayName},tankHeals2D,importantHeals2D]}) /goto :cast_still_pending
+				|this will make tank/important heals ignore everything but subToRun
+       			 /if (${Select[${ArrayName},tankHeals2D,importantHeals2D,xtargetHeals2D]}) /goto :cast_still_pending
+
+				/doevents nowCast
+				|check to see if now Cast has decided to interrupt the casting.
+				/if (!${g_CastNowSpellCasting} && (!${c_SubToRun} && ${Me.Casting.ID})) {
+							/if (${Debug} || ${Debug_Casting}) /echo nowCast called interrupt ${${ArrayName}[${ArrayIndex},${iSubToRun}]}
+							/call interrupt
+							/delay 1s
+							/goto :interrupted
+				}
+
 				|- Other reasons to cancel
 				/if (!${Assisting} && ${Following}) {
 				/if (${SpawnCount[=${FollowTarget}]} && ${Spawn[=${FollowTarget}].Distance} < ${LeashLength}) {

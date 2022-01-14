@@ -26,6 +26,7 @@ SUB Main(modeSelect)
 :MainLoop
 /if (${Debug}) /echo |- MainLoop ==>
 		/varset ActionTaken FALSE
+    
     /call check_Basics
  		/call check_Active
 		/call check_Idle
@@ -42,8 +43,14 @@ SUB Main(modeSelect)
 		/if (!${activeTimer}) {
       |These are functions in the e3_setup/Advanced.ini class sections... ex CLR Function#1=check_DivineArb
 			/for i 1 to ${mainLoop_Array.Size}
-				/if (${Bool[${mainLoop_Array[${i}]}]}) /call ${mainLoop_Array[${i}]}
-			/if (!${ActionTaken}) /next i
+				/if (${Bool[${mainLoop_Array[${i}]}]}) {
+          /call ${mainLoop_Array[${i}]}
+          |check to see if anything has been set to try and cast without an interrupt
+          /doevents nowCast
+				  |check to see if we have spell(s) ready in nowCast that may have interrupted the above call
+          /call castNowSpells
+        } 
+      /if (!${ActionTaken}) /next i
 
       /if (${Me.CombatState.NotEqual[COMBAT]}) {
         /if ((!${Me.Casting.ID} || ${Me.Class.ShortName.Equal[BRD]}) && !${use_TargetAE}) /call completePendingExchange
