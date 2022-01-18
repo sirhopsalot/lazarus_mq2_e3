@@ -46,6 +46,14 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 | Checks to abort casting due to previous failures
   |if im invis and iCastInvis=0 (default except for heals)
   |if im a rog, not in combat, done no action for 10+ seconds, and near 2+ other players then drop invis to buff (allows autohide)
+  
+  |CatchAll Function for potentially locked up spell gems.
+  /if (!${Select[${Me.Class.ShortName},WAR,ROG,MNK,BER]}) {
+  	/call check_SpellGemLockup
+  }
+
+	  
+  
   /if (${Me.Invis}) {
     /if (${Me.Class.ShortName.Equal[Rog]}) {
       /if (!${Me.Combat} && ${SpawnCount[pc radius 40]} > 2 && !${SpawnCount[npc radius 100 zradius 100]} && ${idleTimer}<${Math.Calc[${idleInterval}*600 - 100]}) /makemevisible
@@ -601,4 +609,30 @@ SUB casting_CharacterSettings
 /return
 
 Sub casting_Aliases
+/return
+
+SUB check_SpellGemLockup
+	/declare UnlockSpell string local Origin
+
+	/if (!${Me.AltAbilityReady[${UnlockSpell}]}) {
+		/varset UnlockSpell "Marr's Calling"
+	}
+
+	/if (${Bool[${Me.Casting.ID}]} && !${Window[CastingWindow].Open} && !${Me.SpellInCooldown}) {
+		/if (${Me.AltAbilityReady[${UnlockSpell}]}) {
+			/bc ${Me.CleanName}'s spell gems are locked! Attempting unlock.
+			/alt act ${Me.AltAbility[${UnlockSpell}].ID}
+
+			/while (${Me.Casting.ID}) {
+				/if (${Me.Mount.ID}) {
+					/dismount
+				}
+				/interrupt
+				/stopcast
+				/delay 1
+			}
+		} else {
+			/bc ${Me.CleanName}'s spell gems are locked! ${UnlockSpell} is not up!
+		}
+	}
 /return
