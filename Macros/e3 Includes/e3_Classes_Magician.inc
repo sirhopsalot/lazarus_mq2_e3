@@ -710,7 +710,7 @@ SUB check_OrbOfMasteryCharges
     | if toon has no orb of mastery
     /if (!${Bool[${FindItem[=Orb of Mastery]}]}) {
       /docommand ${ChatToggle} No Orb of Mastery in inventory, summoning an Orb of Mastery
-      /casting "Summon Orb"
+      /call castSimpleSpell "Summon Orb" 0
       /delay 12s ${Cursor.ID}
       /while (${Cursor.ID}) {
         /autoinv

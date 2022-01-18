@@ -1171,23 +1171,20 @@ SUB EVENT_gate(line, ChatSender)
   /if (!${Me.Book[gate]}) {
     /if (${FindItem[Philter of Major Translocation].ID}) {
       /docommand ${ChatToggle} Preparing to gate...
-      /casting "Philter of Major Translocation" -maxtries|2
+      /call castSimpleSpell "Philter of Major Translocation" ${Me.ID}
     } else /if (${FindItem[Vial of Swirling Smoke].ID}) {
       /docommand ${ChatToggle} Preparing to gate...
-      /casting "Vial of Swirling Smoke" -maxtries|2
+      /call castSimpleSpell "Vial of Swirling Smoke" ${Me.ID}
     } else /if (${FindItem[Gate Potion].ID}) {
       /docommand ${ChatToggle} Preparing to gate...
-      /casting "Gate Potion" -maxtries|2
+      /call castSimpleSpell "Gate Potion" ${Me.ID}
     } else {
       /docommand ${ChatToggle} I am not able to gate at this time.
     }
   } else {
     /docommand ${ChatToggle} Preparing to gate...
-    /call interrupt
-    /delay 3s !${Me.Casting.ID}
-    /casting "Gate" -maxtries|2
-    /delay 3s !${Me.Casting.ID}
-  }
+    /call castSimpleSpell "Gate" ${Me.ID}
+   }
 /RETURN 
 
 |--------------------------------------------------------|
@@ -1210,15 +1207,13 @@ SUB EVENT_Evacuate(line, ChatSender)
       /delay 3
       /docommand ${ChatToggle} Evacuating!
       /call interrupt
-      /delay 3s !${Me.Casting.ID}
-      /casting "Exodus" alt
+      /call castSimpleSpell "Exodus" ${Me.ID}
+	  
     } else /if (${Me.Book[${Evac_Spell.Arg[1,/]}]}) {
       /docommand ${ChatToggle} Evacuating!
       /call interrupt
-      /delay 3s !${Me.Casting.ID}
-      /casting "${Evac_Spell.Arg[1,/]}" -maxtries|2
-      /delay 3s !${Me.Casting.ID}
-    } else {
+      /call castSimpleSpell "${Evac_Spell.Arg[1,/]}" ${Me.ID}
+	} else {
       /docommand ${ChatToggle} I am not able to Evac at this time.
     }
   }
@@ -1959,6 +1954,10 @@ sub castSimpleSpell(spellNameToBase, simpleTargetIDToBase)
 /return
 sub castSimpleSpellBase(spellName, simpleTargetID, SkipParams)
 
+  /if (${simpleTargetID}==0) {
+    |if 0 passed in, set it to whatever they are targeting
+    /varset simpleTargetID ${Target.ID}
+  }
   /if (${Defined[castSimpleSpellArray]}) /deletevar castSimpleSpellArray
   /declare castSimpleSpellArray[1] string outer ${spellName}
   /if (${castSimpleSpellArray.Size}) {
@@ -2119,7 +2118,6 @@ SUB check_Supply
        	} else {
            /echo Supply with Gem specific: ${supplySpell}/Gem|${supplyGem}
            /call castSimpleSpellBase "${supplySpell}/Gem|${supplyGem}" ${Me.ID} False
-					 |/casting "${supplySpell}" ${supplyGem}
 				}
 				/delay 20s ${Cursor.ID}
         /call ClearCursor

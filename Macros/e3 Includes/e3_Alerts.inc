@@ -112,7 +112,8 @@ Sub event_angmask
     /delay 3s !${Me.Casting.ID}
     :retry
     /varcalc numtries ${numtries}+1
-    /casting "Mirrored Mask" -maxtries|3
+    /call castSimpleSpell "Mirrored Mask" 0
+    |/casting "Mirrored Mask" -maxtries|3
     /delay 1s
     /if (!${Bool[${Me.Song[Reflective Skin]}]} && ${numtries} < 8) /goto :retry
   }

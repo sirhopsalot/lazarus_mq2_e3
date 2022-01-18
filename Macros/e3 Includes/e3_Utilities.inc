@@ -839,9 +839,11 @@ SUB createTimer(timerName, timerSetting)
 /if (${Debug}) /echo |- createTimer ==>
   /if (${timerName.Length} == 0) /return
   /if (${Defined[${timerName}]}) {
+	|/echo Setting value of Timer: ${timerName} : ${timerSetting}
     /varset ${timerName} ${timerSetting}
   } else {
     /declare ${timerName} timer outer ${timerSetting}
+	|/echo Creating value of Timer: ${timerName} : ${timerSetting}
     /call BuildArray timerArray ${timerName}
   }
 /if (${Debug}) /echo <== createTimer -| created ${timerName} [${${timerName}}]

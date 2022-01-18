@@ -143,8 +143,9 @@ SUB meleeCombatBuffs(ArrayName, int s)
               /if (${c_Ready}) {
                 /if (${buffTargetID}!=${Me.ID}) /call TrueTarget ${buffTargetID}
                 /delay 1
-                /disc ${${ArrayName}[${s},${iCastName}]}
-                /delay 1
+                /call castSimpleSpell "${${ArrayName}[${s},${iCastName}]}" 0
+                |/disc ${${ArrayName}[${s},${iCastName}]}
+                |/delay 3
               }
           }
         }
@@ -223,8 +224,7 @@ SUB checkAuras
       /declare previousSpell string local ${Me.Gem[${DefaultGem}]}
       /call check_Ready "auraSpells2D" 1
       /if (${c_Ready}) {
-        /cast ${Me.Gem[${auraSpells2D[1,${iCastName}]}]}
-        /delay 7s !${Me.Casting.ID}
+        /call castSimpleSpell "${auraSpells2D[1,${iCastName}]}" 0
         /if (${Bool[${previousSpell}]}) {
           /echo Re-memorizing ${previousSpell} after aura cast
           /memorize "${previousSpell}" "${DefaultGem}"

@@ -54,7 +54,9 @@ SUB EVENT_startMelody(line, ChatSender, melodyName)
         /varset playingMelody FALSE
         /varset songSet
         /docommand ${ChatToggle} Ending melody.
-        /twist end
+        /twist stop
+        |let gems reset
+        /delay 3
         /varset fixedMelody ${melodyName}
       } else {
         /docommand ${ChatToggle} [${melodyName}] is not a known melody.
@@ -113,15 +115,16 @@ SUB pauseTwist
 /if (${Debug} || ${Debug_Casting}) /echo |- pauseTwist ==>
 	/varset	returnTwist TRUE
 	/squelch /twist stop
-	/delay 2s !${Me.Casting.ID}
+	/delay 3s !${Me.Casting.ID}
+  /delay 3
 /if (${Debug} || ${Debug_Casting}) /echo <== pauseTwist -|
 /return
 |--------------------------------------------------------------|
 SUB unpauseTwist
-	/delay 2 !${Me.Casting.ID}
+	/delay 3s !${Me.Casting.ID}
 	/varset 	returnTwist FALSE
 	/if (${songPlayer.NotEqual["Dynamo"]}) /squelch 	/twist ${songSet}
-	/delay 2 ${Me.Casting.ID}
+	/delay 1s ${Me.Casting.ID}
 /return
 |--------------------------------------------------------------|
 #event toggleMez "<#1#> Mez #2#"

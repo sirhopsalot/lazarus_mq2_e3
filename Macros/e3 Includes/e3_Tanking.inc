@@ -74,11 +74,11 @@ SUB peelTank
     } else {
       /if (${Me.CombatAbilityReady[Mock]}) {
         /doability Mock
-        /delay 2
+        /delay 3
       }
-      /if (${Me.CombatAbilityReady[Bazu Bellow]}) /doability "Bazu Bellow"
-      /if (${Me.AltAbilityReady[Divine Stun]}) /casting "Divine Stun"
-      /if (${Me.SpellReady[Terror of Discord]}) /casting "Terror of Discord"
+      /if (${Me.CombatAbilityReady[Bazu Bellow]}) /call castSimpleSpell "Bazu Bellow" 0
+      /if (${Me.AltAbilityReady[Divine Stun]}) /call castSimpleSpell "Divine Stun" 0
+      /if (${Me.SpellReady[Terror of Discord]}) /call castSimpleSpell "Terror of Discord" 0
     }
   }
 
@@ -113,11 +113,11 @@ SUB peelTank
           /doability Taunt
           /if (${Me.CombatAbilityReady[Mock]}) {
             /doability Mock
-            /delay 2
+            /delay 3
           }
-          /if (${Me.CombatAbilityReady[Bazu Bellow]}) /doability "Bazu Bellow"
-          /if (${Me.AltAbilityReady[Divine Stun]}) /casting "Divine Stun"
-          /if (${Me.SpellReady[Terror of Discord]}) /casting "Terror of Discord"
+          /if (${Me.CombatAbilityReady[Bazu Bellow]}) /call castSimpleSpell "Bazu Bellow" 0
+          /if (${Me.AltAbilityReady[Divine Stun]}) /call castSimpleSpell "Divine Stun" 0
+          /if (${Me.SpellReady[Terror of Discord]}) /call castSimpleSpell "Terror of Discord" 0
           /return
         } else {
           /varset peelTarget 0

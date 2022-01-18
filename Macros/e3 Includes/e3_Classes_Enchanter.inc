@@ -283,7 +283,7 @@ Sub ENC_Background_Events
 	/doevents toggleRune
 	/doevents add_RuneTarget
 	/doevents remove_RuneTarget
-	/if (${Assisting} && ${Bool[${gatherManaPCT}]} && ${Me.PctMana} < ${gatherManaPCT} && ${Me.AltAbilityReady[Gather Mana]} && ${Me.CombatState.Equal[COMBAT]}) /casting "Gather Mana" -maxtries|3
+	/if (${Assisting} && ${Bool[${gatherManaPCT}]} && ${Me.PctMana} < ${gatherManaPCT} && ${Me.AltAbilityReady[Gather Mana]} && ${Me.CombatState.Equal[COMBAT]}) /call castSimpleSpell "Gather Mana" 0
 /return
 |----------------------------------------------------------------------------|
 SUB ENC_MacroSettings

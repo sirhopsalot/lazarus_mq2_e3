@@ -134,15 +134,20 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
     }
   }
 
-	/if (${Twist.Twisting}) /call pauseTwist
-	/delay 3s !${Me.Casting.ID}
+	/if (${Twist.Twisting}) {
+		|this sets returnTwist to true
+		/call pauseTwist
+		/delay 3s !${Me.Casting.ID}
+		/delay 3
+	} 
+	
 
 	/declare startingLoc ${Me.Loc.Replace[ ,]}
 |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 |  Casting
 :cast_spell
   |/if (${Me.Name.Equal[Lube]}) /gu Casting ${pendingCast} ${pendingCastID} ${Spawn[id ${targetID}].Name} ${targetID}
-	/if (!${StopEchos}) /echo Casting ${pendingCast} ${pendingCastID} ${Spawn[id ${targetID}].Name} ${targetID} in ${e3CastTime}
+	/if (!${StopEchos}) /echo [${Time}]: ${pendingCast} ${pendingCastID} ${Spawn[id ${targetID}].Name} ${targetID}
 	|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	|Use Disc
 	/if (${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Disc]}) {
@@ -157,15 +162,17 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 				/delay 5 ${Target.ID} == ${targetID}
 			}
 			/varset ActionTaken TRUE
-			/disc ${pendingCast}
+			/disc "${pendingCast}""
+			/delay 3
 		}
 	|-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	|- Abilities should never go to e3_cast, just a safeguard
+	|- Abilities
 	} else /if (${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Ability]}) {
-		/if (${Me.AbilityReady[${abilityName}]}) {
-      /varset ActionTaken TRUE
-		  /doability ${pendingCast}
-    }
+		/if (${Me.AbilityReady[${pendingCast}]}) {
+      	   /varset ActionTaken TRUE
+			/doability "${pendingCast}"
+			/delay 3 !${Me.AbilityReady[${pendingCast}]}
+    	}
 	|-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	|- Spells, AA, Items
 	} else {
@@ -198,52 +205,66 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 				/varset pendingType ${DefaultGem}
 			}
 		}
-    |/echo AT pendingCastID ${pendingCastID} pendingType ${pendingType}" "-targetid|${targetID}"
-	/varset ActionTaken TRUE
-	
-
-    /if (${${ArrayName}[${ArrayIndex},${iTargetType}].Equal[Self]}) {
-		/if (${Bool[${FindItem[=${pendingCast}]}]}) {
-
-			/useitem "${pendingCast}"
-			|set to a default good value unless overwritten for a reason
-			/varset castReturn CAST_SUCCESS
-			|Note when using /useitem, if the next 'cast' is a spell you need a 0.3 sec delay similar to bard songs.
-			|Possible optimizations to pass in to use the delay or not, but be warned, not using the delay
-			|and the spell is the next can get you to a point where your spell gems lock up and need to use an AA to fix.
-			/delay 3
-			
-
-		} else {
-			/casting "${pendingCastID}|${pendingType}"		
-		}
-    } else {
-		/if (${Bool[${FindItem[=${pendingCast}]}]}) {
-		    /declare i_target int local 0
-    		|/echo getting tareget for item
-			/for i 1 to 5
-				/if (${Bool[${Target.ID} != ${targetID}]}) {
-      				/target id ${targetID}
-      				/delay 1
-    			} else {
-					|ExitLoop if target is correct
-					/break
+		|/echo AT pendingCastID ${pendingCastID} pendingType ${pendingType}" "-targetid|${targetID}"
+		/varset ActionTaken TRUE
+		|to help with item clicks locking up, to give the server time to issue the cooldown.	
+   		/if (${pendingType.Equal[item]}) {
+   			|When an item delay is applied to an entry, check to see if the delay is still active
+			/if (${Defined[SpellRecast_${pendingCastID}]}) {
+				
+			/if (${SpellRecast_${pendingCastID}}) {
+				|our timer is still active, skip this and say we are not recovered yet.
+				|No action taken, so they can cast the next thing in the list.
+				/echo ${pendingCast} was tried again before cooldown complete, skipping this action with a CAST_RECOVER return value
+				/varset ActionTaken False
+				/varset castReturn CAST_RECOVER
+				/goto :skipCast
 			}
-			/next i_target
-			|/echo casting item "${pendingCast}" on ${targetID}
-			/useitem "${pendingCast}"
-			|set to a default good value unless overwritten for a reason
-			/varset castReturn CAST_SUCCESS
-			|Note when using /useitem, if the next 'cast' is a spell you need a 0.3 sec delay similar to bard songs.
-			|Possible optimizations to pass in to use the delay or not, but be warned, not using the delay
-			|and the spell is the next can get you to a point where your spell gems lock up and need to use an AA to fix.
-			/delay 3
-			|set to a default good value unless overwritten for a reason
-			
-		} else {
-			/casting "${pendingCastID}|${pendingType}" "-targetid|${targetID}"
+			}
 		}
-    }
+
+		/if (${${ArrayName}[${ArrayIndex},${iTargetType}].Equal[Self]}) {
+			/if (${Bool[${FindItem[=${pendingCast}]}]}) {
+
+				/useitem "${pendingCast}"
+				|set to a default good value unless overwritten for a reason
+				/varset castReturn CAST_SUCCESS
+				|Note when using /useitem, if the next 'cast' is a spell you need a 0.3 sec delay similar to bard songs.
+				|Possible optimizations to pass in to use the delay or not, but be warned, not using the delay
+				|and the spell is the next can get you to a point where your spell gems lock up and need to use an AA to fix.
+				/delay 3
+				
+
+			} else {
+				/casting "${pendingCastID}|${pendingType}"		
+			}
+		} else {
+			/if (${Bool[${FindItem[=${pendingCast}]}]}) {
+				/declare i_target int local 0
+				|/echo getting tareget for item
+				/for i 1 to 5
+					/if (${Bool[${Target.ID} != ${targetID}]}) {
+						/target id ${targetID}
+						/delay 1
+					} else {
+						|ExitLoop if target is correct
+						/break
+				}
+				/next i_target
+				|/echo casting item "${pendingCast}" on ${targetID}
+				/useitem "${pendingCast}"
+				|set to a default good value unless overwritten for a reason
+				/varset castReturn CAST_SUCCESS
+				|Note when using /useitem, if the next 'cast' is a spell you need a 0.3 sec delay similar to bard songs.
+				|Possible optimizations to pass in to use the delay or not, but be warned, not using the delay
+				|and the spell is the next can get you to a point where your spell gems lock up and need to use an AA to fix.
+				/delay 3
+				|set to a default good value unless overwritten for a reason
+				
+			} else {
+				/casting "${pendingCastID}|${pendingType}" "-targetid|${targetID}"
+			}
+		}
 		|- Memorizing spell
 		/if (${Cast.Status.Find[M]}) /delay 3s !${Cast.Status.Find[M]}
 		|- Set expected cast end time in 1/10ths of a second
@@ -378,9 +399,23 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 		/call SwapItem "${oldItem}" "${${ArrayName}[${ArrayIndex},${iItemMustEquip}]}"
 	}
 	/if (${Following} && !${Assisting}) /call AcquireFollow
-  /if (${Me.Class.ShortName.Equal[BRD]}) /varset resumeTwistDelay 5
-  /if (${returnTwist})	/call unpauseTwist
-	/if (${Debug} || ${Debug_Casting})  /echo |- e3_Cast -| castReturn= ${Cast.Result} ${castReturn}
+  	/if (${Me.Class.ShortName.Equal[BRD]}) /varset resumeTwistDelay 5
+ 	|if the twist was stopped for this.
+	/if (${returnTwist})	/call unpauseTwist
+  	/if (${Debug} || ${Debug_Casting})  /echo |- e3_Cast -| castReturn= ${Cast.Result} ${castReturn}
+
+
+	|to help with item clicks locking up, to give the server time to issue the cooldown.	
+	/if (${Select[${castReturn},CAST_SUCCESS]} && ${pendingType.Equal[item]}) {
+			|when an item is click/cast, the server sends over the cooldown of said item
+			|so for a breif time between clicking there is an 'unknown' state where the items
+			|cooldown is still 0, even tho it isn't valid. Noticed this when using molten orbs.
+			|Adding a small delay to any item that is cast to prevent it from being a valid target
+			|on the next event cycle as event cycles in e3 are far faster than the server can send us
+			|the cooldown information
+			|/echo e3_Cast: Setting spell recast timer of 2 seconds
+			/call CreateTimer "SpellRecast_${pendingCastID}" "2s"
+	}
 
 |/varset Debug_Casting FALSE
 /return
