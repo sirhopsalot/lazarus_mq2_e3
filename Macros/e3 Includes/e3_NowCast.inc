@@ -69,6 +69,12 @@ SUB castNowSpells
         }
         /if (${DebugNowCast}) /echo nowCast targetID: ${spellTargetID} 	
         | Check if SpellReady/AltAbilityReady
+
+        /if (${Bool[${Me.Book[${spellName}]}]}) {
+            |if this is a spell, delay up to 0.3 sec for the spell gems to be ready
+            /delay 3 ${Me.SpellReady[${spellName}]}
+        }
+       
         /if (${Me.SpellReady[${spellName}]} || ${Me.AltAbilityReady[${spellName}]} || ${Me.ItemReady[${spellName}]}) {
             /call castNowSpell "${spellName}" ${spellTargetID}
             /if (!(${ActionTaken} && ${castReturn.Equal[CAST_SUCCESS]})) {

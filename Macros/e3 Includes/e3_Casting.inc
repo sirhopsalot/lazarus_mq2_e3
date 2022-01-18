@@ -613,9 +613,17 @@ Sub casting_Aliases
 
 SUB check_SpellGemLockup
 	/declare UnlockSpell string local Origin
+	/declare checkCounter int local 0
 
 	/if (!${Me.AltAbilityReady[${UnlockSpell}]}) {
 		/varset UnlockSpell "Marr's Calling"
+	}
+	
+	|if we are stuck in this sitaution, delay for 0.3 sec to see if we will self correct before we do
+	|anything drastic
+	/while ((${Bool[${Me.Casting.ID}]} && !${Window[CastingWindow].Open} && !${Me.SpellInCooldown}) && ${checkCounter} < 3) {
+		/delay 1
+		/varcalc checkCounter ${checkCounter}+1 
 	}
 
 	/if (${Bool[${Me.Casting.ID}]} && !${Window[CastingWindow].Open} && !${Me.SpellInCooldown}) {
