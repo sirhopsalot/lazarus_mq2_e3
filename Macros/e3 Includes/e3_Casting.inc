@@ -32,6 +32,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 	/varset pendingCast		${${ArrayName}[${ArrayIndex},${iCastName}]}
 	/varset pendingCastID	${${ArrayName}[${ArrayIndex},${iCastID}]}
 	/declare castTargetName string local ${Spawn[id ${targetID}].CleanName}
+	/declare e3_CastTime int local ${${ArrayName}[${ArrayIndex},${iMyCastTime}]}
 	/varset castEndTime		0
   /varset castReturn		0
 	/varset interruptFlag FALSE
@@ -51,8 +52,6 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
   /if (!${Select[${Me.Class.ShortName},WAR,ROG,MNK,BER]}) {
   	/call check_SpellGemLockup
   }
-
-	  
   
   /if (${Me.Invis}) {
     /if (${Me.Class.ShortName.Equal[Rog]}) {
@@ -142,12 +141,6 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
     }
   }
 
-	/if (${Twist.Twisting}) {
-		|this sets returnTwist to true
-		/call pauseTwist
-		/delay 3s !${Me.Casting.ID}
-		/delay 3
-	} 
 	
 
 	/declare startingLoc ${Me.Loc.Replace[ ,]}
@@ -155,7 +148,10 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 |  Casting
 :cast_spell
   |/if (${Me.Name.Equal[Lube]}) /gu Casting ${pendingCast} ${pendingCastID} ${Spawn[id ${targetID}].Name} ${targetID}
-	/if (!${StopEchos}) /echo [${Time}]: ${pendingCast} ${pendingCastID} ${Spawn[id ${targetID}].Name} ${targetID}
+	/if (!${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Ability]}) {
+		
+		/if (!${StopEchos}) /echo [${Time}]: ${pendingCast} ${pendingCastID} ${Spawn[id ${targetID}].Name} ${targetID}  (${Math.Calc[${e3_CastTime}/1000]}sec)
+	}
 	|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	|Use Disc
 	/if (${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Disc]}) {
@@ -184,7 +180,18 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 	|-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	|- Spells, AA, Items
 	} else {
-			|- Stop following for spell/item/aa with a cast time > 0 MyCastTime, unless im a bard
+
+		|if bard and the spell/item you are casting is > 0.3 sec stop what we are doing
+		/if (${Select[${Me.Class.ShortName},BRD]} && ${e3_CastTime} >0) {
+			/if (${Twist.Twisting}) {
+				|this sets returnTwist to true
+				/call pauseTwist
+				/delay 3s !${Me.Casting.ID}
+				/delay 3
+			} 
+		}
+	
+		|- Stop following for spell/item/aa with a cast time > 0 MyCastTime, unless im a bard
 		/if (${${ArrayName}[${ArrayIndex},${iMyCastTime}]} >0 && ${Me.Class.ShortName.NotEqual[BRD]}) {
 			/if (${Stick.Status.Equal[on]}) /squelch /stick pause
 			/if (${NetAdvPath.Following} && ${Following}) /squelch /netfollow off

@@ -54,8 +54,10 @@ SUB e3_Setup(modeSelect)
 	/declare reloadOnLoot bool outer FALSE
 	/declare missingSpellItem string outer
 	/declare numInventorySlots int outer 10
+	/declare previousSpellGemThatWasCast int outer -1
 	/call BuildSpellArrayDefinedValues
 	/call NowCastDefinedValues
+	/call BardClassDefinedValues
 
 	/if (${modeSelect.Equal[Debug]}) /varset Debug TRUE
 	| The file path for e3 Data.ini will still need to be updated in corresponding includes because you must use /noparse to write variables to inis.

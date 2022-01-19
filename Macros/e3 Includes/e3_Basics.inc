@@ -2622,6 +2622,25 @@ SUB ItemDeleteSummoned(ItemString)
     } 
 
 /RETURN
+
+|--------------------
+|Method currently used in bard twisting, but can be useful for other areas.
+|takes a snapshot of spells that were cast (non insta casts), to be used for later. 
+|possibly update e3cast to also update this, but was written to be used with /twist
+|as it doesn't go through e3_Cast
+|------------------
+sub check_PreviousSpell
+
+  /if (!${Bool[${Me.Casting.ID}]}) /return
+  /declare currentSpellCasting int local 0
+  /varset currentSpellCasting ${Me.Gem[${Me.Casting}]}
+
+  /if (${Bool[${currentSpellCasting}]}) {
+    /varset previousSpellGemThatWasCast ${currentSpellCasting}
+  }
+
+/return
+
 |---------------------------------------------------------------------------------|
 | Centralized area to call methods that will be called every event loop
 | Warning only put things that check very quickly if they should be called or not.
@@ -2629,4 +2648,8 @@ SUB ItemDeleteSummoned(ItemString)
 |---------------------------------------------------------------------------------|
 Sub check_Basics
   /call check_ResistCounters
+  /call check_PreviousSpell
+
 /return
+
+
