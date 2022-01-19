@@ -29,16 +29,17 @@
 Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 |StopEchos = Skips the /echo on successful cast if a value other than 0 is passed with the /call e3_Cast
 /if (${Debug} || ${Debug_Casting}) /echo |- e3_Cast ==>
-	/varset pendingCast		${${ArrayName}[${ArrayIndex},${iCastName}]}
-	/varset pendingCastID	${${ArrayName}[${ArrayIndex},${iCastID}]}
+	/varset pendingCast	${${ArrayName}[${ArrayIndex},${iCastName}]}
+	/varset pendingCastID ${${ArrayName}[${ArrayIndex},${iCastID}]}
 	/declare castTargetName string local ${Spawn[id ${targetID}].CleanName}
 	/declare e3_CastTime int local ${${ArrayName}[${ArrayIndex},${iMyCastTime}]}
-	/varset castEndTime		0
-  /varset castReturn		0
+	/varset castEndTime	0
+	/varset castReturn 0
 	/varset interruptFlag FALSE
-	/declare pendingType	string local
-  /declare oldItem			string local
-	/declare i						int local
+	/declare pendingType string local
+	/declare oldItem string local
+	/declare i	int local
+	/varset	returnTwist FALSE
 	|this needs to be set to true every run, as its checked for interrupt method calls. Technically they set it to true every time they run, but best to 
 	|be sure this is reset.
 	/varset c_SubToRun TRUE
@@ -48,18 +49,59 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
   |if im invis and iCastInvis=0 (default except for heals)
   |if im a rog, not in combat, done no action for 10+ seconds, and near 2+ other players then drop invis to buff (allows autohide)
   
-  /if (!${Twist.Twisting} && ${Me.Class.ShortName.Equal[BRD]} && ${Bool[${Me.Casting.ID}]} && !${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Ability]} && !${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Disc]} ) {
-    |turn off our current song so that items and other things can be clicked
-	 /if (${Bool[${Me.Gem[${Me.Casting}]}]}) {
-		 /echo doing a spell click off
- 		/cast ${Me.Gem[${Me.Casting}]}
-	} else {
-		|an item cast most likely, we have to click some valid gem
-		/echo doing an item click off
-		/cast 1
+  |if we are a bard, and not doing async twisting this section of code
+  |will 'block' as the check_BardSongs does not block on its call.
+  |this allows other check_ Methods to run to do their computation while the spell is running
+  |if they have to do an e3_Cast for their stuff, they will block here until the song is complete
+  |if they don't do anything, it ends up blocking back in check_BardSongs for the next song on the list. 
+  /if (!${Twist.Twisting} && ${Me.Class.ShortName.Equal[BRD]}) {
+	   	/if (!${playingMelody}) {
+      		/echo issuing stopcast and kicking out
+      		/stopcast
+      		/goto :endBardSongLock
+    	}	 
+	   /while (${Window[CastingWindow].Open}) {
+		/doevents Follow
+		/if (!${Window[CastingWindow].Open}) {
+		/break
+		}
+		/doevents Stop
+		/if (!${Window[CastingWindow].Open}) {
+		/break
+		}
+		/doevents MoveHere
+		/if (!${Window[CastingWindow].Open}) {
+		/break
+		}
+		/doevents BackOff
+		/if (!${Window[CastingWindow].Open}) {
+		/break
+		}
+		/doevents clickit
+		/if (!${Window[CastingWindow].Open}) {
+		/break
+		}
+		/doevents bark
+		/if (!${Window[CastingWindow].Open}) {
+		/break
+		}
+		/call alerts_Background_Events
+		/if (!${Window[CastingWindow].Open}) {
+		/break
+		}
+		/delay 1
 	}
+
+   }
+:endBardSongLock
+  |if we are not using MQ2Twist, but we currently have a cast going yet no cast window, issue a stopcast
+  /if (!${Twist.Twisting} && ${Me.Class.ShortName.Equal[BRD]} && ${Bool[${Me.Casting.ID}]} && !${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Ability]} && !${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Disc]} ) {
+    |sometimes when the window is gone but the buff hasn't quite landed yet, stopcast can cancel it. delay 1 to make sure that situation is avoided
+	/delay 1
+	/stopcast
   }
-  
+   
+
   |CatchAll Function for potentially locked up spell gems.
   /if (!${Select[${Me.Class.ShortName},WAR,ROG,MNK,BER]}) {
   	/call check_SpellGemLockup
@@ -197,6 +239,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 		/if (${Select[${Me.Class.ShortName},BRD]} && ${e3_CastTime} >0) {
 			/if (${Twist.Twisting}) {
 				|this sets returnTwist to true
+				/varset	returnTwist TRUE
 				/call pauseTwist
 				/delay 3s !${Me.Casting.ID}
 				/delay 3
@@ -298,7 +341,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 		/varcalc castEndTime ${Me.Casting.MyCastTime}/100
 :cast_still_pending
 |- check for reasons to cancel casting
-		/if (${Cast.Status.Find[C]}) {
+		/if (${Cast.Status.Find[C]} || ${Window[CastingWindow].Open}) {
 		  |dont allow item swap/must equip interrupts to avoid crashes
 
 
@@ -428,7 +471,10 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 	/if (${Following} && !${Assisting}) /call AcquireFollow
   	/if (${Me.Class.ShortName.Equal[BRD]}) /varset resumeTwistDelay 5
  	|if the twist was stopped for this.
-	/if (${returnTwist})	/call unpauseTwist
+	/if (${returnTwist}) {
+		/call unpauseTwist
+		/varset	returnTwist FALSE
+	}	
   	/if (${Debug} || ${Debug_Casting})  /echo |- e3_Cast -| castReturn= ${Cast.Result} ${castReturn}
 
 
