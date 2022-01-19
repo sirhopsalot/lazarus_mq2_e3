@@ -48,6 +48,11 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
   |if im invis and iCastInvis=0 (default except for heals)
   |if im a rog, not in combat, done no action for 10+ seconds, and near 2+ other players then drop invis to buff (allows autohide)
   
+  /if ( ${Me.Class.ShortName.Equal[BRD]} && ${Bool[${Me.Casting.ID}]} && !${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Ability]} && !${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Disc]} ) {
+    |turn off our current song so that items and other things can be clicked
+     /cast ${Me.Gem[${Me.Casting}]}
+  }
+
   |CatchAll Function for potentially locked up spell gems.
   /if (!${Select[${Me.Class.ShortName},WAR,ROG,MNK,BER]}) {
   	/call check_SpellGemLockup

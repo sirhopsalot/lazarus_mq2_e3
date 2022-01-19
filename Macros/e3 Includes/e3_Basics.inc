@@ -2649,6 +2649,9 @@ sub check_PreviousSpell
 Sub check_Basics
   /call check_ResistCounters
   /call check_PreviousSpell
+  /if (${Me.Class.ShortName.Equal[BRD]}) {
+              /call check_BardSongs
+  }
 
 /return
 

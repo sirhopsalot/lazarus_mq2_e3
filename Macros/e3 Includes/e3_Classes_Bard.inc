@@ -88,6 +88,7 @@ Sub BardClass_CircularQueue_PrintQueue
 /return
 
 
+
 Sub BardClass_CircularQueue_ToString
   /if (${bardSongArrayQueueCount}==0) {
     /echo BardClass Queue Empty Already
@@ -109,6 +110,119 @@ Sub BardClass_CircularQueue_ToString
 |----------------------------------------------------------------------------|
 | Bard Functions
 |----------------------------------------------------------------------------|
+
+sub check_BardSongs
+
+  /if (!${playingMelody}) /return
+  /if (${bardSongArrayQueueCount}==0) {
+    /return
+  }
+  /if (${Window[CastingWindow].Open}) {
+    /return
+  }
+  /if (${Bool[${Me.Casting.ID}]} ) {
+    |turn off our current song so we can start a new one
+     /cast ${Me.Gem[${Me.Casting}]}
+     |/delay 1
+  }
+  |we are not  casting, cast the next spell in the list. 
+  /call BardClass_CircularQueue_Pop
+  /declare songGemValue string local
+  /varset songGemValue ${Macro.Return}
+  /call BardClass_CircularQueue_Insert "${songGemValue}"
+  
+  |/if (${Me.Gem[${songGemValue}].Name.Equal[Selo's Accelerating Chorus]}) {
+   /if (${songGemValue.Equal[Selo's Accelerating Chorus]}) {
+    /if (${Me.Buff[Selo's Accelerating Chorus].Duration.TotalSeconds}>45) {
+      |we already have the buff up and it has > 45 seconds left, skip it
+      |/echo Skipping Selo's Accelerating Chorus as it has time left
+      /call BardClass_CircularQueue_Pop
+      /varset songGemValue ${Macro.Return}
+      /call BardClass_CircularQueue_Insert "${songGemValue}"      
+    }
+  }
+    
+  |/call castSimpleSpell "${Me.Gem[${songGemValue}]}" 0
+  |/declare castTime int local ${Spell[${Me.Gem[${songGemValue}]}].MyCastTime}
+
+
+  /if (${Bool[${FindItem[${songGemValue}]}]}) {
+    /declare castTime int local ${FindItem[${songGemValue}].CastTime}
+  } else {
+    /declare castTime int local ${Spell[${songGemValue}].MyCastTime}
+    
+  }
+  
+  /if (${castTime}<100) {
+    /varset castTime 100
+  }
+  /declare delayTime int local ${Math.Calc[${castTime}/100]}
+  
+  /varcalc delayTime ${delayTime} 
+
+  /if (${delayTime}<5) {
+    /varset delayTime 5
+  }
+  /if (${Bool[${FindItem[${songGemValue}]}]}) {
+    /useitem "${songGemValue}"
+   
+  } else {
+    /cast "${songGemValue}"
+    /delay 3 ${Window[CastingWindow].Open}
+    /delay 5
+    /if (!${Window[CastingWindow].Open}) {
+      /echo fizzle happened, recasting
+      /cast ${songGemValue}
+      /varcalc delayTime ${Math.Calc[${castTime}/100]}
+      /delay 5
+    }
+    
+  }
+  
+  
+  |/echo [${Time}]: ${Me.Gem[${songGemValue}]} | ${delayTime}
+  |/echo [${Time}]: ${songGemValue} | ${delayTime}
+
+  /while (${delayTime}>0) {
+     /if (!${Window[CastingWindow].Open}) {
+       /break
+     }
+    /doevents Follow
+    /if (!${Window[CastingWindow].Open}) {
+       /break
+     }
+    /doevents Stop
+    /if (!${Window[CastingWindow].Open}) {
+       /break
+     }
+    /doevents MoveHere
+    /if (!${Window[CastingWindow].Open}) {
+       /break
+     }
+    /doevents BackOff
+    /if (!${Window[CastingWindow].Open}) {
+       /break
+     }
+    /doevents clickit
+    /if (!${Window[CastingWindow].Open}) {
+       /break
+     }
+    /doevents bark
+    /if (!${Window[CastingWindow].Open}) {
+       /break
+     }
+    /call alerts_Background_Events
+    /if (!${Window[CastingWindow].Open}) {
+       /break
+     }
+    /delay 1
+    /varcalc delayTime ${delayTime} -1
+  }
+  |/delay ${delayTime}
+  
+/return
+
+
 #event saveMelody "<#1#> Save Melody #2# #3#"
 #event saveMelody "[MQ2] Save Melody #2# #3#"
 SUB EVENT_saveMelody(line, ChatSender, melodyName, songsToSave)
@@ -171,12 +285,13 @@ SUB EVENT_startMelody(line, ChatSender, melodyName)
       /call BardClass_CircularQueue_Empty
 
       /varset playingMelody FALSE
-      /varset songSet
+      |**/varset songSet
       /docommand ${ChatToggle} Ending melody.
       /twist stop
       |let gems reset
       /delay 3
-      /echo setting fixedMelody to off
+      /echo setting fixedMelody to off**|
+
       /varset fixedMelody off
 
     } else /if (${Select[${melodyName},Pause]}) { 
@@ -198,6 +313,7 @@ SUB EVENT_startMelody(line, ChatSender, melodyName)
     
     /call IniToArrayV "${Character_Ini},${melodyName} Melody,Song#" melodyArray
     /if (!${Defined[melodyArray]}) {
+        /varset playingMelody FALSE
         /docommand ${ChatToggle} [${melodyName}] is not a known melody.
     } else {
 
@@ -216,7 +332,8 @@ SUB EVENT_startMelody(line, ChatSender, melodyName)
                 /call argueString gem| "${melodyArray[${i}]}"
                 /echo Found item for twist ${spellName}, will use item slot ${c_argueString}
                 /varset songList ${songList} ${c_argueString}
-                /call BardClass_CircularQueue_Insert ${c_argueString}
+                |/call BardClass_CircularQueue_Insert ${c_argueString}
+                /call BardClass_CircularQueue_Insert  "${spellName}"
               } else {
                 | If the song is not memmed, use mq2Cast to mem
                 /if (!${Me.Gem[${spellName}]}) {
@@ -230,8 +347,9 @@ SUB EVENT_startMelody(line, ChatSender, melodyName)
                   /if (${Cast.Status.Find[M]}) /delay 3s !${Cast.Status.Find[M]}
                 } 
                 | Update songList with the corresponding gem#
-                /varset songList ${songList} ${Me.Gem[${spellName}]}
-                /call BardClass_CircularQueue_Insert  "${Me.Gem[${spellName}]}"
+                 /varset songList ${songList} ${Me.Gem[${spellName}]}
+                |/call BardClass_CircularQueue_Insert  "${Me.Gem[${spellName}]}"
+                /call BardClass_CircularQueue_Insert  "${spellName}"
               }
             }
           /next i
@@ -245,7 +363,7 @@ SUB EVENT_startMelody(line, ChatSender, melodyName)
             |/echo singing Songset: ${songList}
             /docommand ${ChatToggle} Playing New Melody: [${melodyName}].
           
-            /if (${songPlayer.NotEqual["Dynamo"]}) /twist ${songSet}
+            |**/if (${songPlayer.NotEqual["Dynamo"]}) /twist ${songSet}**|
           }
         }
     }
@@ -262,7 +380,10 @@ SUB EVENT_startMelody(line, ChatSender, melodyName)
 |--------------------------------------------------------------|
 SUB pauseTwist
 /if (${Debug} || ${Debug_Casting}) /echo |- pauseTwist ==>
-	/varset	returnTwist TRUE
+	
+  /varset playingMelody FALSE
+  /return
+  /varset	returnTwist TRUE
 	
   | just stop the quest and reorganize the playlist
 
@@ -301,6 +422,8 @@ SUB pauseTwist
 |--------------------------------------------------------------|
 --------------------------------------------------------------|
 SUB unpauseTwist
+  /varset playingMelody TRUE
+  /return
 	/delay 3s !${Me.Casting.ID}
 	
   /if (!${Bool[${playingMelody}]}) {
