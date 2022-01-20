@@ -184,7 +184,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 				/delay 5 ${Target.ID} == ${targetID}
 			}
 			/varset ActionTaken TRUE
-			/disc "${pendingCast}""
+			/disc "${pendingCast}"
 			/delay 3
 		}
 	|-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
