@@ -325,7 +325,7 @@ SUB CombatAbilities
       |- Discipline, no disc with a duration can go here
     } else /if (${Abilities2D[${i},${iCastType}].Equal[Disc]}) {
     |/echo car ${Me.CombatAbilityReady[${abilityName}]} ${Me.CombatAbility[${abilityName}]} ${abilityName} ${Me.CombatAbilityReady[${abilityName}]} ${Me.CombatAbilityReady[Backstab]}
-      /if (${Me.CombatAbilityReady[${Abilities2D[${i},${iCastName}]}]}) {
+      /if (${Me.CombatAbilityReady[${Abilities2D[${i},${iCastName}]}]} && !${Me.ActiveDisc.Name.Find[${Abilities2D[${i},${iCastName}]}]}) {
         |/echo ${Abilities2D[${i},${iCastName}]} myend ${Me.PctEndurance} >= minend ${Abilities2D[${i},${iMinEnd}]} and endcost ${Spell[${Abilities2D[${i},${iCastName}]}].EnduranceCost} <= ${Me.Endurance}
         /if (${Me.PctEndurance} >= ${Abilities2D[${i},${iMinEnd}]} && ${Spell[${Abilities2D[${i},${iCastName}]}].EnduranceCost} <= ${Me.Endurance} && ${Abilities2D[${i},${iIfs}]}) {
           |/echo ready ${abilityName} ${Me.CombatAbilityReady[${abilityName}]}
