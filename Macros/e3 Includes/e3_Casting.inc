@@ -54,46 +54,10 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
   |this allows other check_ Methods to run to do their computation while the spell is running
   |if they have to do an e3_Cast for their stuff, they will block here until the song is complete
   |if they don't do anything, it ends up blocking back in check_BardSongs for the next song on the list. 
-  /if (!${Twist.Twisting} && ${Me.Class.ShortName.Equal[BRD]}) {
-	   	/if (!${playingMelody}) {
-      		/echo issuing stopcast and kicking out
-      		/stopcast
-      		/goto :endBardSongLock
-    	}	 
-	   /while (${Window[CastingWindow].Open}) {
-		/doevents Follow
-		/if (!${Window[CastingWindow].Open}) {
-		/break
-		}
-		/doevents Stop
-		/if (!${Window[CastingWindow].Open}) {
-		/break
-		}
-		/doevents MoveHere
-		/if (!${Window[CastingWindow].Open}) {
-		/break
-		}
-		/doevents BackOff
-		/if (!${Window[CastingWindow].Open}) {
-		/break
-		}
-		/doevents clickit
-		/if (!${Window[CastingWindow].Open}) {
-		/break
-		}
-		/doevents bark
-		/if (!${Window[CastingWindow].Open}) {
-		/break
-		}
-		/call alerts_Background_Events
-		/if (!${Window[CastingWindow].Open}) {
-		/break
-		}
-		/delay 1
+	/if (!${Twist.Twisting} && ${Me.Class.ShortName.Equal[BRD]}) {
+	   
+	   /call BardSongWaitLockPumpQueue
 	}
-
-   }
-:endBardSongLock
   |if we are not using MQ2Twist, but we currently have a cast going yet no cast window, issue a stopcast
   /if (!${Twist.Twisting} && ${Me.Class.ShortName.Equal[BRD]} && ${Bool[${Me.Casting.ID}]} && !${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Ability]} && !${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Disc]} ) {
     |sometimes when the window is gone but the buff hasn't quite landed yet, stopcast can cancel it. delay 1 to make sure that situation is avoided
@@ -344,8 +308,10 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 		/if (${Cast.Status.Find[C]} || ${Window[CastingWindow].Open}) {
 		  |dont allow item swap/must equip interrupts to avoid crashes
 
-
-			
+		   	/if (${Me.Class.ShortName.Equal[BRD]}) {
+				 /call ActivateSelosKick
+		   }
+		 	
 
 		  /if (${oldItem.Length}) {
 		    /delay 1

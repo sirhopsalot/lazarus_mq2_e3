@@ -111,11 +111,15 @@ Sub BardClass_CircularQueue_ToString
 | Bard Functions
 |----------------------------------------------------------------------------|
 
+
 sub check_BardSongs
   
   /if (!${songPlayer.Equal["Twist"]} || ${Me.Invis} || ${Me.Stunned}) {
       /return
   }
+  /declare didKick bool local false
+  
+
   |don't do songs when looting
   /if (${Target.CleanName.Equal[${Me}'s corpse]}) { 
       /return 
@@ -127,12 +131,18 @@ sub check_BardSongs
       /stopcast
     } 
     /return
-  }   
+  } 
+
+ 
+
   /if (!${playingMelody}) /return
   
   /if (${bardSongArrayQueueCount}==0) {
     /return
   }
+  
+  /call ActivateSelosKick
+
   |######################################################
   |Figure out the next song on the list to play
   /call BardClass_CircularQueue_Pop
@@ -158,49 +168,10 @@ sub check_BardSongs
   /if (${Bool[${FindItem[${songGemValue}]}]}) {
       /varset isItem True
   }
-   /if (!${playingMelody} ) {
-    /echo issuing stopcast and kicking out
-    /stopcast
-    /return
-  } 
-  |Block in case we are currently casting a previous song
-   /while (${Window[CastingWindow].Open}) {
-		/doevents startMelody
-    /if (!${playingMelody}) {
-      /echo issuing stopcast and kicking out
-      /stopcast
-      /return
-    } 
-    /doevents Follow
-		/if (!${Window[CastingWindow].Open}) {
-		/break
-		}
-		/doevents Stop
-		/if (!${Window[CastingWindow].Open}) {
-		/break
-		}
-		/doevents MoveHere
-		/if (!${Window[CastingWindow].Open}) {
-		/break
-		}
-		/doevents BackOff
-		/if (!${Window[CastingWindow].Open}) {
-		/break
-		}
-		/doevents clickit
-		/if (!${Window[CastingWindow].Open}) {
-		/break
-		}
-		/doevents bark
-		/if (!${Window[CastingWindow].Open}) {
-		/break
-		}
-		/call alerts_Background_Events
-		/if (!${Window[CastingWindow].Open}) {
-		/break
-		}
-		/delay 1
-	}
+  
+  /call ActivateSelosKick
+  /call BardSongWaitLockPumpQueue
+
   |tap the current gem if we are casting 
   /if (${Bool[${Me.Casting.ID}]} ) {
     /delay 1
@@ -233,7 +204,10 @@ sub check_BardSongs
             /delay 1
          } 
     }
-    
+    |a delay check, for sync 
+    /if (!${Me.SpellReady[${songGemValue}]}) {
+       /delay 1
+    } 
     /if (!${Me.SpellReady[${songGemValue}]}) {
       /echo [${Time}]: Twist-Skip: "${songGemValue}"
       /return
@@ -464,7 +438,8 @@ SUB pauseTwist
 /if (${Debug} || ${Debug_Casting}) /echo <== pauseTwist -|
 /return
 |--------------------------------------------------------------|
---------------------------------------------------------------|
+|--------------------------------------------------------------|
+
 SUB unpauseTwist
   
  
@@ -969,4 +944,63 @@ SUB delaySongCast(songName, myNhtTimerName)
     /if (${${myNhtTimerName}.OriginalValue} < 600) /varset ${myNhtTimerName} ${Math.Calc[${${myNhtTimerName}.OriginalValue} + 60]}
   }
   |/echo ${songName} did not take hold, waiting ${myNhtTimerName} = ${${myNhtTimerName}.OriginalValue} before trying again
+/RETURN
+
+sub ActivateSelosKick
+
+  /if (${Target.ID} && ${Target.ID} == ${AssistTarget} && ${Me.AltAbilityReady[Selo's Kick]}  && ${Spawn[${Target}].Distance} < 25 ) {
+
+    /alt activate 8205
+    /delay 5 !${Me.AltAbilityReady[Selo's Kick]}
+   
+  }
+
+/RETURN
+sub BardSongWaitLockPumpQueue
+  /if (!${playingMelody} ) {
+    /echo issuing stopcast and kicking out
+    /stopcast
+    /return
+  } 
+|Block in case we are currently casting a previous song
+  /while (${Window[CastingWindow].Open}) {
+  /doevents startMelody
+  /if (!${playingMelody}) {
+    /echo issuing stopcast and kicking out
+    /stopcast
+    /return
+  }
+  /call ActivateSelosKick
+
+  /doevents Follow
+  /if (!${Window[CastingWindow].Open}) {
+  /break
+  }
+  /doevents Stop
+  /if (!${Window[CastingWindow].Open}) {
+  /break
+  }
+  /doevents MoveHere
+  /if (!${Window[CastingWindow].Open}) {
+  /break
+  }
+  /doevents BackOff
+  /if (!${Window[CastingWindow].Open}) {
+  /break
+  }
+  /doevents clickit
+  /if (!${Window[CastingWindow].Open}) {
+  /break
+  }
+  /doevents bark
+  /if (!${Window[CastingWindow].Open}) {
+  /break
+  }
+  /call alerts_Background_Events
+  /if (!${Window[CastingWindow].Open}) {
+  /break
+  }
+  /delay 1
+}
+
 /RETURN
