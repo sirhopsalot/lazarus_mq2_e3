@@ -201,9 +201,9 @@ SUB check_AssistStatus
     /if (${AllowControl} || !${Select[${Me.Class.ShortName},NEC,SHD,MNK]}) /stand
   }
   | If the character is macro controlled
-  /if (${AllowControl} && ((${AssistType.Equal[melee]} || ${AssistType.Equal[ranged]}))) {
+  /if (${AllowControl} && ((${AssistType.Equal[melee]} || ${AssistType.Equal[ranged]} || ${AssistType.Equal[Autofire]} ))) {
     | Check Target: this only forces retarget for melee/autofire bots and lets casters/priests do their thing
-    /if (${Target.ID} != ${AssistTarget} && (!${Bool[${Me.Casting}]} || ${Me.Class.ShortName.Equal[BRD]}) && (${AssistType.Equal[melee]} || ${AssistType.Equal[ranged]})) /call TrueTarget ${AssistTarget}
+    /if (${Target.ID} != ${AssistTarget} && (!${Bool[${Me.Casting}]} || ${Me.Class.ShortName.Equal[BRD]}) && (${AssistType.Equal[melee]} || ${AssistType.Equal[ranged]}|| ${AssistType.Equal[Autofire]} )) /call TrueTarget ${AssistTarget}
     |----- Melee functions-------------------------------------------------------------------------------------------------------------|
       /if (${AssistType.Equal[Melee]} || ${pauseRanged}) {
         /if (${isEnraged}) {
