@@ -299,9 +299,6 @@ SUB EVENT_startMelody(line, ChatSender, melodyName)
           /delay 3
       }
      
-      
-      /varset fixedMelody off
-
     } else /if (${Select[${melodyName},Pause]}) { 
       
       /call pauseTwist
@@ -325,7 +322,7 @@ SUB EVENT_startMelody(line, ChatSender, melodyName)
         /docommand ${ChatToggle} [${melodyName}] is not a known melody.
     } else {
           /varset currentMelody ${melodyName}
-          /varset fixedMelody ${melodyName}
+          |/varset fixedMelody ${melodyName}
           /declare spellName string local
           /declare i int local
           | For 1 to 7 (maximum melody size to include selos, 6 songs played actively with some droppage)
@@ -612,17 +609,16 @@ sub check_bard_mez
 SUB melodyIfs
 
   /if (!${playingMelody}) /return
-
   | when fixedMelody is stop, stop all melodies and don't let them start
   | when fixedMelody is off/null, start up MelodyIf again
   /if (!${Bool[${fixedMelody.Equal[off]}]} && !${currentMelody.Equal[${fixedMelody}]}) {
     
-    /echo if starting up melody ${fixedMelody}
+    |/echo if starting up melody ${fixedMelody}
 
     /call EVENT_startMelody "<${Me}> melody ${fixedMelody}" "${Me}" "${fixedMelody}"
     /return
   } else /if (${currentMelody.Equal[${fixedMelody}]}) {
-    | already set to one of the fixed melodies
+    |/echo  already set to one of the fixed melodies
     /return
   }
 
@@ -633,11 +629,12 @@ SUB melodyIfs
     /varset newIfMelody ${melodyIfs[${i},1]}
     /if (!${currentMelody.Equal[${newIfMelody}]} && (${melodyIfs[${i},2]})) {
        
-      /echo if starting up melody:${newIfMelody}
+      |/echo if starting up melody:${newIfMelody}
 
       /call EVENT_startMelody "<${Me}> melody ${newIfMelody}" "${Me}" "${newIfMelody}"
     }
   /next i
+ 
 /RETURN
 
 |--------------------------------------------------------------|
@@ -669,7 +666,7 @@ Sub BRD_Setup
   /call iniToVarV "${Character_Ini},Bard,Auto-Sonata (On/Off)" autoSonataOn bool outer
   /call iniToVarV "${Character_Ini},Bard,SongPlayer" songPlayer string outer
   /call iniToVarV "${Character_Ini},Bard,DynamoPrecastTime" dynamoPrecastTime int outer
-
+  /declare returnTwist bool outer False
   /if (!${Defined[songPlayer]}) {
     /echo Setting default SongPlayer to Twist
     /declare songPlayer string outer Twist
@@ -679,7 +676,7 @@ Sub BRD_Setup
     /declare dynamoPrecastTime int outer 4000
   }
 
-  /declare returnTwist		bool outer FALSE
+  
   /declare playingMelody	bool outer TRUE
   /declare songSet string outer
   /declare resumeTwistDelay timer outer

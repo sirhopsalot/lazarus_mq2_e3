@@ -39,7 +39,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 	/declare pendingType string local
 	/declare oldItem string local
 	/declare i	int local
-	/varset	returnTwist FALSE
+	/declare reEnableTwist bool local FALSE
 	|this needs to be set to true every run, as its checked for interrupt method calls. Technically they set it to true every time they run, but best to 
 	|be sure this is reset.
 	/varset c_SubToRun TRUE
@@ -203,7 +203,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 		/if (${Select[${Me.Class.ShortName},BRD]} && ${e3_CastTime} >0) {
 			/if (${Twist.Twisting}) {
 				|this sets returnTwist to true
-				/varset	returnTwist TRUE
+				/varset	reEnableTwist TRUE
 				/call pauseTwist
 				/delay 3s !${Me.Casting.ID}
 				/delay 3
@@ -439,7 +439,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
  	|if the twist was stopped for this.
 	/if (${returnTwist}) {
 		/call unpauseTwist
-		/varset	returnTwist FALSE
+		
 	}	
   	/if (${Debug} || ${Debug_Casting})  /echo |- e3_Cast -| castReturn= ${Cast.Result} ${castReturn}
 
