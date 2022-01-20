@@ -250,6 +250,10 @@ SUB check_AssistStatus
         }
         /if (!${Me.AutoFire}) /autofire on
       }
+    } else /if (${AssistType.Equal[Autofire]} && !${pauseRanged}) {
+      /squelch /face fast id ${AssistTarget}
+      |dont play chase
+      /if (!${Me.AutoFire}) /autofire on
     }
   }
   /if ((!${Me.Casting.ID} || ${Me.Class.ShortName.Equal[BRD]}) && (${Me.Combat} || ${Me.CombatState.Equal[Combat]} ||  ${AssistTarget} >0 ) && ${Defined[Abilities2D]}) /call CombatAbilities
