@@ -67,9 +67,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
    
 
   |CatchAll Function for potentially locked up spell gems.
-  /if (!${Select[${Me.Class.ShortName},WAR,ROG,MNK,BER]}) {
-  	/call check_SpellGemLockup
-  }
+  /call check_SpellGemLockup
   
   /if (${Me.Invis}) {
     /if (${Me.Class.ShortName.Equal[Rog]}) {
@@ -193,7 +191,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 		/if (${Me.AbilityReady[${pendingCast}]}) {
       	   /varset ActionTaken TRUE
 			/doability "${pendingCast}"
-			/delay 3 !${Me.AbilityReady[${pendingCast}]}
+			/delay 5 !${Me.AbilityReady[${pendingCast}]}
     	}
 	|-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	|- Spells, AA, Items
