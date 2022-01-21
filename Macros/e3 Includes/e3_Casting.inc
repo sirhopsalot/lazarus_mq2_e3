@@ -183,7 +183,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 			}
 			/varset ActionTaken TRUE
 			/disc ${pendingCast}
-			/delay 3
+			/delay 5 !${Me.CombatAbilityReady[${pendingCast}]}
 		}
 	|-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	|- Abilities
