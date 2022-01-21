@@ -1,6 +1,6 @@
 Sub BardClassDefinedValues
     |Create a circular queue with insert and pop methods
-    /declare bardSongArrayQueue[10] string outer
+    /declare bardSongArrayQueue[32] string outer
     /declare bardSongArrayQueueIndexFront int outer 0
     /declare bardSongArrayQueueIndexBack int outer -1
     /declare bardSongArrayQueueMax int outer 10
@@ -165,8 +165,15 @@ sub check_BardSongs
   |##########################
 
   /declare isItem bool local False
-  /if (${Bool[${FindItem[${songGemValue}]}]}) {
+  /declare isSpell bool local False
+  /declare isAltAbility bool local False
+
+ /if (${Bool[${Me.Book[${songGemValue}]}]}) {
+      /varset isSpell True
+  } else /if (${Bool[${FindItem[${songGemValue}]}]}) {
       /varset isItem True
+  } else /if (${Me.AltAbility[${songGemValue}]}) {
+      /varset isAltAbility true
   }
   
   /call ActivateSelosKick
@@ -188,14 +195,8 @@ sub check_BardSongs
   }
   |########
   |Cast the Song/Item
-  /if (${isItem}) {
-    |item isn't ready kickout
-    /if (!${Me.ItemReady[${songGemValue}]}) /return
-    /echo [${Time}]: Twist-Click: "${songGemValue}"
-    /useitem "${songGemValue}"
-    /delay 1
-   
-  } else {
+  |check for isSpell in case we have the actual spell in our inventory
+  /if (${isSpell}) {
   
     |is ths song ready? if not, kick out and loop back in
     /if (${songGemValue.Equal[Verse of Vesagran]}) { 
@@ -215,13 +216,30 @@ sub check_BardSongs
     |cast the song
     /cast "${songGemValue}"
     /echo [${Time}]: Twist: "${songGemValue}"
-    /delay 3
+    /delay 5 ${Window[CastingWindow].Open}
+    
     /if (!${Window[CastingWindow].Open}) {
       /echo [${Time}]: fizzle happened, recasting
+      /stopcast
+      /delay 1
       /cast ${songGemValue}
       /delay 3
     }
+  } else /if (${isItem}) {
+    |item isn't ready kickout
+    /if (!${Me.ItemReady[${songGemValue}]}) /return
+    /echo [${Time}]: Twist-Click: "${songGemValue}"
+    /useitem "${songGemValue}"
+    /delay 3
+   
+  } else /if (${isAltAbility}) {
+    /if (${Me.AltAbilityReady[${songGemValue}]}) {
+       /echo [${Time}]: Twist-Alt: "${songGemValue}"
+      /casting "${songGemValue}" alt
+			/delay 3 !${Me.AltAbilityReady[${pendingCast}]}   
+    }
   }
+
   |End cast of song/item
   |##############
 /return
@@ -331,18 +349,7 @@ SUB EVENT_startMelody(line, ChatSender, melodyName)
             /if (${melodyArray[${i}].Length} && ${melodyArray[${i}].NotEqual[PLACEHOLDER]}) {
               /varset spellName ${melodyArray[${i}].Arg[1,/]}
               | Check that the song is in my book or the item is in my inventory
-              /if (!${Me.Book[${spellName}]} && !${Bool[${FindItem[=${spellName}]}]}) {
-                /echo I don't have [${spellName}] in my spellbook and I don't have an item named [${spellName}], playing the melody without it.
-              } else /if (${Bool[${FindItem[=${spellName}]}]}) {
-                /call argueString gem| "${melodyArray[${i}]}"
-                /echo Found item for twist ${spellName}, will use item slot ${c_argueString}
-                /varset songList ${songList} ${c_argueString}
-                /if (${songPlayer.Equal["Twist"]}) {
-                     /call BardClass_CircularQueue_Insert  "${spellName}"
-                } else {
-                    /call BardClass_CircularQueue_Insert ${c_argueString}
-                }
-              } else {
+              /if (${Me.Book[${spellName}]}) {
                 | If the song is not memmed, use mq2Cast to mem
                 /if (!${Me.Gem[${spellName}]}) {
                   /call argueString gem| "${melodyArray[${i}]}"
@@ -362,7 +369,20 @@ SUB EVENT_startMelody(line, ChatSender, melodyName)
                     /call BardClass_CircularQueue_Insert  "${Me.Gem[${spellName}]}"
                 }
                 
-              }
+              } else /if (${Bool[${FindItem[=${spellName}]}]}) {
+                /call argueString gem| "${melodyArray[${i}]}"
+                /echo Found item for twist ${spellName}, will use item slot ${c_argueString}
+                /varset songList ${songList} ${c_argueString}
+                /if (${songPlayer.Equal["Twist"]}) {
+                     /call BardClass_CircularQueue_Insert  "${spellName}"
+                } else {
+                    /call BardClass_CircularQueue_Insert ${c_argueString}
+                }
+              } else /if (${songPlayer.Equal["Twist"]} && ${Me.AltAbility[${spellName}]} ) {
+                   /call BardClass_CircularQueue_Insert  "${spellName}"
+              } else {
+                /echo I don't have [${spellName}], playing the melody without it.
+              } 
             }
           /next i
         
