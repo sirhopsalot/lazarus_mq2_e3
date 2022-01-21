@@ -1958,19 +1958,15 @@ sub castSimpleSpellBase(spellName, simpleTargetID, SkipParams)
     |if 0 passed in, set it to whatever they are targeting
     /varset simpleTargetID ${Target.ID}
   }
-  /if (${Defined[castSimpleSpellArray]}) /deletevar castSimpleSpellArray
-  /declare castSimpleSpellArray[1] string outer ${spellName}
-  /if (${castSimpleSpellArray.Size}) {
     |/echo building the spell array for heirlooms
-    /call BuildSpellArrayBase "castSimpleSpellArray" "castSimpleSpellArray2D" ${SkipParams}
+  /call BuildSingleSpellArrayBase "${spellName}" "castSimpleSpellArray2D" ${SkipParams}
    
     /call e3_Cast ${simpleTargetID} "castSimpleSpellArray2D" 1 False
     /while (${Select[${castReturn},CAST_FIZZLE]}) {
           /delay 1s
           /call e3_Cast  ${simpleTargetID} "castSimpleSpellArray2D" 1 False
     }
-    /if (${Defined[castSimpleSpellArray]}) /deletevar castSimpleSpellArray
-  }
+
 /return
 |----------------------------------------------------------------------------|
 |- Whenever nothing else is going on will check if the toon has all the items in the gimme list

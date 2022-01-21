@@ -29,6 +29,15 @@
 Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 |StopEchos = Skips the /echo on successful cast if a value other than 0 is passed with the /call e3_Cast
 /if (${Debug} || ${Debug_Casting}) /echo |- e3_Cast ==>
+
+
+	/declare beforeSpell string local ${${ArrayName}[${ArrayIndex},${iBeforeSpell}]}
+	/if (${beforeSpell.Length}>1) {
+		/if (${Me.SpellReady[${beforeSpell}]} || ${Me.AltAbilityReady[${beforeSpell}]} || ${Me.ItemReady[${beforeSpell}]} ) {
+			/call castSimpleSpell "${beforeSpell}" 0
+		}
+	}
+	/declare afterSpell string local ${${ArrayName}[${ArrayIndex},${iAfterSpell}]}
 	/varset pendingCast	${${ArrayName}[${ArrayIndex},${iCastName}]}
 	/varset pendingCastID ${${ArrayName}[${ArrayIndex},${iCastID}]}
 	/declare castTargetName string local ${Spawn[id ${targetID}].CleanName}
@@ -43,6 +52,8 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 	|this needs to be set to true every run, as its checked for interrupt method calls. Technically they set it to true every time they run, but best to 
 	|be sure this is reset.
 	/varset c_SubToRun TRUE
+	
+
   |/varset Debug_Casting TRUE
 |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 | Checks to abort casting due to previous failures
@@ -227,8 +238,10 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 		|- Define item|alt|gem# parameter
 		/if (${${ArrayName}[${ArrayIndex},${iCastType}].Equal[AA]}) {
 			/varset pendingType alt
+			
 		} else /if (${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Item]}) {
 			/varset pendingType item
+			
 		} else /if (${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Spell]}) {
 			|- if Gem specified, use it, else use default
 			/if (${${ArrayName}[${ArrayIndex},${iSpellGem}]}) {
@@ -404,6 +417,8 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 			}
 			/goto :cast_still_pending
 		}
+		|let the window fuly close
+		/delay 1
   :interrupted
 		/varset castReturn ${Cast.Result}
 		|- Cast Result Processing
@@ -454,6 +469,11 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 			/call CreateTimer "SpellRecast_${pendingCastID}" "2s"
 	}
 
+	/if (${afterSpell.Length}>1) {
+		/if (${Me.SpellReady[${afterSpell}]} || ${Me.AltAbilityReady[${afterSpell}]} || ${Me.ItemReady[${afterSpell}]} ) {
+			/call castSimpleSpell "${afterSpell}" 0
+		}
+	}
 |/varset Debug_Casting FALSE
 /return
 
