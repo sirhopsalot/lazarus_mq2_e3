@@ -1126,7 +1126,7 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
             /varset ${resistCount} 0
             /call createTimer "${spellTimer}" "1m"
           }
-        } u
+        }
       | If the spell did not take hold.
       } else /if (${Cast.Stored.Name.Equal[${${ArrayName}[${i},${iSpellName}]}]} && ${castReturn.Equal[CAST_TAKEHOLD]} && !${Cast.Stored.Name.Equal[${spammableSpell}]}) {
         /if (${Defined[${resistCount}]}) {
