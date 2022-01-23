@@ -284,7 +284,8 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 				
 
 			} else {
-				/casting "${pendingCastID}|${pendingType}"		
+				/casting "${pendingCastID}|${pendingType}"
+				/delay 3		
 			}
 
 		} else {
@@ -317,6 +318,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 				
 			} else {
 				/casting "${pendingCastID}|${pendingType}" "-targetid|${targetID}"
+				/delay 3
 			}
 		}
 		|- Memorizing spell
