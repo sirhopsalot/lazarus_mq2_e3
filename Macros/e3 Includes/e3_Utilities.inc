@@ -326,7 +326,7 @@ SUB BuildSingleSpellArrayBase(spellName, NewArrayName, SkipParams)
 		/varset ${NewArrayName}[1,${iCastType}] Disc
 	} else /if (${Me.Ability[${spellName}]}) {
 		/varset ${NewArrayName}[1,${iCastType}] Ability			
-	} else /if (${Me.ItemReady[]}) {
+	} else /if (${Me.ItemReady[${spellName}]}) {
 		/varset ${NewArrayName}[1,${iCastType}] Item
 	} else {
 		/varset ${NewArrayName}[1,${iCastType}] NotFound
@@ -348,6 +348,8 @@ SUB BuildSingleSpellArrayBase(spellName, NewArrayName, SkipParams)
 		|ITEM INFORMATION
 		|Instead of calling FindItem 12 times, we call it twice and get a direct reference to the item in question
 	| ${Me.Inventory[23].Item[7].Spell.TargetType}
+		/declare invSlot int local 0
+		/declare bagSlot int local 0
 		/varset invSlot ${FindItem[=${${NewArrayName}[1,${iCastName}]}].ItemSlot}
 		/varset bagSlot ${FindItem[=${${NewArrayName}[1,${iCastName}]}].ItemSlot2}
 

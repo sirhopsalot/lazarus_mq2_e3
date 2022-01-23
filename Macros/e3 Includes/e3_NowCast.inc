@@ -78,7 +78,7 @@ SUB castNowSpells
         /if (${Me.SpellReady[${spellName}]} || ${Me.AltAbilityReady[${spellName}]} || ${Me.ItemReady[${spellName}]}) {
             /call castNowSpell "${spellName}" ${spellTargetID}
             /if (!(${ActionTaken} && ${castReturn.Equal[CAST_SUCCESS]})) {
-                /echo <NowCast>: Failed to cast ${spellName} due to ${castReturn}
+                /bc <NowCast>: Failed to cast ${spellName} due to ${castReturn}
             } else /if (${nowSpellArrayQueueCount}>0 ) {
                 |give times global cooldown if this is not an item
                 /if (!${Bool[${FindItemCount[=${spellName}]}]}) {

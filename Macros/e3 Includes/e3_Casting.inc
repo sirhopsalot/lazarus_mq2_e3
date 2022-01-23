@@ -266,9 +266,13 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 			}
 			}
 		}
-
+		
 		/if (${${ArrayName}[${ArrayIndex},${iTargetType}].Equal[Self]}) {
-			/if (${Bool[${FindItem[=${pendingCast}]}]}) {
+			/casting "${pendingCast}|${pendingType}"
+			/if (${pendingType.Equal[Item]}) {
+				/delay 3
+			}		
+			|**/if (${Bool[${FindItem[=${pendingCast}]}]}) {
 
 				/useitem "${pendingCast}"
 				|set to a default good value unless overwritten for a reason
@@ -281,8 +285,14 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 
 			} else {
 				/casting "${pendingCastID}|${pendingType}"		
-			}
+			}**|
+
 		} else {
+			/casting "${pendingCast}|${pendingType}" "-targetid|${targetID}"
+			/if (${pendingType.Equal[Item]}) {
+				/delay 3
+			}	
+			|**			
 			/if (${Bool[${FindItem[=${pendingCast}]}]}) {
 				/declare i_target int local 0
 				|/echo getting tareget for item
@@ -307,7 +317,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 				
 			} else {
 				/casting "${pendingCastID}|${pendingType}" "-targetid|${targetID}"
-			}
+			}**|
 		}
 		|- Memorizing spell
 		/if (${Cast.Status.Find[M]}) /delay 3s !${Cast.Status.Find[M]}
@@ -458,13 +468,10 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 
 	|to help with item clicks locking up, to give the server time to issue the cooldown.	
 	/if (${Select[${castReturn},CAST_SUCCESS]} && ${pendingType.Equal[item]}) {
-			|when an item is click/cast, the server sends over the cooldown of said item
-			|so for a breif time between clicking there is an 'unknown' state where the items
-			|cooldown is still 0, even tho it isn't valid. Noticed this when using molten orbs.
-			|Adding a small delay to any item that is cast to prevent it from being a valid target
-			|on the next event cycle as event cycles in e3 are far faster than the server can send us
-			|the cooldown information
-			|/echo e3_Cast: Setting spell recast timer of 2 seconds
+	
+			|sometimes cooldowns are not just properly registered or there is a delay
+			|add small cooldown of default 2 seconds, unless we know the cooldown of the item 
+			|and we just set it ourselves.
 			/call casting_ItemCooldown "${pendingCast}"
 			/declare itemRecastToUseInSeconds int ${Macro.Return}
 
@@ -817,7 +824,7 @@ Sub casting_Setup
 			/varset itemCooldownLookupList[${index},2]  ${tempItemLookupList[${index},2]}
 	/next index
 
-	
+	/echo Items to keep timers on.
 	/for index 1 to ${itemCooldownLookupList.Size[1]}
 
 		/echo ${index} ) ${itemCooldownLookupList[${index},1]}
