@@ -790,7 +790,7 @@ Sub casting_Setup
 	/varset itemCooldownList[42,1] Grobb Frenzy Maxx
 	/varset itemCooldownList[42,2] 120
 	/varset itemCooldownList[43,1] Fabled Idol of the Underking
-	/varset itemCooldownList[43,2] 2
+	/varset itemCooldownList[43,2] 22
 	/varset itemCooldownList[44,1] Fabled Idol of the UnderkingShattered Gnoll Slayer
 	/varset itemCooldownList[44,2] 600
 	/varset itemCooldownList[45,1] Rapier of Somber Notes
