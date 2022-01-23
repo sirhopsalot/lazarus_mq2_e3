@@ -30,6 +30,24 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 |StopEchos = Skips the /echo on successful cast if a value other than 0 is passed with the /call e3_Cast
 /if (${Debug} || ${Debug_Casting}) /echo |- e3_Cast ==>
 
+	|if we are a bard, and not doing async twisting this section of code
+	|will 'block' as the check_BardSongs does not block on its call.
+	|this allows other check_ Methods to run to do their computation while the spell is running
+	|if they have to do an e3_Cast for their stuff, they will block here until the song is complete
+	|if they don't do anything, it ends up blocking back in check_BardSongs for the next song on the list. 
+	/if (!${Twist.Twisting} && ${Me.Class.ShortName.Equal[BRD]}) {
+
+		/call BardSongWaitLockPumpQueue
+	}
+	|if we are not using MQ2Twist, but we currently have a cast going yet no cast window, issue a stopcast
+	/if (!${Twist.Twisting} && ${Me.Class.ShortName.Equal[BRD]} && ${Bool[${Me.Casting.ID}]} && !${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Ability]} && !${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Disc]} ) {
+		|sometimes when the window is gone but the buff hasn't quite landed yet, stopcast can cancel it. delay 1 to make sure that situation is avoided
+		/delay 1
+		/stopcast
+	}
+
+	|CatchAll Function for potentially locked up spell gems.
+  	/call check_SpellGemLockup
 
 	/declare beforeSpell string local ${${ArrayName}[${ArrayIndex},${iBeforeSpell}]}
 	/if (${beforeSpell.Length}>1) {
@@ -54,31 +72,13 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 	
 
   |/varset Debug_Casting TRUE
-|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-| Checks to abort casting due to previous failures
-  |if im invis and iCastInvis=0 (default except for heals)
-  |if im a rog, not in combat, done no action for 10+ seconds, and near 2+ other players then drop invis to buff (allows autohide)
-  
-  |if we are a bard, and not doing async twisting this section of code
-  |will 'block' as the check_BardSongs does not block on its call.
-  |this allows other check_ Methods to run to do their computation while the spell is running
-  |if they have to do an e3_Cast for their stuff, they will block here until the song is complete
-  |if they don't do anything, it ends up blocking back in check_BardSongs for the next song on the list. 
-	/if (!${Twist.Twisting} && ${Me.Class.ShortName.Equal[BRD]}) {
-	   
-	   /call BardSongWaitLockPumpQueue
-	}
-  |if we are not using MQ2Twist, but we currently have a cast going yet no cast window, issue a stopcast
-  /if (!${Twist.Twisting} && ${Me.Class.ShortName.Equal[BRD]} && ${Bool[${Me.Casting.ID}]} && !${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Ability]} && !${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Disc]} ) {
-    |sometimes when the window is gone but the buff hasn't quite landed yet, stopcast can cancel it. delay 1 to make sure that situation is avoided
-	/delay 1
-	/stopcast
-  }
-   
+ 
+ 
+	|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	| Checks to abort casting due to previous failures
+	|if im invis and iCastInvis=0 (default except for heals)
+	|if im a rog, not in combat, done no action for 10+ seconds, and near 2+ other players then drop invis to buff (allows autohide)
 
-  |CatchAll Function for potentially locked up spell gems.
-  /call check_SpellGemLockup
-  
   /if (${Me.Invis}) {
     /if (${Me.Class.ShortName.Equal[Rog]}) {
       /if (!${Me.Combat} && ${SpawnCount[pc radius 40]} > 2 && !${SpawnCount[npc radius 100 zradius 100]} && ${idleTimer}<${Math.Calc[${idleInterval}*600 - 100]}) /makemevisible
@@ -268,11 +268,14 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 		}
 		
 		/if (${${ArrayName}[${ArrayIndex},${iTargetType}].Equal[Self]}) {
-			|**/casting "${pendingCast}|${pendingType}"
+			/casting "${pendingCast}|${pendingType}"
 			/if (${pendingType.Equal[Item]}) {
 				/delay 3
-			}**|		
-			/if (${pendingType.Equal[Item]}) {
+			} else {
+				/delay 5
+			}		
+			
+			|**/if (${pendingType.Equal[Item]}) {
 
 				/useitem "${pendingCast}"
 				|set to a default good value unless overwritten for a reason
@@ -286,15 +289,17 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 			} else {
 				/casting "${pendingCastID}|${pendingType}"
 				/delay 3		
-			}
+			}**|
 
 		} else {
-			|**/casting "${pendingCast}|${pendingType}" "-targetid|${targetID}"
+			|/echo /casting "${pendingCast}|${pendingType}" "-targetid|${targetID}"
+			/casting "${pendingCast}|${pendingType}" "-targetid|${targetID}"
 			/if (${pendingType.Equal[Item]}) {
 				/delay 3
-			}	
-			**|			
-			/if (${pendingType.Equal[Item]}) {
+			} else {
+				/delay 5
+			}		
+			|**/if (${pendingType.Equal[Item]}) {
 				/declare i_target int local 0
 				|/echo getting tareget for item
 				/for i 1 to 5
@@ -319,7 +324,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 			} else {
 				/casting "${pendingCastID}|${pendingType}" "-targetid|${targetID}"
 				/delay 3
-			}
+			}**|
 		}
 		|- Memorizing spell
 		/if (${Cast.Status.Find[M]}) /delay 3s !${Cast.Status.Find[M]}
@@ -431,6 +436,12 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 		|let the window fuly close
 		/delay 1
   :interrupted
+		|At this point the cast window is closed, but we may need to delay to get the result. 
+		|note, if we don't find the result in 2 seconds, soemthing has gone wrong
+		|it will use the previous cast return instead. There is a bug here for item lockups
+		|so we let this continue to loop back around and remove the item lock
+		/delay 2s !${Cast.Status.Find[C]}
+	
 		/varset castReturn ${Cast.Result}
 		|- Cast Result Processing
 		  /if (${castReturn.Equal[CAST_INTERRUPTED]} || ${interruptFlag}) {
@@ -490,6 +501,10 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 	}
 
 |/varset Debug_Casting FALSE
+	|sometimes cast status gets locked up
+	|lets kill the current cast.
+	
+
 /return
 
 
