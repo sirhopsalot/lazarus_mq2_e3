@@ -33,10 +33,9 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 
 	/declare beforeSpell string local ${${ArrayName}[${ArrayIndex},${iBeforeSpell}]}
 	/if (${beforeSpell.Length}>1) {
-		/if (${Me.SpellReady[${beforeSpell}]} || ${Me.AltAbilityReady[${beforeSpell}]} || ${Me.ItemReady[${beforeSpell}]} ) {
-			/call castSimpleSpell "${beforeSpell}" 0
-		}
+		/call CastAfterBeforeSpell "${beforeSpell}"
 	}
+
 	/declare afterSpell string local ${${ArrayName}[${ArrayIndex},${iAfterSpell}]}
 	/varset pendingCast	${${ArrayName}[${ArrayIndex},${iCastName}]}
 	/varset pendingCastID ${${ArrayName}[${ArrayIndex},${iCastID}]}
@@ -466,15 +465,46 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 			|on the next event cycle as event cycles in e3 are far faster than the server can send us
 			|the cooldown information
 			|/echo e3_Cast: Setting spell recast timer of 2 seconds
-			/call CreateTimer "SpellRecast_${pendingCastID}" "2s"
+			/call casting_ItemCooldown "${pendingCast}"
+			/declare itemRecastToUseInSeconds int ${Macro.Return}
+
+			/if (${itemRecastToUseInSeconds}<60) {
+				|/varset itemRecastToUseInSeconds ${Math.Calc[${itemRecastToUseInSeconds}]}
+			} else {
+				/varcalc itemRecastToUseInSeconds ${Math.Calc[${itemRecastToUseInSeconds}+6]}
+			}
+			/call CreateTimer "SpellRecast_${pendingCastID}" "${itemRecastToUseInSeconds}s"
 	}
 
 	/if (${afterSpell.Length}>1) {
-		/if (${Me.SpellReady[${afterSpell}]} || ${Me.AltAbilityReady[${afterSpell}]} || ${Me.ItemReady[${afterSpell}]} ) {
-			/call castSimpleSpell "${afterSpell}" 0
+		/call CastAfterBeforeSpell "${afterSpell}"
+	}
+
+|/varset Debug_Casting FALSE
+/return
+
+
+sub CastAfterBeforeSpell(spellName)
+	
+	/if (${spellName.Length}>1) {
+		/declare spellItemReady bool local ${Me.ItemReady[${spellName}]}
+		/if (${Me.SpellReady[${spellName}]} || ${Me.AltAbilityReady[${spellName}]} || ${spellItemReady} ) {
+			/if (${spellItemReady}) {
+				|need to check if there is a cooldown on it
+				/declare spellItemID int local ${FindItem[${spellName}].ID}
+				/if (${Defined[SpellRecast_${spellItemID}]}) {
+							
+					/if (${SpellRecast_${spellItemID}}) {
+						|our timer is still active, skip this and say we are not recovered yet.
+						|No action taken, so they can cast the next thing in the list.
+						|/echo CastAfterBeforeSpell SpellRecast is on cooldown still for: ${SpellRecast_${spellItemID}} seconds
+						/return
+					}
+				} 
+			}
+			/call castSimpleSpell "${spellName}" 0
 		}
 	}
-|/varset Debug_Casting FALSE
 /return
 
 |------------------------------------------------|
@@ -488,7 +518,23 @@ Sub check_Ready(ArrayName, int ArrayIndex)
     /if (!${Bool[${Me.Gem[${${ArrayName}[${ArrayIndex},${iCastName}]}]}]}) /call memorize_spell "${${ArrayName}[${ArrayIndex},${iCastName}]}" ${${ArrayName}[${ArrayIndex},${iSpellGem}]}
     /if (${Me.SpellReady[${${ArrayName}[${ArrayIndex},${iCastName}]}]}) /varset c_Ready TRUE
   } else /if (${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Item]}) {
-    /if (${Me.ItemReady[=${${ArrayName}[${ArrayIndex},${iCastName}]}]}) /varset c_Ready TRUE
+	|Need to check if we already have this item on cooldown
+	/declare itemID int local ${FindItem[=${${ArrayName}[${ArrayIndex},${iCastName}]}].ID}
+	/if (${Defined[SpellRecast_${itemID}]}) {
+				
+		/if (${SpellRecast_${itemID}}) {
+			|our timer is still active, skip this and say we are not recovered yet.
+			|No action taken, so they can cast the next thing in the list.
+			|/echo check_Ready SpellRecast is on cooldown still for: ${SpellRecast_${itemID}}
+			/varset c_Ready FALSE
+			/goto :endOfCheckReady
+
+		}
+	} 
+	/if (${Me.ItemReady[=${${ArrayName}[${ArrayIndex},${iCastName}]}]}) {
+		/varset c_Ready TRUE
+	} 
+  
   } else /if (${${ArrayName}[${ArrayIndex},${iCastType}].Equal[AA]}) {
     /if (${Me.AltAbilityReady[${${ArrayName}[${ArrayIndex},${iCastName}]}]})  /varset c_Ready TRUE
   } else /if (${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Disc]}) {
@@ -497,7 +543,11 @@ Sub check_Ready(ArrayName, int ArrayIndex)
     /if (${Me.AbilityReady[${${ArrayName}[${ArrayIndex},${iCastName}]}]}) /varset c_Ready TRUE
   }
 
+
+	:endOfCheckReady
+
   /if (${Debug} || ${Debug_Casting}) /echo |- check_Ready <= ${c_Ready}
+
 /RETURN ${c_Ready}
 
 Sub memorize_spell(spellName,gemNum)
@@ -614,40 +664,183 @@ Sub casting_Setup
 	/declare castEndTime				timer outer
 	/declare noInvis						bool outer TRUE
 	/declare noFeigning					bool outer TRUE
-  /declare interruptFlag			bool outer FALSE
-	
+	/declare interruptFlag			bool outer FALSE
+
 	/declare failureList			string outer
 	/declare immuneList				string outer
 
-  /declare c_Ready bool outer FALSE
-  /declare c_SubToRun bool outer FALSE
+	/declare c_Ready bool outer FALSE
+	/declare c_SubToRun bool outer FALSE
 
 	/declare DefaultGem int outer 8
 	/call iniToVarV "${genSettings_Ini},Casting,Default Spell Gem" DefaultGem int outer
-  /call iniToVarV "${genSettings_Ini},Casting,Default Spell Set" Default_SpellSet string outer
+	/call iniToVarV "${genSettings_Ini},Casting,Default Spell Set" Default_SpellSet string outer
 
-  /declare vetArray[8] string outer
-  /declare iLesson    int outer 1
-  |/declare iThrone    int outer 2
-  /declare iArmor     int outer 2
-  /declare iIntensity int outer 3
-  /declare iImfusion  int outer 4
-  /declare iSteadfast int outer 5
-  /declare iStaunch   int outer 6
-  /declare iExpedient int outer 7
-  /declare iJester    int outer 8
-  /varset vetArray[${iLesson}]    "Lesson of the Devoted"
-  |/varset vetArray[${iThrone}]    "Throne of Heroes"
-  /varset vetArray[${iArmor}]     "Armor of Experience"
-  /varset vetArray[${iIntensity}] "Intensity of the Resolute"
-  /varset vetArray[${iImfusion}]  "Infusion of the Faithful"
-  /varset vetArray[${iSteadfast}] "Steadfast Servant"
-  /varset vetArray[${iStaunch}]   "Staunch Recovery"
-  /varset vetArray[${iExpedient}] "Expedient Recovery"
-  /varset vetArray[${iJester}]    "Chaotic Jester"
-  /call BuildSpellArray "vetArray" "vetArray2D"
+	/declare vetArray[8] string outer
+	/declare iLesson    int outer 1
+	|/declare iThrone    int outer 2
+	/declare iArmor     int outer 2
+	/declare iIntensity int outer 3
+	/declare iImfusion  int outer 4
+	/declare iSteadfast int outer 5
+	/declare iStaunch   int outer 6
+	/declare iExpedient int outer 7
+	/declare iJester    int outer 8
+	/varset vetArray[${iLesson}]    "Lesson of the Devoted"
+	|/varset vetArray[${iThrone}]    "Throne of Heroes"
+	/varset vetArray[${iArmor}]     "Armor of Experience"
+	/varset vetArray[${iIntensity}] "Intensity of the Resolute"
+	/varset vetArray[${iImfusion}]  "Infusion of the Faithful"
+	/varset vetArray[${iSteadfast}] "Steadfast Servant"
+	/varset vetArray[${iStaunch}]   "Staunch Recovery"
+	/varset vetArray[${iExpedient}] "Expedient Recovery"
+	/varset vetArray[${iJester}]    "Chaotic Jester"
+	/call BuildSpellArray "vetArray" "vetArray2D"
+
+	/declare itemCooldownList[47,2] string local
+	/varset itemCooldownList[1,1] Summoned: Large Modulation Shard
+	/varset itemCooldownList[1,2] 300
+	/varset itemCooldownList[2,1] Shroud of the Subjugated Kuaan
+	/varset itemCooldownList[2,2] 3600
+	/varset itemCooldownList[3,1] Orb of Shadows
+	/varset itemCooldownList[3,2] 30
+	/varset itemCooldownList[4,1] Graverobber's Icon
+	/varset itemCooldownList[4,2] 600
+	/varset itemCooldownList[5,1] Aged Shissar Apothic Staff
+	/varset itemCooldownList[5,2] 0
+	/varset itemCooldownList[6,1] Weighted Hammer of Conviction
+	/varset itemCooldownList[6,2] 0
+	/varset itemCooldownList[7,1] Molten Orb
+	/varset itemCooldownList[7,2] 12
+	/varset itemCooldownList[8,1] Innoruuk's Dark Blassing
+	/varset itemCooldownList[8,2] 300
+	/varset itemCooldownList[9,1] Blood Drinker's Coating
+	/varset itemCooldownList[9,2] 600
+	/varset itemCooldownList[10,1] Blightbringer's Tunic of the Grave
+	/varset itemCooldownList[10,2] 300
+	/varset itemCooldownList[11,1] Dagger of Death
+	/varset itemCooldownList[11,2] 120
+	/varset itemCooldownList[12,1] Duskbringer's Plate Chestguard of the Hateful
+	/varset itemCooldownList[12,2] 300
+	/varset itemCooldownList[13,1] Minion's Memento
+	/varset itemCooldownList[13,2] 600
+	/varset itemCooldownList[14,1] Blessed Spiritstaff of the Heyokah
+	/varset itemCooldownList[14,2] 180
+	/varset itemCooldownList[15,1] Mindreaver's Vest  of Coercion
+	/varset itemCooldownList[15,2] 30
+	/varset itemCooldownList[16,1] Staff of Eternal Eloquence
+	/varset itemCooldownList[16,2] 90
+	/varset itemCooldownList[17,1] Aged Hammer of the Dragonborn
+	/varset itemCooldownList[17,2] 210
+	/varset itemCooldownList[18,1] Azure Mind Crystal
+	/varset itemCooldownList[18,2] 180
+	/varset itemCooldownList[19,1] Zun'Muram's Spear of Doom
+	/varset itemCooldownList[19,2] 210
+	/varset itemCooldownList[20,1] Ritualchanter's Tunic of the Ancestors
+	/varset itemCooldownList[20,2] 300
+	/varset itemCooldownList[21,1] Hammer of Delusions
+	/varset itemCooldownList[21,2] 120
+	/varset itemCooldownList[22,1] Bladewhisper Chain Vest of Journeys
+	/varset itemCooldownList[22,2] 300
+	/varset itemCooldownList[23,1] Aurora, the Heartwood Bow
+	/varset itemCooldownList[23,2] 180
+	/varset itemCooldownList[24,1] Faithbringer's Breastplate of Conviction
+	/varset itemCooldownList[24,2] 300
+	/varset itemCooldownList[25,1] Aegis of Superior Divinity
+	/varset itemCooldownList[25,2] 120
+	/varset itemCooldownList[26,1] Glyphwielder's Tunic of the Summoner
+	/varset itemCooldownList[26,2] 300
+	/varset itemCooldownList[27,1] Vengeful Taelosian Blood Axe
+	/varset itemCooldownList[27,2] 180
+	/varset itemCooldownList[28,1] Focus of Primal Elements
+	/varset itemCooldownList[28,2] 180
+	/varset itemCooldownList[29,1] Wrathbringer's Chain Chestguard of the Vindicator
+	/varset itemCooldownList[29,2] 300
+	/varset itemCooldownList[30,1] Dagger of Evil Summons
+	/varset itemCooldownList[30,2] 120
+	/varset itemCooldownList[31,1] Aged Sarnak Channeler Staff
+	/varset itemCooldownList[31,2] 120
+	/varset itemCooldownList[32,1] Blade of Vesagran
+	/varset itemCooldownList[32,2] 180
+	/varset itemCooldownList[33,1] Kept-Covered Hammer
+	/varset itemCooldownList[33,2] 210
+	/varset itemCooldownList[34,1] Farseeker's Plate Chestguard of Harmony
+	/varset itemCooldownList[34,2] 300
+	/varset itemCooldownList[35,1] Everspring Jerkin of the Tangled Briars
+	/varset itemCooldownList[35,2] 300
+	/varset itemCooldownList[36,1] Master Lazarus Charm
+	/varset itemCooldownList[36,2] 450
+	/varset itemCooldownList[37,1] Staff of Everliving Brambles
+	/varset itemCooldownList[37,2] 180
+	/varset itemCooldownList[38,1] Gladiator's Plate Chestguard of War
+	/varset itemCooldownList[38,2] 300
+	/varset itemCooldownList[39,1] Kreljnok's Sword of Eternal Power
+	/varset itemCooldownList[39,2] 60
+	/varset itemCooldownList[40,1] Blood Drinker's Coating
+	/varset itemCooldownList[40,2] 600
+	/varset itemCooldownList[41,1] Bottomless Venom Vial
+	/varset itemCooldownList[41,2] 180
+	/varset itemCooldownList[42,1] Grobb Frenzy Maxx
+	/varset itemCooldownList[42,2] 120
+	/varset itemCooldownList[43,1] Fabled Idol of the Underking
+	/varset itemCooldownList[43,2] 2
+	/varset itemCooldownList[44,1] Fabled Idol of the UnderkingShattered Gnoll Slayer
+	/varset itemCooldownList[44,2] 600
+	/varset itemCooldownList[45,1] Rapier of Somber Notes
+	/varset itemCooldownList[45,2] 120
+	/varset itemCooldownList[46,1] Innoruuk's Voice
+	/varset itemCooldownList[46,2] 480
+	/varset itemCooldownList[47,1] Prismatic Dragon Blade
+	/varset itemCooldownList[47,2] 300
+
+  	|scan through each of the items in itemCooldownList to see if we actually have that item, if so put it in the lookup list.
+
+	/declare tempItemLookupList[47,2] string local
+	/declare tempItemLookupListCounter int local 1
+
+	/declare index int local 1
+	/for index 1 to ${itemCooldownList.Size[1]} 
+		/if (${Bool[${FindItem[${itemCooldownList[${index},1]}]}]}) {
+			|found the item, add the name/index in the primary list to the temp list.
+			/varset tempItemLookupList[${tempItemLookupListCounter},1]  ${itemCooldownList[${index},1]}
+			/varset tempItemLookupList[${tempItemLookupListCounter},2]  ${itemCooldownList[${index},2]}
+			/varcalc tempItemLookupListCounter ${tempItemLookupListCounter}+1
+		}
+	/next index
+
+	|creating our final list of only the size we need
+	/declare itemCooldownLookupList[${Math.Calc[${tempItemLookupListCounter}-1]},2] string outer
+	
+	/for index 1 to ${itemCooldownLookupList.Size[1]} 
+			|found the item, add the name/index in the primary list to the temp list.
+			/varset itemCooldownLookupList[${index},1]  ${tempItemLookupList[${index},1]}
+			/varset itemCooldownLookupList[${index},2]  ${tempItemLookupList[${index},2]}
+	/next index
+
+	
+	/for index 1 to ${itemCooldownLookupList.Size[1]}
+
+		/echo ${index} ) ${itemCooldownLookupList[${index},1]}
+
+	/next index
+
+
 /if (${Debug} || ${Debug_Casting}) /echo <== casting_Setup -|
 /return
+
+
+sub casting_ItemCooldown(itemName)
+
+	/declare returnValue int local 2
+	/declare i int local 0
+	/for i 1 to ${itemCooldownLookupList.Size[1]}
+
+			/if (${itemCooldownLookupList[${i},1].Equal[${itemName}]}) {
+				/varset returnValue ${itemCooldownLookupList[${i},2]}
+				/break
+			}
+	/next i
+/return ${returnValue}
 
 |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Sub casting_Background_Events
@@ -692,4 +885,28 @@ SUB check_SpellGemLockup
 			/bc ${Me.CleanName}'s spell gems are locked! ${UnlockSpell} is not up!
 		}
 	}
+/return
+|--------------------------------------------------------------------------------------------|
+|- Used to call the e3_Cast for simple spells that cannot normally fail.                   	-|
+|--------------------------------------------------------------------------------------------|
+sub castSimpleSpell(spellNameToBase, simpleTargetIDToBase)
+
+    /call castSimpleSpellBase "${spellNameToBase}" ${simpleTargetIDToBase} True
+
+/return
+sub castSimpleSpellBase(spellName, simpleTargetID, SkipParams)
+
+  /if (${simpleTargetID}==0) {
+    |if 0 passed in, set it to whatever they are targeting
+    /varset simpleTargetID ${Target.ID}
+  }
+    |/echo building the spell array for heirlooms
+  /call BuildSingleSpellArrayBase "${spellName}" "castSimpleSpellArray2D" ${SkipParams}
+   
+    /call e3_Cast ${simpleTargetID} "castSimpleSpellArray2D" 1 False
+    /while (${Select[${castReturn},CAST_FIZZLE]}) {
+          /delay 1s
+          /call e3_Cast  ${simpleTargetID} "castSimpleSpellArray2D" 1 False
+    }
+
 /return
