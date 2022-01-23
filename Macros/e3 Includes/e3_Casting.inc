@@ -272,7 +272,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 			/if (${pendingType.Equal[Item]}) {
 				/delay 3
 			}**|		
-			/if (${Bool[${FindItem[=${pendingCast}]}]}) {
+			/if (${pendingType.Equal[Item]}) {
 
 				/useitem "${pendingCast}"
 				|set to a default good value unless overwritten for a reason
@@ -293,7 +293,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 				/delay 3
 			}	
 			**|			
-			/if (${Bool[${FindItem[=${pendingCast}]}]}) {
+			/if (${pendingType.Equal[Item]}) {
 				/declare i_target int local 0
 				|/echo getting tareget for item
 				/for i 1 to 5
@@ -325,7 +325,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 		/varcalc castEndTime ${Me.Casting.MyCastTime}/100
 :cast_still_pending
 |- check for reasons to cancel casting
-		/if (${Cast.Status.Find[C]} || ${Window[CastingWindow].Open}) {
+		/if (${Window[CastingWindow].Open}) {
 		  |dont allow item swap/must equip interrupts to avoid crashes
 
 		   	/if (${Me.Class.ShortName.Equal[BRD]}) {

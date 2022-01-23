@@ -1440,7 +1440,7 @@ SUB useBurns(ArrayName)
         /if (${Me.ActiveDisc.ID} && ${${ArrayName}[${i},${iCastName}].Equal[Savage Spirit]}) /goto :skipCurrent
         /if (${Me.ActiveDisc.ID} && ${${ArrayName}[${i},${iCastType}].Equal[Disc]} && ${Bool[${${ArrayName}[${i},${iDuration}]}]}) /goto :skipCurrent
         /call e3_Cast ${AssistTarget} "${ArrayName}" "${i}"
-        /delay 2
+        |/delay 2
         |/varset ActionTaken TRUE
         /call check_Ready "${ArrayName}" ${i}
         /if (!${c_Ready}) /g ${ArrayName}-${${ArrayName}[${i},${iCastName}]}
