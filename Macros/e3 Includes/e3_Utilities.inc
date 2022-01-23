@@ -1103,8 +1103,8 @@ SUB check_macroTimers
 	/declare SpentTimerList string local
 	/for i 1 to ${timerArray.Size}
     /if (${Defined[${timerArray[${i}]}]}) {
-		  /if (!${${timerArray[${i}]}}) {
-        /if (${Debug}) /echo Deleting timer: ${timerArray[${i}]}
+		/if (!${${timerArray[${i}]}}) {
+        		/echo Deleting timer: ${timerArray[${i}]}
 			    /varcalc SpentTimerCounter ${SpentTimerCounter} + 1
 				/deletevar ${timerArray[${i}]}
 				/varset SpentTimerList ${SpentTimerList}${i},
@@ -1115,8 +1115,8 @@ SUB check_macroTimers
 	/if (${SpentTimerCounter}==${timerArray.Size}) {
 		/if (${Debug}) /echo All timers have been cleared.
 		/deletevar timerArray
-	} else {
-    /call RemoveArrayElements "timerArray" ${SpentTimerList}"
+	} else /if (${SpentTimerCounter}>0) {
+		/call RemoveArrayElements "timerArray" ${SpentTimerList}"
 	}
 /if (${Debug}) /echo <== check_macroTimers -|
 /RETURN
