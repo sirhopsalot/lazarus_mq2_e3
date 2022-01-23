@@ -226,9 +226,13 @@ SUB checkAuras
         /if (${Me.Casting.ID}) /call interrupt
 
       } else {
+
+        /while (${Window[CastingWindow].Open}) {
+          /delay 1
+        }
+        /delay 1
         |tap the current gem if we are casting 
         /if (${Bool[${Me.Casting.ID}]} ) {
-          /delay 1
           /stopcast
         }
       }
