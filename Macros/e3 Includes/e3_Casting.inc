@@ -268,11 +268,11 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 		}
 		
 		/if (${${ArrayName}[${ArrayIndex},${iTargetType}].Equal[Self]}) {
-			/casting "${pendingCast}|${pendingType}"
+			|**/casting "${pendingCast}|${pendingType}"
 			/if (${pendingType.Equal[Item]}) {
 				/delay 3
-			}		
-			|**/if (${Bool[${FindItem[=${pendingCast}]}]}) {
+			}**|		
+			/if (${Bool[${FindItem[=${pendingCast}]}]}) {
 
 				/useitem "${pendingCast}"
 				|set to a default good value unless overwritten for a reason
@@ -285,14 +285,14 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 
 			} else {
 				/casting "${pendingCastID}|${pendingType}"		
-			}**|
+			}
 
 		} else {
-			/casting "${pendingCast}|${pendingType}" "-targetid|${targetID}"
+			|**/casting "${pendingCast}|${pendingType}" "-targetid|${targetID}"
 			/if (${pendingType.Equal[Item]}) {
 				/delay 3
 			}	
-			|**			
+			**|			
 			/if (${Bool[${FindItem[=${pendingCast}]}]}) {
 				/declare i_target int local 0
 				|/echo getting tareget for item
@@ -317,7 +317,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 				
 			} else {
 				/casting "${pendingCastID}|${pendingType}" "-targetid|${targetID}"
-			}**|
+			}
 		}
 		|- Memorizing spell
 		/if (${Cast.Status.Find[M]}) /delay 3s !${Cast.Status.Find[M]}
