@@ -704,7 +704,7 @@ Sub casting_Setup
 	/varset vetArray[${iJester}]    "Chaotic Jester"
 	/call BuildSpellArray "vetArray" "vetArray2D"
 
-	/declare itemCooldownList[47,2] string local
+	/declare itemCooldownList[49,2] string local
 	/varset itemCooldownList[1,1] Summoned: Large Modulation Shard
 	/varset itemCooldownList[1,2] 300
 	/varset itemCooldownList[2,1] Shroud of the Subjugated Kuaan
@@ -799,10 +799,14 @@ Sub casting_Setup
 	/varset itemCooldownList[46,2] 480
 	/varset itemCooldownList[47,1] Prismatic Dragon Blade
 	/varset itemCooldownList[47,2] 300
+	/varset itemCooldownList[48,1] Staff of Phenomenal Power
+	/varset itemCooldownList[48,2] 180
+	/varset itemCooldownList[49,1] Academic's Robe of the Arcanists
+	/varset itemCooldownList[49,2] 300
 
   	|scan through each of the items in itemCooldownList to see if we actually have that item, if so put it in the lookup list.
 
-	/declare tempItemLookupList[47,2] string local
+	/declare tempItemLookupList[49,2] string local
 	/declare tempItemLookupListCounter int local 1
 
 	/declare index int local 1
