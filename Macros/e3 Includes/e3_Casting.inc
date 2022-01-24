@@ -362,6 +362,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 		}
 		|- Memorizing spell
 		/if (${Cast.Status.Find[M]}) /delay 3s !${Cast.Status.Find[M]}
+
 		|- Set expected cast end time in 1/10ths of a second
 		/varcalc castEndTime ${Me.Casting.MyCastTime}/100
 		|/echo checking if window is open
@@ -572,9 +573,12 @@ Sub check_Ready(ArrayName, int ArrayIndex)
   /if (${Debug} || ${Debug_Casting}) /echo |- check_Ready =>
   /varset c_Ready FALSE
   | Memorize the spell if it is not memorized
+  
   /if (${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Spell]}) {
-    /if (!${Bool[${Me.Gem[${${ArrayName}[${ArrayIndex},${iCastName}]}]}]}) /call memorize_spell "${${ArrayName}[${ArrayIndex},${iCastName}]}" ${${ArrayName}[${ArrayIndex},${iSpellGem}]}
-    /if (${Me.SpellReady[${${ArrayName}[${ArrayIndex},${iCastName}]}]}) /varset c_Ready TRUE
+    /if (!${Bool[${Me.Gem[${${ArrayName}[${ArrayIndex},${iCastName}]}]}]}) {
+ 		/call memorize_spell "${${ArrayName}[${ArrayIndex},${iCastName}]}" ${${ArrayName}[${ArrayIndex},${iSpellGem}]}
+	}
+	/if (${Me.SpellReady[${${ArrayName}[${ArrayIndex},${iCastName}]}]}) /varset c_Ready TRUE
   } else /if (${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Item]}) {
 	|Need to check if we already have this item on cooldown
 	/declare itemID int local ${FindItem[=${${ArrayName}[${ArrayIndex},${iCastName}]}].ID}
@@ -610,24 +614,31 @@ Sub check_Ready(ArrayName, int ArrayIndex)
 
 Sub memorize_spell(spellName,gemNum)
   /if (${Debug} || ${Debug_Casting}) /echo |- memorize_spell =>
-  /memorize "${spellName}" ${gemNum}
-	/delay 3s ${Bool[${Me.Gem[${spellName}]}]}
+  	/memorize "${spellName}" ${gemNum}
+	/delay 5s ${Bool[${Me.Gem[${spellName}]}]}
+	
 	|only wait for beneficial,self spells
-	/if (${Spell[${spellName}].Beneficial} || ${Spell[${spellName}].TargetType.Equal[Self]}) {
-    /declare waitForReady timer local ${If[${Me.CombatState.Equal[COMBAT]},35,${Math.Calc[35+(${Spell[${spellName}].RecastTime}/100)]}]}
-    |/echo wfr ${waitForReady} rc ${Spell[${spellName}].RecastTime} math ${Math.Calc[25+(${Spell[${spellName}].RecastTime}/100)]}
-    :checkTimer
-      |/echo chectimer ${waitForReady} ${Me.SpellReady[${spellName}]}
-      /if (${waitForReady}) {
-      /doevents Follow
-      /doevents Stop
-      /doevents MoveHere
-      /doevents BackOff
-      /call alerts_Background_Events
-      /delay 1
-      /if (!${Me.SpellReady[${spellName}]}) /goto :checkTimer
-		}
+	|(${Me.Combat} || ${Me.CombatState.Equal[Combat]} ||  ${AssistTarget} >0)
+
+	/declare timeTowait int local ${Math.Calc[35+(${Spell[${spellName}].RecastTime}/100)]}
+	/if ((${Me.Combat} || ${Me.CombatState.Equal[Combat]} ||  ${AssistTarget} >0)) {
+		/varset timeTowait 30
 	}
+	/declare waitForReady timer local ${timeTowait}
+	|/echo wfr ${waitForReady} rc ${Spell[${spellName}].RecastTime} math ${Math.Calc[25+(${Spell[${spellName}].RecastTime}/100)]}
+	:checkTimer
+		/echo memorize_spell waiting on spell being ready
+		|/echo chectimer ${waitForReady} ${Me.SpellReady[${spellName}]}
+		/if (${waitForReady}) {
+		/doevents Follow
+		/doevents Stop
+		/doevents MoveHere
+		/doevents BackOff
+		/call alerts_Background_Events
+		/delay 1
+		/if (!${Me.SpellReady[${spellName}]}) /goto :checkTimer
+	}
+	
   /if (${Debug} || ${Debug_Casting}) /echo |- memorize_spell <=
 /RETURN
 |------------------------------------------------|
@@ -958,13 +969,20 @@ sub castSimpleSpell(spellNameToBase, simpleTargetIDToBase)
 /return
 sub castSimpleSpellBase(spellName, simpleTargetID, SkipParams)
 
-  /if (${simpleTargetID}==0) {
-    |if 0 passed in, set it to whatever they are targeting
-    /varset simpleTargetID ${Target.ID}
-  }
-    |/echo building the spell array for heirlooms
-    /call BuildSingleSpellArrayBase "${spellName}" "castSimpleSpellArray2D" ${SkipParams}
-   
+	/if (${simpleTargetID}==0) {
+		|if 0 passed in, set it to whatever they are targeting
+		/varset simpleTargetID ${Target.ID}
+	}
+   	
+	/call BuildSingleSpellArrayBase "${spellName}" "castSimpleSpellArray2D" ${SkipParams}
+  
+	/call check_Ready "castSimpleSpellArray2D" 1
+    /while (!${c_Ready}) {
+		/delay 3
+		/echo checkready not ready, waiting
+		/call check_Ready "castSimpleSpellArray2D" 1		
+	}
+	
     /call e3_Cast ${simpleTargetID} "castSimpleSpellArray2D" 1 False
     /while (${Select[${castReturn},CAST_FIZZLE]}) {
           /delay 1s

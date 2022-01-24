@@ -308,16 +308,25 @@ SUB BuildSingleSpellArrayBase(spellName, NewArrayName, SkipParams)
 	}
 	
 	| get SpellName
+	/declare inputValue string local ${spellName}
+	/varset spellName  ${spellName.Arg[1,/]}
 
 	/declare oldName string local 
 	/varset oldName ${${NewArrayName}[1,${iCastName}]}
 	
 	/if (${oldName.Equal[${spellName}]}) {
-		|don't have to do anything just return
+		
+		| get SpellGem
+		/if (${inputValue.Find[/Gem|]}) {
+			/call argueString Gem| "${inputValue}"
+			/varset ${NewArrayName}[1,${iSpellGem}] ${c_argueString}
+		} else {
+			/varset ${NewArrayName}[1,${iSpellGem}] 0
+		}
+		|don't have to do anything else just return	
 		/return
 	}
 	/varset ${NewArrayName}[1,${iCastName}] ${spellName}
-	
 	/if (${Bool[${Me.AltAbility[${spellName}].Spell}]}) {
 		/varset ${NewArrayName}[1,${iCastType}] AA
 	} else /if (${Me.Book[${spellName}]}) {
@@ -326,12 +335,11 @@ SUB BuildSingleSpellArrayBase(spellName, NewArrayName, SkipParams)
 		/varset ${NewArrayName}[1,${iCastType}] Disc
 	} else /if (${Me.Ability[${spellName}]}) {
 		/varset ${NewArrayName}[1,${iCastType}] Ability			
-	} else /if (${Me.ItemReady[${spellName}]}) {
-		/varset ${NewArrayName}[1,${iCastType}] Item
 	} else {
-		/varset ${NewArrayName}[1,${iCastType}] NotFound
-	}
-	
+		|default to item , as we simply don't know if its an item that may have to be
+		|resummoned like a mage orb and may not be in the bags atm
+		/varset ${NewArrayName}[1,${iCastType}] Item
+	} 
 	|set the normal defaults
 	/varset ${NewArrayName}[1,${iSpellGem}] ${DefaultGem}
 	/varset ${NewArrayName}[1,${iMaxTries}] 5
@@ -342,7 +350,11 @@ SUB BuildSingleSpellArrayBase(spellName, NewArrayName, SkipParams)
 	/varset ${NewArrayName}[1,${iIfs}] TRUE
 	/varset ${NewArrayName}[1,${iBeforeSpell}]  
 	/varset ${NewArrayName}[1,${iAfterSpell}]  
-	
+	|deal with the gems
+	/if (${inputValue.Find[/Gem|]}) {
+		/call argueString Gem| "${inputValue}"
+		/varset ${NewArrayName}[1,${iSpellGem}] ${c_argueString}
+	}
 	|Fill out information based off Item/AA/Spell/Disc
 	/if (${${NewArrayName}[1,${iCastType}].Equal[Item]}) {
 		|ITEM INFORMATION
@@ -458,7 +470,9 @@ SUB BuildSingleSpellArrayBase(spellName, NewArrayName, SkipParams)
 
 
 	|Print out debug information if requsted
-	/if (${printAll} || ${printMin} || ${isHealArray}) {
+	/declare printAll bool local False
+	/declare printMin bool local False
+	/if (${printAll} || ${printMin}) {
 
 		/if (${printAll} || ${printMin}) /echo CastName ${${NewArrayName}[1,${iCastName}]}
 		/if (${printAll}  || ${printMin}) /echo CastType ${${NewArrayName}[1,${iCastType}]}
