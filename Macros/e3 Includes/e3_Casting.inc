@@ -627,7 +627,7 @@ Sub memorize_spell(spellName,gemNum)
 	/declare waitForReady timer local ${timeTowait}
 	|/echo wfr ${waitForReady} rc ${Spell[${spellName}].RecastTime} math ${Math.Calc[25+(${Spell[${spellName}].RecastTime}/100)]}
 	:checkTimer
-		/echo memorize_spell waiting on spell being ready
+		
 		|/echo chectimer ${waitForReady} ${Me.SpellReady[${spellName}]}
 		/if (${waitForReady}) {
 		/doevents Follow
