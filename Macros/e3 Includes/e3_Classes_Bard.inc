@@ -991,31 +991,39 @@ sub BardSongWaitLockPumpQueue
 
   /doevents Follow
   /if (!${Window[CastingWindow].Open}) {
-  /break
+    /break
   }
   /doevents Stop
   /if (!${Window[CastingWindow].Open}) {
-  /break
+    /break
   }
   /doevents MoveHere
   /if (!${Window[CastingWindow].Open}) {
-  /break
+    /break
   }
   /doevents BackOff
   /if (!${Window[CastingWindow].Open}) {
-  /break
+    /break
   }
   /doevents clickit
   /if (!${Window[CastingWindow].Open}) {
-  /break
+    /break
   }
   /doevents bark
   /if (!${Window[CastingWindow].Open}) {
-  /break
+    /break
   }
   /call alerts_Background_Events
   /if (!${Window[CastingWindow].Open}) {
-  /break
+    /break
+  }
+  /doevents Assist
+  /if (!${Window[CastingWindow].Open}) {
+    /break
+  }
+  /doevents BackOff
+  /if (!${Window[CastingWindow].Open}) {
+    /break
   }
   /delay 1
 }
