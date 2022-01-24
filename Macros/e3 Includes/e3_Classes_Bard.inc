@@ -965,7 +965,7 @@ SUB delaySongCast(songName, myNhtTimerName)
 
 sub ActivateSelosKick
 
-  /if (${Target.ID} && ${Target.ID} == ${AssistTarget} && ${Me.AltAbilityReady[Selo's Kick]}  && ${Spawn[${Target}].Distance} < 25 ) {
+  /if (${Target.ID} && ${Target.ID} == ${AssistTarget} && ${Me.AltAbilityReady[Selo's Kick]}  && ${Spawn[${Target}].Distance} < 69 ) {
 
     /alt activate 8205
     /delay 5 !${Me.AltAbilityReady[Selo's Kick]}
