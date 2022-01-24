@@ -269,12 +269,27 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 		
 		/if (${${ArrayName}[${ArrayIndex},${iTargetType}].Equal[Self]}) {
 			/casting "${pendingCast}|${pendingType}"
-			/if (${pendingType.Equal[Item]}) {
+			/delay 3
+			/declare castWindowWaitCounter int local 0
+			/if (${e3_CastTime}>500) {
+				/while (!${Window[CastingWindow].Open}) {
+					/if (${Cast.Result.Equal[CAST_FIZZLE]}) {
+						/echo window not open yet, but we have a fizzle set..breaking
+						/break
+					}
+					/delay 1
+					/varcalc castWindowWaitCounter ${castWindowWaitCounter}+1
+					|if its taking longer than 2 sec to open a window we have an issue exit
+					/if (${castWindowWaitCounter} > 20) {
+						/break
+					}
+				}
+			}
+			|**/if (${pendingType.Equal[Item]}) {
 				/delay 3
 			} else {
 				/delay 5
-			}		
-			
+			}**|	
 			|**/if (${pendingType.Equal[Item]}) {
 
 				/useitem "${pendingCast}"
@@ -293,12 +308,31 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 
 		} else {
 			|/echo /casting "${pendingCast}|${pendingType}" "-targetid|${targetID}"
+			
 			/casting "${pendingCast}|${pendingType}" "-targetid|${targetID}"
-			/if (${pendingType.Equal[Item]}) {
+			|delay 3 is enough time to have result come back with fizzle
+			/delay 3
+			/declare castWindowWaitCounter int local 0
+			/if (${e3_CastTime}>500) {
+				/while (!${Window[CastingWindow].Open}) {
+					/if (${Cast.Result.Equal[CAST_FIZZLE]}) {
+						/echo window not open yet, but we have a fizzle set..breaking
+						/break
+					}
+					/delay 1
+					/varcalc castWindowWaitCounter ${castWindowWaitCounter}+1
+					|if its taking longer than 2 sec to open a window we have an issue exit
+					/if (${castWindowWaitCounter} > 20) {
+						/break
+					}
+				}
+			}
+			
+			|**/if (${pendingType.Equal[Item]}) {
 				/delay 3
 			} else {
 				/delay 5
-			}		
+			}**|		
 			|**/if (${pendingType.Equal[Item]}) {
 				/declare i_target int local 0
 				|/echo getting tareget for item
@@ -330,11 +364,13 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 		/if (${Cast.Status.Find[M]}) /delay 3s !${Cast.Status.Find[M]}
 		|- Set expected cast end time in 1/10ths of a second
 		/varcalc castEndTime ${Me.Casting.MyCastTime}/100
+		|/echo checking if window is open
 :cast_still_pending
 |- check for reasons to cancel casting
+		
 		/if (${Window[CastingWindow].Open}) {
 		  |dont allow item swap/must equip interrupts to avoid crashes
-
+			|/echo checking is still open
 		   	/if (${Me.Class.ShortName.Equal[BRD]}) {
 				 /call ActivateSelosKick
 		   }
@@ -433,15 +469,13 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 			}
 			/goto :cast_still_pending
 		}
-		|let the window fuly close
-		/delay 1
+		
   :interrupted
 		|At this point the cast window is closed, but we may need to delay to get the result. 
 		|note, if we don't find the result in 2 seconds, soemthing has gone wrong
 		|it will use the previous cast return instead. There is a bug here for item lockups
 		|so we let this continue to loop back around and remove the item lock
 		/delay 2s !${Cast.Status.Find[C]}
-	
 		/varset castReturn ${Cast.Result}
 		|- Cast Result Processing
 		  /if (${castReturn.Equal[CAST_INTERRUPTED]} || ${interruptFlag}) {
@@ -500,11 +534,11 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 		/call CastAfterBeforeSpell "${afterSpell}"
 	}
 
-|/varset Debug_Casting FALSE
+	|/varset Debug_Casting FALSE
 	|sometimes cast status gets locked up
 	|lets kill the current cast.
 	
-
+	|/echo Exiting e3_Cast with result : ${castReturn}
 /return
 
 
@@ -929,7 +963,7 @@ sub castSimpleSpellBase(spellName, simpleTargetID, SkipParams)
     /varset simpleTargetID ${Target.ID}
   }
     |/echo building the spell array for heirlooms
-  /call BuildSingleSpellArrayBase "${spellName}" "castSimpleSpellArray2D" ${SkipParams}
+    /call BuildSingleSpellArrayBase "${spellName}" "castSimpleSpellArray2D" ${SkipParams}
    
     /call e3_Cast ${simpleTargetID} "castSimpleSpellArray2D" 1 False
     /while (${Select[${castReturn},CAST_FIZZLE]}) {
