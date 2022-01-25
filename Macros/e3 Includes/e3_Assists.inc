@@ -1432,25 +1432,33 @@ SUB useBurns(ArrayName)
 	/declare i int local
 	/for i 1 to ${${ArrayName}.Size[1]}
 
+    /echo useBurns ${ArrayName}: calling check for ${${ArrayName}[${i},${iCastName}]}
     /call check_Ready "${ArrayName}" ${i}
-    |/echo ${i} ${${ArrayName}[${i},${iCastName}]} tgt ${AssistTarget} rng ${${ArrayName}[${i},${iMyRange}]}
-    |/echo ${i} rdy ${c_Ready} dist ${check_Distance[${AssistTarget},${${ArrayName}[${i},${iMyRange}]}]}
     /if (${c_Ready} && ${${ArrayName}[${i},${iIfs}]}) {
+
+       /echo useBurns ${ArrayName}: check for passed ${${ArrayName}[${i},${iCastName}]}
       /if (${check_Distance[${AssistTarget},${${ArrayName}[${i},${iMyRange}]}]}) {
+       
         /if (${Me.ActiveDisc.ID} && ${${ArrayName}[${i},${iCastName}].Equal[Savage Spirit]}) /goto :skipCurrent
         /if (${Me.ActiveDisc.ID} && ${${ArrayName}[${i},${iCastType}].Equal[Disc]} && ${Bool[${${ArrayName}[${i},${iDuration}]}]}) /goto :skipCurrent
-        /call e3_Cast ${AssistTarget} "${ArrayName}" "${i}"
-        |/delay 2
-        |/varset ActionTaken TRUE
-        /call check_Ready "${ArrayName}" ${i}
-        /if (!${c_Ready}) /g ${ArrayName}-${${ArrayName}[${i},${iCastName}]}
+        
+        /echo useBurns ${ArrayName}: Issuing cast for  ${${ArrayName}[${i},${iCastName}]}
+        /call e3_Cast ${AssistTarget} "${ArrayName}" "${i}" 0
+       
+        /if (${Select[${castReturn},CAST_SUCCESS]}) {
+          /g ${ArrayName}-${${ArrayName}[${i},${iCastName}]}
+        } else {
+          /g ${castReturn}: ${ArrayName}-${${ArrayName}[${i},${iCastName}]}
+        }
+       
       }
     } else {
-      /if (${Debug} || ${Debug_Assists}) /echo NotReady: ${i} ${${ArrayName}[${i},${iCastName}]}
+      /echo useBurns ${ArrayName}: NotReady: ${i} ${${ArrayName}[${i},${iCastName}]}
     }
-  :skipCurrent
-  |/delay 1
-  /if (!${ActionTaken}) /next i
+    :skipCurrent
+    |/delay 1
+  /next i
+
 /if (${Debug} || ${Debug_Assists}) /echo <== useBurns -|
 /RETURN
 
