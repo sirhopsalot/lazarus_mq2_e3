@@ -181,7 +181,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 	|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	|Use Disc
 	/if (${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Disc]}) {
-		/if (${Me.ActiveDisc.ID} && ${${ArrayName}[${ArrayIndex},${iDuration}]}) {
+		/if (${Me.ActiveDisc.ID} && ${Spell[${${ArrayName}[${ArrayIndex},${iCastName}]}].TargetType.Equal[Self]}) {
 			/if (${Debug} || ${Debug_Casting}) /echo Skipping ${ArrayName}[${ArrayIndex},${iCastName}, Waiting on disc [${Window[CombatAbilityWnd].Child[CAW_CombatEffectLabel].Text}]
 			/varset castReturn ACTIVEDISC
 			/goto :skipCast

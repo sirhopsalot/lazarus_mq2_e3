@@ -333,8 +333,9 @@ SUB CombatAbilities
         |/echo ${Abilities2D[${i},${iCastName}]} myend ${Me.PctEndurance} >= minend ${Abilities2D[${i},${iMinEnd}]} and endcost ${Spell[${Abilities2D[${i},${iCastName}]}].EnduranceCost} <= ${Me.Endurance}
         /if (${Me.PctEndurance} >= ${Abilities2D[${i},${iMinEnd}]} && ${Spell[${Abilities2D[${i},${iCastName}]}].EnduranceCost} <= ${Me.Endurance} && ${Abilities2D[${i},${iIfs}]}) {
           |/echo ready ${abilityName} ${Me.CombatAbilityReady[${abilityName}]}
-          /call castSimpleSpell "${Abilities2D[${i},${iCastName}]}" 0
-          
+          /if (!(${Me.ActiveDisc.ID} && ${Abilities2D[${i},${iCastType}].Equal[Disc]} && ${Spell[${Abilities2D[${i},${iCastName}]}].TargetType.Equal[Self]})) {
+              /call castSimpleSpell "${Abilities2D[${i},${iCastName}]}" 0
+          }
         }
       }
     }
@@ -1440,9 +1441,10 @@ SUB useBurns(ArrayName)
       /if (${check_Distance[${AssistTarget},${${ArrayName}[${i},${iMyRange}]}]}) {
        
         /if (${Me.ActiveDisc.ID} && ${${ArrayName}[${i},${iCastName}].Equal[Savage Spirit]}) /goto :skipCurrent
-        /if (${Me.ActiveDisc.ID} && ${${ArrayName}[${i},${iCastType}].Equal[Disc]} && ${Bool[${${ArrayName}[${i},${iDuration}]}]}) {
+        /if (${Me.ActiveDisc.ID} && ${${ArrayName}[${i},${iCastType}].Equal[Disc]} && ${Spell[${${ArrayName}[${i},${iCastName}]}].TargetType.Equal[Self]}) {
            | /echo Currently in disc and duration > 0. Skiping ${${ArrayName}[${i},${iCastName}]}. Duration: ${Bool[${${ArrayName}[${i},${iDuration}]}]} 
            |/echo Burns-Skip: ${i} ${${ArrayName}[${i},${iCastName}]}
+         
            /goto :skipCurrent
 
         } 
