@@ -1453,7 +1453,7 @@ SUB useBurns(ArrayName)
         /if (${Select[${castReturn},CAST_SUCCESS]}) {
           /g ${ArrayName}-${${ArrayName}[${i},${iCastName}]}
         } else {
-          /g ${castReturn}: ${ArrayName}-${${ArrayName}[${i},${iCastName}]}
+          |/g ${castReturn}: ${ArrayName}-${${ArrayName}[${i},${iCastName}]}
         }
        
       }
