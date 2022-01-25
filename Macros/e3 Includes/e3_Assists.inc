@@ -1443,7 +1443,6 @@ SUB useBurns(ArrayName)
         /if (${Me.ActiveDisc.ID} && ${${ArrayName}[${i},${iCastType}].Equal[Disc]} && ${Bool[${${ArrayName}[${i},${iDuration}]}]}) {
            | /echo Currently in disc and duration > 0. Skiping ${${ArrayName}[${i},${iCastName}]}. Duration: ${Bool[${${ArrayName}[${i},${iDuration}]}]} 
            |/echo Burns-Skip: ${i} ${${ArrayName}[${i},${iCastName}]}
-           /delay 1
            /goto :skipCurrent
 
         } 
