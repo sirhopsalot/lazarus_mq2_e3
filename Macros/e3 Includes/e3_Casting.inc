@@ -193,7 +193,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 			}
 			/varset ActionTaken TRUE
 			/disc ${pendingCast}
-			/delay 5 !${Me.CombatAbilityReady[${pendingCast}]}
+			/delay 3
 		}
 	|-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	|- Abilities
@@ -201,7 +201,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 		/if (${Me.AbilityReady[${pendingCast}]}) {
       	   /varset ActionTaken TRUE
 			/doability "${pendingCast}"
-			/delay 5 !${Me.AbilityReady[${pendingCast}]}
+			/delay 3 !${Me.AbilityReady[${pendingCast}]}
     	}
 	|-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	|- Spells, AA, Items

@@ -1440,7 +1440,12 @@ SUB useBurns(ArrayName)
       /if (${check_Distance[${AssistTarget},${${ArrayName}[${i},${iMyRange}]}]}) {
        
         /if (${Me.ActiveDisc.ID} && ${${ArrayName}[${i},${iCastName}].Equal[Savage Spirit]}) /goto :skipCurrent
-        /if (${Me.ActiveDisc.ID} && ${${ArrayName}[${i},${iCastType}].Equal[Disc]} && ${Bool[${${ArrayName}[${i},${iDuration}]}]}) /goto :skipCurrent
+        /if (${Me.ActiveDisc.ID} && ${${ArrayName}[${i},${iCastType}].Equal[Disc]} && ${Bool[${${ArrayName}[${i},${iDuration}]}]}) {
+            /echo Currently in disc and duration > 0. Skiping ${${ArrayName}[${i},${iCastName}]}. Duration: ${Bool[${${ArrayName}[${i},${iDuration}]}]} 
+            /echo 
+            /goto :skipCurrent
+
+        } 
         /call e3_Cast ${AssistTarget} "${ArrayName}" "${i}" 0
        
         /if (${Select[${castReturn},CAST_SUCCESS]}) {
