@@ -1429,20 +1429,18 @@ SUB event_Burns(line, ChatSender, burnType)
 |--------------------------------------------------------------------------------|
 SUB useBurns(ArrayName)
 /if (${Debug} || ${Debug_Assists}) /echo |- useBurns Array=${ArrayName} ==>
+
 	/declare i int local
+  /declare isHealer bool Local ${Select[${Me.Class.ShortName},CLR,DRU,SHM]}
 	/for i 1 to ${${ArrayName}.Size[1]}
 
-    /echo useBurns ${ArrayName}: calling check for ${${ArrayName}[${i},${iCastName}]}
     /call check_Ready "${ArrayName}" ${i}
     /if (${c_Ready} && ${${ArrayName}[${i},${iIfs}]}) {
 
-       /echo useBurns ${ArrayName}: check for passed ${${ArrayName}[${i},${iCastName}]}
       /if (${check_Distance[${AssistTarget},${${ArrayName}[${i},${iMyRange}]}]}) {
        
         /if (${Me.ActiveDisc.ID} && ${${ArrayName}[${i},${iCastName}].Equal[Savage Spirit]}) /goto :skipCurrent
         /if (${Me.ActiveDisc.ID} && ${${ArrayName}[${i},${iCastType}].Equal[Disc]} && ${Bool[${${ArrayName}[${i},${iDuration}]}]}) /goto :skipCurrent
-        
-        /echo useBurns ${ArrayName}: Issuing cast for  ${${ArrayName}[${i},${iCastName}]}
         /call e3_Cast ${AssistTarget} "${ArrayName}" "${i}" 0
        
         /if (${Select[${castReturn},CAST_SUCCESS]}) {
@@ -1453,10 +1451,17 @@ SUB useBurns(ArrayName)
        
       }
     } else {
-      /echo useBurns ${ArrayName}: NotReady: ${i} ${${ArrayName}[${i},${iCastName}]}
+      /if (${Debug} || ${Debug_Assists}) /echo useBurns ${ArrayName}: NotReady: ${i} ${${ArrayName}[${i},${iCastName}]}
     }
     :skipCurrent
-    |/delay 1
+    /if (${isHealer}) {
+        |interupt stoning if we have someone to heal
+        /call check_HealCasting_DuringDetrimental
+        /if (!${c_SubToRun}) {
+            /break
+        }
+    } 
+
   /next i
 
 /if (${Debug} || ${Debug_Assists}) /echo <== useBurns -|
