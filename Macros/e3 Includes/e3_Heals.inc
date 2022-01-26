@@ -471,6 +471,10 @@ SUB hot_pets
 |------------------------------------------------|
 SUB check_HotTankStack(targetName, spellID)
 	/varset c_SubToRun TRUE
+	/call check_TankAndXTargetNeedHeal
+	/if (!${c_SubToRun}) {
+		/return
+	}
 	/declare i int local
 	/if (!${Defined[targetName]}) {
 		/declare targShortBuff string local ${NetBots[${Target.CleanName}].ShortBuff.Replace[ ,,]}
