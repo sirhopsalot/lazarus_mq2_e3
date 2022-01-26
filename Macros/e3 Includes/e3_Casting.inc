@@ -766,7 +766,7 @@ Sub casting_Setup
 	/varset vetArray[${iJester}]    "Chaotic Jester"
 	/call BuildSpellArray "vetArray" "vetArray2D"
 
-	/declare itemCooldownList[49,2] string local
+	/declare itemCooldownList[57,2] string local
 	/varset itemCooldownList[1,1] Summoned: Large Modulation Shard
 	/varset itemCooldownList[1,2] 300
 	/varset itemCooldownList[2,1] Shroud of the Subjugated Kuaan
@@ -865,10 +865,26 @@ Sub casting_Setup
 	/varset itemCooldownList[48,2] 180
 	/varset itemCooldownList[49,1] Academic's Robe of the Arcanists
 	/varset itemCooldownList[49,2] 300
+	/varset itemCooldownList[50,1] Whispering Tunic of Shadows
+	/varset itemCooldownList[50,2] 300
+	/varset itemCooldownList[51,1] Nightshade, Blade of Entropy
+	/varset itemCooldownList[51,2] 180
+	/varset itemCooldownList[52,1] Dawnseeker's Chestpiece of the Defender
+	/varset itemCooldownList[52,2] 300
+	/varset itemCooldownList[53,1] Nightbane, Sword of the Valiant
+	/varset itemCooldownList[53,2] 300
+	/varset itemCooldownList[54,1] Deathwhisper
+	/varset itemCooldownList[54,2] 180
+	/varset itemCooldownList[55,1] Bifold Focus of the Evil Eye
+	/varset itemCooldownList[55,2] 600
+	/varset itemCooldownList[56,1] Transcended Fistwraps of Immortality
+	/varset itemCooldownList[56,2] 180
+	/varset itemCooldownList[57,1] Fiercehand Shroud of the Focused
+	/varset itemCooldownList[57,2] 180
 
   	|scan through each of the items in itemCooldownList to see if we actually have that item, if so put it in the lookup list.
 
-	/declare tempItemLookupList[49,2] string local
+	/declare tempItemLookupList[57,2] string local
 	/declare tempItemLookupListCounter int local 1
 
 	/declare index int local 1
