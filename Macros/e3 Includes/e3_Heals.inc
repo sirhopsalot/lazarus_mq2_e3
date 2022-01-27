@@ -622,7 +622,6 @@ SUB check_HealCasting_DuringDetrimental
 	}
 
 	/if (${healXTargets}) {
-	|/if (false) {	
 		/if (${Math.Rand[2]}==0) {
 			/for xtargetIndex 1 to ${numXTargets}
 		} else {
@@ -655,6 +654,102 @@ SUB check_HealCasting_DuringDetrimental
 	}
 
 	|/echo check_HealCasting_DuringDetrimental no target found
+
+/RETURN
+
+
+|--------------------------------------------------|
+|- Used with determental spells to interrupt	  -|
+|--------------------------------------------------|
+SUB check_HealCasting_DuringBurns
+	/varset c_SubToRun TRUE
+	|/echo called check_HealTankCasting_DuringDetrimental
+	|First check the tank heals
+	/declare currentBot string local NULL
+	/declare currentSpellIndx int local
+	/declare xtargetIndex int local NULL
+	/declare numXTargets int local 13
+	/declare t int local
+	/declare s int local	
+
+	/if (${healTanks}) {
+		|/echo check_HealTankCasting_DuringDetrimental checking tank heals
+		/for t 1 to ${tanks.Size}
+			/for s 1 to ${tankHeals2D.Size[1]}
+				|/echo Tank HP ${NetBots[${tanks[${t}]}].PctHPs} vs configured ${tankHeals2D[${s},${iHealPct}]}
+				/if (${Bool[${NetBots[${tanks[${t}]}].InZone}]} && ${NetBots[${tanks[${t}]}].PctHPs} <= ${tankHeals2D[${s},${iHealPct}]}) {
+					|interrupt any determenal spell if casting if we are supposed to be healing		
+					/if (${check_Distance[${NetBots[${tanks[${t}]}].ID},${tankHeals2D[${s},${iMyRange}]}]}) {
+						
+						/varset currentBot ${tanks[${t}]}
+						/varset currentSpellIndx ${s}
+					}
+				}
+			/if (!${Bool[${currentBot}]}) /next s
+		/if (!${Bool[${currentBot}]}) /next t
+
+		/if (${Bool[${currentBot}]}) {
+		
+			/varset c_SubToRun FALSE
+			/RETURN
+		}	
+		
+	}
+
+	/if (${healImportant}) {
+		/for t 1 to ${importantBots.Size}
+			/for s 1 to ${importantHeals2D.Size[1]}
+				/if (${Bool[${NetBots[${importantBots[${t}]}].InZone}]} && ${NetBots[${importantBots[${t}]}].PctHPs} <= ${importantHeals2D[${s},${iHealPct}]}) {
+					/if (${importantHeals2D[${s},${iIfs}]}) {
+						/if (${check_Mana["importantHeals2D",${s}]}) {
+							/if (!${Bool[${currentBot}]} || ${NetBots[${importantBots[${t}]}].PctHPs} < ${NetBots[${currentBot}].PctHPs}) {
+							/varset currentBot ${importantBots[${t}]}
+							/varset currentSpellIndx ${s}
+							}
+						}
+					}
+				}
+			/next s
+		/next t
+		/if (${Bool[${currentBot}]}) {
+			/varset c_SubToRun FALSE
+			/RETURN
+		}
+
+	}
+
+	/if (${healXTargets}) {
+	
+		/if (${Math.Rand[2]}==0) {
+			/for xtargetIndex 1 to ${numXTargets}
+		} else {
+			/for xtargetIndex ${numXTargets} downto 1
+		}
+			/if (${Me.XTarget[${xtargetIndex}].TargetType.Equal[Specific PC]} ) {
+				/for s 1 to ${xtargetHeals2D.Size[1]}
+					/if (${Me.XTarget[${xtargetIndex}].PctHPs} < ${xtargetHeals2D[${s},${iHealPct}]}) {
+						/if (${xtargetHeals2D[${s},${iIfs}]}) {
+							/if (${check_Distance[${Me.XTarget[${xtargetIndex}].ID},${xtargetHeals2D[${s},${iMyRange}]}]}) {
+								/if (${check_Mana["xtargetHeals2D",${s}]}) {
+									/if (!${Bool[${currentBot}]} || ${Me.XTarget[${xtargetIndex}].PctHPs} < ${Me.XTarget[${currentBot}].PctHPs}) {
+										
+										/varset currentBot ${xtargetIndex}
+										/varset currentSpellIndx ${s}
+									}
+								}
+							}
+						}
+					}
+				/next s
+			}
+		/next xtargetIndex
+
+		/if (${Bool[${currentBot}]}) {
+				/varset c_SubToRun FALSE
+			/RETURN
+		}
+	}
+
 
 /RETURN
 |---------------------------------------------------------------------------|

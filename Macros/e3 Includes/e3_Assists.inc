@@ -1463,8 +1463,9 @@ SUB useBurns(ArrayName)
     :skipCurrent
     /if (${isHealer}) {
         |interupt stoning if we have someone to heal
-        /call check_HealCasting_DuringDetrimental
+        /call check_HealCasting_DuringBurns
         /if (!${c_SubToRun}) {
+          	/echo [${Time}]: useBurns: ${ArrayName}: healer needs to heal jumping out of burn.
             /break
         }
     } 

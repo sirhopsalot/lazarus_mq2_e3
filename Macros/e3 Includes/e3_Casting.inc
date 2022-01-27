@@ -371,6 +371,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 |- check for reasons to cancel casting
 		
 		/if (${Window[CastingWindow].Open}) {
+		   /varset c_SubToRun True
 		  |dont allow item swap/must equip interrupts to avoid crashes
 			|/echo checking is still open
 		   	/if (${Me.Class.ShortName.Equal[BRD]}) {
@@ -414,7 +415,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 				/if (!${g_CastNowSpellCasting} && (!${c_SubToRun})) {
 							/echo [${Time}]: E3_Cast nowCast called interrupt ${${ArrayName}[${ArrayIndex},${iSubToRun}]}
 							/call interrupt
-							/delay 1s
+							/delay 3
 							/varset castReturn CAST_INTERRUPTED
 							/goto :skipCast
 				}
