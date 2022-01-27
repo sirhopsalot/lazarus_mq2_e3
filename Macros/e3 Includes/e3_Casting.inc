@@ -394,7 +394,8 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 					/call ${${ArrayName}[${ArrayIndex},${iSubToRun}]} ${ArrayName} ${ArrayIndex}
 
 					/if (!${c_SubToRun}) {
-           				/if (${Debug} || ${Debug_Casting}) /echo SubToRun called interrupt ${${ArrayName}[${ArrayIndex},${iSubToRun}]}
+					
+						/echo [${Time}]: E3_Cast SubToRun called interrupt for spell: ${pendingCast}
 					 	/call interrupt
 						/delay 3
 						/varset castReturn CAST_INTERRUPTED
@@ -411,7 +412,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 				/doevents nowCast
 				|check to see if now Cast has decided to interrupt the casting.
 				/if (!${g_CastNowSpellCasting} && (!${c_SubToRun})) {
-							/if (${Debug} || ${Debug_Casting}) /echo nowCast called interrupt ${${ArrayName}[${ArrayIndex},${iSubToRun}]}
+							/echo [${Time}]: E3_Cast nowCast called interrupt ${${ArrayName}[${ArrayIndex},${iSubToRun}]}
 							/call interrupt
 							/delay 1s
 							/varset castReturn CAST_INTERRUPTED
@@ -689,24 +690,33 @@ Sub memorize_spell(spellName,gemNum)
 	
 	|only wait for beneficial,self spells
 	|(${Me.Combat} || ${Me.CombatState.Equal[Combat]} ||  ${AssistTarget} >0)
-
+	/declare isHealer bool Local ${Select[${Me.Class.ShortName},CLR,DRU,SHM]}
 	/declare timeTowait int local ${Math.Calc[35+(${Spell[${spellName}].RecastTime}/100)]}
-	/if ((${Me.Combat} || ${Me.CombatState.Equal[Combat]} ||  ${AssistTarget} >0)) {
-		/varset timeTowait 30
-	}
+	 /if (${isHealer} && ${timeTowait}>30) {
+        /varset timeTowait 30
+    } 
 	/declare waitForReady timer local ${timeTowait}
 	|/echo wfr ${waitForReady} rc ${Spell[${spellName}].RecastTime} math ${Math.Calc[25+(${Spell[${spellName}].RecastTime}/100)]}
 	:checkTimer
 		
 		|/echo chectimer ${waitForReady} ${Me.SpellReady[${spellName}]}
-		/if (${waitForReady}) {
+	/if (${waitForReady}) {
 		/doevents Follow
 		/doevents Stop
 		/doevents MoveHere
 		/doevents BackOff
+		/doevents Assist
 		/call alerts_Background_Events
-		/delay 1
-		/if (!${Me.SpellReady[${spellName}]}) /goto :checkTimer
+		
+		/if ((${Me.Combat} || ${Me.CombatState.Equal[Combat]} ||  ${AssistTarget} >0)) {
+			|kick out as we are now in combat
+			/return
+		}
+
+		/if (!${Me.SpellReady[${spellName}]}) {
+			/delay 1
+			/goto :checkTimer
+		}
 	}
 	
   /if (${Debug} || ${Debug_Casting}) /echo |- memorize_spell <=

@@ -124,12 +124,11 @@ SUB heal_importantBots
   |/echo cb ${currentBot} ${Bool[${currentBot}]}
 	/if (${Bool[${currentBot}]}) {
 
-		/varset importantHeals2D[${currentSpellIndx},${iSubToRun}] check_TankAndXTargetNeedHeal
+		/varset importantHeals2D[${currentSpellIndx},${iSubToRun}] check_TankNeedHeal
 		|-Our cast may have been interrupted so need to do a quick check on heals
 		/call e3_Cast ${NetBots[${currentBot}].ID} "importantHeals2D" ${currentSpellIndx}
 		/if (${castReturn.Equal[CAST_INTERRUPTED]}) {
 			/call heal_tanks
-			/call heal_xtargets
 		}
 	}
 /if (${Debug} || ${Debug_Heals}) /echo <== heal_importantBots -|
@@ -314,7 +313,7 @@ SUB hot_tanks
 	
 	/if (${Bool[${currentBot}]}) {
 
-		/varset hotSpells2D[${currentSpellIndx},${iSubToRun}] check_HotTankStack
+		/varset hotSpells2D[${currentSpellIndx},${iSubToRun}] check_TankAndXTargetNeedHeal
 		/call e3_Cast ${NetBots[${currentBot}].ID} "hotSpells2D" ${currentSpellIndx}
 
 		|-Our cast may have been interrupted so need to do a quick check on heals
@@ -358,7 +357,7 @@ SUB hot_importantBots
   /next t
 
   /if (${Bool[${currentBot}]}) {
-    /varset hotSpells2D[${currentSpellIndx},${iSubToRun}] check_HotImportantBotStack
+    /varset hotSpells2D[${currentSpellIndx},${iSubToRun}] check_TankAndXTargetNeedHeal
     /call e3_Cast ${NetBots[${currentBot}].ID} "hotSpells2D" ${currentSpellIndx}
 	|-Our cast may have been interrupted so need to do a quick check on heals
 	/if (${castReturn.Equal[CAST_INTERRUPTED]}) {
@@ -408,7 +407,7 @@ SUB hot_Allbots
 	/next t
 	
 	/if (${Bool[${currentBot}]}) {
-		/varset hotSpells2D[${currentSpellIndx},${iSubToRun}] check_HotAllStack
+		/varset hotSpells2D[${currentSpellIndx},${iSubToRun}] check_TankAndXTargetNeedHeal
 		/call e3_Cast ${NetBots[${currentBot}].ID} "hotSpells2D" ${currentSpellIndx}
 |		/call set_RecentHealTimer "${hotSpells2D[${s},${iCastType}]}"
 		/if (${castReturn.Equal[CAST_INTERRUPTED]}) {
@@ -453,7 +452,7 @@ SUB hot_pets
   /next t
   |/echo ${currentBot} ${Spawn[pc =${currentBot}].Pet.ID} ${Spawn[pc =${currentBot}].Pet.Name}
   /if (${Bool[${currentBot}]}) {
-    /varset hotSpells2D[${currentSpellIndx},${iSubToRun}] check_HotPetStack
+    /varset hotSpells2D[${currentSpellIndx},${iSubToRun}] check_TankAndXTargetNeedHeal
     /call e3_Cast ${NetBots[${currentBot}].PetID} "hotSpells2D" ${currentSpellIndx}
 
 	|-Our cast may have been interrupted so need to do a quick check on heals
@@ -471,10 +470,7 @@ SUB hot_pets
 |------------------------------------------------|
 SUB check_HotTankStack(targetName, spellID)
 	/varset c_SubToRun TRUE
-	/call check_TankAndXTargetNeedHeal
-	/if (!${c_SubToRun}) {
-		/return
-	}
+	
 	/declare i int local
 	/if (!${Defined[targetName]}) {
 		/declare targShortBuff string local ${NetBots[${Target.CleanName}].ShortBuff.Replace[ ,,]}
@@ -495,13 +491,6 @@ SUB check_HotTankStack(targetName, spellID)
 |------------------------------------------------|
 SUB check_HotImportantBotStack(targetName, spellID)
 	/varset c_SubToRun TRUE
-
-	
-	/call check_TankAndXTargetNeedHeal
-	/if (!${c_SubToRun}) {
-		/return
-	}
-
 	/declare i int local
 	/if (!${Defined[targetName]}) {
 		/declare targShortBuff string local ${NetBots[${Target.CleanName}].ShortBuff.Replace[ ,,]}
@@ -522,11 +511,6 @@ SUB check_HotImportantBotStack(targetName, spellID)
 |------------------------------------------------|
 SUB check_HotAllStack(targetName, spellID)
 	/varset c_SubToRun TRUE
-
-	/call check_TankAndXTargetNeedHeal
-	/if (!${c_SubToRun}) {
-		/return
-	}
 
 	/declare i int local
 	/if (!${Defined[targetName]}) {
@@ -549,11 +533,6 @@ SUB check_HotAllStack(targetName, spellID)
 SUB check_HotPetStack(targetName, spellID)
   /varset c_SubToRun TRUE
 
-	/call check_TankAndXTargetNeedHeal
-	/if (!${c_SubToRun}) {
-		/return
-	}
-
   /declare i int local
   /if (!${Defined[targetName]}) {
     /declare targShortBuff string local ${NetBots[${Target.CleanName}].PetBuff.Replace[ ,,]}
@@ -574,9 +553,11 @@ SUB check_HotPetStack(targetName, spellID)
 |- Checks while casting tank heals		-|
 |----------------------------------------|
 SUB check_HealTankCasting
-	/varset c_SubToRun FALSE
-	/if (${castEndTime} > ${interruptTankCastSec} || ${Spawn[id ${Target.ID}].PctHPs} < ${interruptHealPct}) /varset c_SubToRun TRUE
-  |/echo cth ${Target.CleanName} nb ${NetBots[${Target.CleanName}].PctHPs} s ${Spawn[${Target.CleanName}].PctHPs} cet ${castEndTime} ${passCheck} ${interruptTankCastSec}
+	/varset c_SubToRun TRUE
+	/if (${Spawn[id ${Target.ID}].PctHPs} > ${interruptHealPct}) {
+		/echo [${Time}]: check_HealTankCasting target above threshold for heals, setting interrupt flag
+		/varset c_SubToRun FALSE
+	}
 /RETURN
 
 |--------------------------------------------------|
@@ -610,7 +591,7 @@ SUB check_HealCasting_DuringDetrimental
 		/if (!${Bool[${currentBot}]}) /next t
 
 		/if (${Bool[${currentBot}]}) {
-			/echo check_HealCasting_DuringDetrimental tank setting interrupt flag
+			/echo [${Time}]: check_HealCasting_DuringDetrimental tank setting interrupt flag
 			/varset c_SubToRun FALSE
 			/RETURN
 		}	
@@ -633,7 +614,7 @@ SUB check_HealCasting_DuringDetrimental
 			/next s
 		/next t
 		/if (${Bool[${currentBot}]}) {
-			/echo check_HealCasting_DuringDetrimental important bot setting interrupt flag
+			/echo [${Time}]: check_HealCasting_DuringDetrimental important bot setting interrupt flag
 			/varset c_SubToRun FALSE
 			/RETURN
 		}
@@ -667,7 +648,7 @@ SUB check_HealCasting_DuringDetrimental
 		/next xtargetIndex
 
 		/if (${Bool[${currentBot}]}) {
-			/echo check_HealCasting_DuringDetrimental xtarget setting interrupt flag
+			/echo [${Time}]: check_HealCasting_DuringDetrimental xtarget setting interrupt flag
 			/varset c_SubToRun FALSE
 			/RETURN
 		}
@@ -689,6 +670,12 @@ SUB check_TankAndXTargetNeedHeal
 	/declare s int local	
 
 	/varset c_SubToRun TRUE
+
+	/if (${Spawn[id ${Target.ID}].PctHPs} > ${interruptHealPct}) {
+		/echo [${Time}]: check_TankAndXTargetNeedHeal target above threshold for heals, setting interrupt flag
+		/varset c_SubToRun FALSE
+		/return
+	}
 	/if (${healTanks}) {
 		|/echo check_HealTankCasting_DuringDetrimental checking tank heals
 		/for t 1 to ${tanks.Size}
@@ -700,15 +687,16 @@ SUB check_TankAndXTargetNeedHeal
 						
 						/varset currentBot ${tanks[${t}]}
 						/varset currentSpellIndx ${s}
+						/goto :endTankCheck
 					}
 				}
-			/if (!${Bool[${currentBot}]}) /next s
-		/if (!${Bool[${currentBot}]}) /next t
-
+			/next s
+		/next t
+		:endTankCheck
 		/if (${Bool[${currentBot}]}) {
-			/echo check_TankAndXTargetNeedHeal tank needs heal setting interrupt flag
+			/echo [${Time}]: check_TankAndXTargetNeedHeal tank needs heal setting interrupt flag
 			/varset c_SubToRun FALSE
-			/RETURN
+			/return
 		}	
 		|/echo check_HealCasting_DuringDetrimental no target found
 	}
@@ -739,39 +727,99 @@ SUB check_TankAndXTargetNeedHeal
 		/next xtargetIndex
 
 		/if (${Bool[${currentBot}]}) {
-			/echo check_TankAndXTargetNeedHeal xtarget setting interrupt flag
+			/echo [${Time}]: check_TankAndXTargetNeedHeal xtarget setting interrupt flag
 			/varset c_SubToRun FALSE
-			/RETURN
+			/return
 		}
 	}
+/Return
+
+
+|---------------------------------------------------------------------------|
+|- Used with heals spells to interrupt so that we can heal tanks/xtargets  -|
+|---------------------------------------------------------------------------|
+SUB check_TankNeedHeal
+
+	/declare currentBot string local NULL
+	/declare currentSpellIndx int local
+	/declare xtargetIndex int local NULL
+	/declare numXTargets int local 13
+	/declare t int local
+	/declare s int local	
+
+	/varset c_SubToRun TRUE
+
+
+	/if (${Spawn[id ${Target.ID}].PctHPs} > ${interruptHealPct}) {
+		/echo [${Time}]: check_TankNeedHeal target above threshold for heals, setting interrupt flag
+		/varset c_SubToRun FALSE
+		/return
+	}
+	/if (${healTanks}) {
+		|/echo check_HealTankCasting_DuringDetrimental checking tank heals
+		/for t 1 to ${tanks.Size}
+			/for s 1 to ${tankHeals2D.Size[1]}
+				|/echo Tank HP ${NetBots[${tanks[${t}]}].PctHPs} vs configured ${tankHeals2D[${s},${iHealPct}]}
+				/if (${Bool[${NetBots[${tanks[${t}]}].InZone}]} && ${NetBots[${tanks[${t}]}].PctHPs} <= ${tankHeals2D[${s},${iHealPct}]}) {
+					|interrupt any determenal spell if casting if we are supposed to be healing		
+					/if (${check_Distance[${NetBots[${tanks[${t}]}].ID},${tankHeals2D[${s},${iMyRange}]}]}) {
+						
+						/varset currentBot ${tanks[${t}]}
+						/varset currentSpellIndx ${s}
+					}
+				}
+			/if (!${Bool[${currentBot}]}) /next s
+		/if (!${Bool[${currentBot}]}) /next t
+
+		/if (${Bool[${currentBot}]}) {
+			/echo [${Time}]: check_TankNeedHeal tank needs heal setting interrupt flag
+			/varset c_SubToRun FALSE
+			/RETURN
+		}	
+		|/echo check_HealCasting_DuringDetrimental no target found
+	}
+	
 /Return
 |----------------------------------------|
 |- Checks while casting important heals	-|
 |----------------------------------------|
 SUB check_HealImportantCasting
-	/varset c_SubToRun FALSE
-	/if (${castEndTime} > ${interruptImportantCastSec} || ${Spawn[id ${Target.ID}].PctHPs} < ${interruptHealPct}) /varset c_SubToRun TRUE
+	/varset c_SubToRun TRUE
+	/if (${Spawn[id ${Target.ID}].PctHPs} > ${interruptHealPct}) {
+		/echo [${Time}]: check_HealImportantCasting target above threshold for heals, setting interrupt flag
+		/varset c_SubToRun FALSE
+	}
+	
 /RETURN
 |----------------------------------------|
 |- Checks while casting all heals		-|
 |----------------------------------------|
 SUB check_HealAllCasting
-	/varset c_SubToRun FALSE
-	/if (${castEndTime} > ${interruptAllCastSec} || ${Spawn[id ${Target.ID}].PctHPs} < ${interruptHealPct}) /varset c_SubToRun TRUE
+	/varset c_SubToRun TRUE
+	/if (${Spawn[id ${Target.ID}].PctHPs} > ${interruptHealPct}) {
+		/echo [${Time}]: check_HealAllCasting target above threshold for heals, setting interrupt flag
+		/varset c_SubToRun FALSE
+	}
 /RETURN
 |----------------------------------------|
 |- Checks while casting xtarget heals	-|
 |----------------------------------------|
 SUB check_HealXTargetCasting
-	/varset c_SubToRun FALSE
-	/if (${castEndTime} > ${interruptXTargetCastSec} || ${Spawn[id ${Target.ID}].PctHPs} < ${interruptHealPct}) /varset c_SubToRun TRUE
+	/varset c_SubToRun TRUE
+	/if (${Spawn[id ${Target.ID}].PctHPs} > ${interruptHealPct}) {
+		/echo [${Time}]: check_HealXTargetCasting target above threshold for heals, setting interrupt flag
+		/varset c_SubToRun FALSE
+	}
 /RETURN
 |----------------------------------------|
 |- Checks while casting pet heals		-|
 |----------------------------------------|
 SUB check_HealPetCasting
-	/varset c_SubToRun FALSE
-	/if (${castEndTime} > ${interruptAllCastSec} || ${Spawn[id ${Target.ID}].PctHPs} < ${interruptHealPct}) /varset c_SubToRun TRUE
+	/varset c_SubToRun TRUE
+	/if (${Spawn[id ${Target.ID}].PctHPs} > ${interruptHealPct}) {
+		/echo [${Time}]: check_HealPetCasting target above threshold for heals, setting interrupt flag
+		/varset c_SubToRun FALSE
+	}
 /RETURN
 
 |-------------------------------------------|
