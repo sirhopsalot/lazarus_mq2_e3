@@ -393,11 +393,12 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 					|call interrupt check
 					/call ${${ArrayName}[${ArrayIndex},${iSubToRun}]} ${ArrayName} ${ArrayIndex}
 
-					/if (!${c_SubToRun} && ${Me.Casting.ID}) {
+					/if (!${c_SubToRun}) {
            				/if (${Debug} || ${Debug_Casting}) /echo SubToRun called interrupt ${${ArrayName}[${ArrayIndex},${iSubToRun}]}
 					 	/call interrupt
 						/delay 3
-						/goto :interrupted
+						/varset castReturn CAST_INTERRUPTED
+						/goto :skipCast
 					}
 					  /delay 1
         		|-no SubToRun
@@ -409,11 +410,12 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 
 				/doevents nowCast
 				|check to see if now Cast has decided to interrupt the casting.
-				/if (!${g_CastNowSpellCasting} && (!${c_SubToRun} && ${Me.Casting.ID})) {
+				/if (!${g_CastNowSpellCasting} && (!${c_SubToRun})) {
 							/if (${Debug} || ${Debug_Casting}) /echo nowCast called interrupt ${${ArrayName}[${ArrayIndex},${iSubToRun}]}
 							/call interrupt
 							/delay 1s
-							/goto :interrupted
+							/varset castReturn CAST_INTERRUPTED
+							/goto :skipCast
 				}
 
 				|- Other reasons to cancel
@@ -423,7 +425,8 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 					/if (${Debug} || ${Debug_Casting}) /echo following interrupt
 					|/bc following interrupt ${Time}  ${NetBots[${FollowTarget}].Moving}  ${Spawn[${FollowTarget}].Moving} ${Spawn[${FollowTarget}].Distance}
 					/call interrupt
-					/goto :interrupted
+					/varset castReturn CAST_INTERRUPTED
+					/goto :skipCast
 					}
 				}
 				}
@@ -432,14 +435,16 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 					
 					/if (${Debug} || ${Debug_Casting}) /echo duck called interrupt
 							/call interrupt
-							/goto :interrupted
+							/varset castReturn CAST_INTERRUPTED
+							/goto :skipCast
 				}
 						|-Dead target and I'm not using a detrimental AE or self buff
 				/if (!${Select[${${ArrayName}[${ArrayIndex},${iTargetType}]},PB AE,Targeted AE,Corpse,Self,Group v1]}) {
 					/if ((!${Bool[${Target.ID}]} || ${Spawn[${Target.ID}].Dead})) {
 						/if (${Debug} || ${Debug_Casting}) /echo target corpse called interrupt
 						/call interrupt
-						/goto :interrupted
+						/varset castReturn CAST_INTERRUPTED
+						/goto :skipCast
 					}
 				}
 						|-Target is out of range
@@ -447,7 +452,8 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 					/if (${Target.Distance} > ${${ArrayName}[${ArrayIndex},${iMyRange}]}) {
 						/if (${Debug} || ${Debug_Casting}) /echo target range called interrupt
 						/call interrupt
-						/goto :interrupted
+						/varset castReturn CAST_INTERRUPTED
+						/goto :skipCast
 					}
 				}
 						|-Moved since casting began
@@ -456,7 +462,8 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 					/if (${Math.Distance[${startingLoc}]}>=8) {
 						/if (${Debug} || ${Debug_Casting}) /echo moved 8+ units after casting: called interrupt
 						/call interrupt
-						/goto :interrupted
+						/varset castReturn CAST_INTERRUPTED
+						/goto :skipCast
 					}
 				}
 						|-Check LifeSupport if more than 1.5 sec left to cast end
@@ -494,9 +501,9 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 			/varset immuneList ${immuneList}${pendingCastID}_${castTargetName},
     |dont create a nohold timer for detrimental AE spells
 		} else /if (${castReturn.Equal[CAST_TAKEHOLD]} && ${Select[${ArrayName},TargetAE_Spells2D,PBAE_Spells2D]}==0) {
-      /if (${Target.ID}==${targetID}) {
+     		 /if (${Target.ID}==${targetID}) {
 				/docommand ${ChatToggle} ** ${pendingCast} did not take hold on ${castTargetName} **
-        /call CreateTimer "nht${targetID}-${pendingCastID}" "${noHoldDelay}"
+       			/call CreateTimer "nht${targetID}-${pendingCastID}" "${noHoldDelay}"
 			}
 		} else /if (${Select[${castReturn},CAST_OUTDOORS,CAST_COMPONENTS,CAST_UNKNOWN]}) {
 			/docommand ** ${ChatToggle} Adding to failureList due to Return Events CAST_OUTDOORS,CAST_COMPONENT,CAST_UNKNOWN

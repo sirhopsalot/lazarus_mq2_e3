@@ -1125,7 +1125,7 @@ SUB check_macroTimers
 	/for i 1 to ${timerArray.Size}
     /if (${Defined[${timerArray[${i}]}]}) {
 		/if (!${${timerArray[${i}]}}) {
-        		/echo Deleting timer: ${timerArray[${i}]}
+        		|/echo Deleting timer: ${timerArray[${i}]}
 			    /varcalc SpentTimerCounter ${SpentTimerCounter} + 1
 				/deletevar ${timerArray[${i}]}
 				/varset SpentTimerList ${SpentTimerList}${i},
