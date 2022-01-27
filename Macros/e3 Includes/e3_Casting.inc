@@ -59,6 +59,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 	/varset pendingCastID ${${ArrayName}[${ArrayIndex},${iCastID}]}
 	/declare castTargetName string local ${Spawn[id ${targetID}].CleanName}
 	/declare e3_CastTime int local ${${ArrayName}[${ArrayIndex},${iMyCastTime}]}
+	/declare e3_CastNoInterrupt bool local ${${ArrayName}[${ArrayIndex},${iNoInterrupt}]}
 	/varset castEndTime	0
 	/varset castReturn 0
 	/varset interruptFlag FALSE
@@ -377,13 +378,16 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 		   }
 		 	
 
-		  /if (${oldItem.Length}) {
-		    /delay 1
-		    /goto :cast_still_pending
-		  }
+			/if (${oldItem.Length} || ${e3_CastNoInterrupt}) {
+				/delay 1
+				/goto :cast_still_pending
+			}
+
 			/if (!${interruptFlag}) {
 			   |- Run SubToRun
 			    |/varset Debug_Casting TRUE
+				|allow nothing to interrupt this.
+			
 				/if (${Bool[${${ArrayName}[${ArrayIndex},${iSubToRun}]}]}) {
 					
 					|call interrupt check

@@ -191,7 +191,7 @@ SUB ListToArray(ArrayName, Data, delimiter)
 Sub BuildSpellArrayDefinedValues()
 
 	/if (!${Defined[SpellProp]}) {
-		/declare SpellProp[45] string outer 0
+		/declare SpellProp[46] string outer 0
 		/varset SpellProp[1] CastName
 		/varset SpellProp[2] CastType
 		/varset SpellProp[3] TargetType
@@ -237,6 +237,7 @@ Sub BuildSpellArrayDefinedValues()
     	/varset SpellProp[42] Ifs
 		/varset SpellProp[43] BeforeSpell
 		/varset SpellProp[44] AfterSpell
+		/varset SpellProp[45] NoInterrupt
 
 		
 	}
@@ -284,6 +285,7 @@ Sub BuildSpellArrayDefinedValues()
   	/if (!${Defined[iIfs]})		/declare iIfs int outer 42
 	/if (!${Defined[iBeforeSpell]})		/declare iBeforeSpell int outer 43
 	/if (!${Defined[iAfterSpell]})		/declare iAfterSpell int outer 44
+	/if (!${Defined[iNoInterrupt]})		/declare iNoInterrupt int outer 45
 
 /return
 
@@ -634,6 +636,11 @@ SUB BuildSpellArrayBase(ArrayName, NewArrayName, SkipParams)
 				/call argueString Gem| "${${ArrayName}[${i}]}"
 				/varset ${NewArrayName}[${i},${iSpellGem}] ${c_argueString}
 			}
+			|iNoInterrupt
+			/if (${${ArrayName}[${i}].Find[/NoInterrupt]}) {
+				/varset ${NewArrayName}[${i},${iNoInterrupt}] 1
+			}
+
 			| get AfterSpell
 			/if (${${ArrayName}[${i}].Find[/AfterSpell|]}) {
 				/varset printMin true
