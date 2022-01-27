@@ -612,6 +612,65 @@ Sub check_Ready(ArrayName, int ArrayIndex)
 
 /RETURN ${c_Ready}
 
+
+Sub check_ReadySimple(spellName, gemToUse)
+  /if (${Debug} || ${Debug_Casting}) /echo |- check_ReadySimple =>
+  /varset c_Ready FALSE
+  | Memorize the spell if it is not memorized
+  
+	/declare spellType string local 
+
+	/if (${Bool[${Me.AltAbility[${spellName}].Spell}]}) {
+		/varset spellType AA
+	} else /if (${Me.Book[${spellName}]}) {
+		/varset spellType Spell
+	} else /if (${Me.CombatAbility[${spellName}]}) {
+		/varset spellType Disc
+	} else /if (${Me.Ability[${spellName}]}) {
+		/varset spellType Ability			
+	} else {
+		/varset spellType Item
+	}
+  /if (${spellType.Equal[Spell]}) {
+    /if (!${Bool[${Me.Gem[${spellName}]}]}) {
+		/declare tempGemNum int local ${DefaultGem}
+		/if (${Bool[gemTouse]}) {
+			/varset tempGemNum ${gemToUse}
+		}
+		/call memorize_spell "${spellName}" ${tempGemNum}
+	}
+	/if (${Me.SpellReady[${spellName}]}) /varset c_Ready TRUE
+  } else /if (${spellType.Equal[Item]}) {
+	|Need to check if we already have this item on cooldown
+	/declare itemID int local ${FindItem[=${spellName}].ID}
+	/if (${Defined[SpellRecast_${itemID}]}) {
+				
+		/if (${SpellRecast_${itemID}}) {
+			|our timer is still active, skip this and say we are not recovered yet.
+			|No action taken, so they can cast the next thing in the list.
+			|/echo check_Ready SpellRecast is on cooldown still for: ${SpellRecast_${itemID}}
+			/varset c_Ready FALSE
+			/goto :check_ReadySimple
+
+		}
+	} 
+	/if (${Me.ItemReady[=${spellName}]}) {
+		/varset c_Ready TRUE
+	} 
+  
+  } else /if (${spellType.Equal[AA]}) {
+    /if (${Me.AltAbilityReady[${spellName}]})  /varset c_Ready TRUE
+  } else /if (${spellType.Equal[Disc]}) {
+    /if (${Me.CombatAbilityReady[${spellName}]}) /varset c_Ready TRUE
+  } else /if (${spellType.Equal[Ability]}) {
+    /if (${Me.AbilityReady[${spellName}]}) /varset c_Ready TRUE
+  }
+   :check_ReadySimple
+
+  /if (${Debug} || ${Debug_Casting}) /echo |- check_ReadySimple <= ${c_Ready}
+
+/RETURN ${c_Ready}
+
 Sub memorize_spell(spellName,gemNum)
   /if (${Debug} || ${Debug_Casting}) /echo |- memorize_spell =>
   	/memorize "${spellName}" ${gemNum}
@@ -887,6 +946,7 @@ Sub casting_Setup
 	/declare tempItemLookupList[57,2] string local
 	/declare tempItemLookupListCounter int local 1
 
+
 	/declare index int local 1
 	/for index 1 to ${itemCooldownList.Size[1]} 
 		/if (${Bool[${FindItem[${itemCooldownList[${index},1]}]}]}) {
@@ -896,23 +956,26 @@ Sub casting_Setup
 			/varcalc tempItemLookupListCounter ${tempItemLookupListCounter}+1
 		}
 	/next index
-
 	|creating our final list of only the size we need
 	/declare itemCooldownLookupList[${Math.Calc[${tempItemLookupListCounter}-1]},2] string outer
 	
-	/for index 1 to ${itemCooldownLookupList.Size[1]} 
-			|found the item, add the name/index in the primary list to the temp list.
-			/varset itemCooldownLookupList[${index},1]  ${tempItemLookupList[${index},1]}
-			/varset itemCooldownLookupList[${index},2]  ${tempItemLookupList[${index},2]}
-	/next index
+	/if (${itemCooldownLookupList.Size[1]}>1) {
 
-	/echo Items to keep timers on.
-	/for index 1 to ${itemCooldownLookupList.Size[1]}
+		/for index 1 to ${itemCooldownLookupList.Size[1]} 
+				|found the item, add the name/index in the primary list to the temp list.
+				/varset itemCooldownLookupList[${index},1]  ${tempItemLookupList[${index},1]}
+				/varset itemCooldownLookupList[${index},2]  ${tempItemLookupList[${index},2]}
+		/next index
 
-		/echo ${index} ) ${itemCooldownLookupList[${index},1]}
+		/echo Items to keep timers on.
+		/for index 1 to ${itemCooldownLookupList.Size[1]}
 
-	/next index
+			/echo ${index} ) ${itemCooldownLookupList[${index},1]}
 
+		/next index
+
+	}
+	
 
 /if (${Debug} || ${Debug_Casting}) /echo <== casting_Setup -|
 /return

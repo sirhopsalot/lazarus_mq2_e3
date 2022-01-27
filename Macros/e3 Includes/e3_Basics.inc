@@ -1944,30 +1944,7 @@ sub notifyViaBCTell(targetToTell, messageToSend)
     }
 
 /return
-|--------------------------------------------------------------------------------------------|
-|- Used to call the e3_Cast for simple spells that cannot normally fail.                   	-|
-|--------------------------------------------------------------------------------------------|
-sub castSimpleSpell(spellNameToBase, simpleTargetIDToBase)
 
-    /call castSimpleSpellBase "${spellNameToBase}" ${simpleTargetIDToBase} True
-
-/return
-sub castSimpleSpellBase(spellName, simpleTargetID, SkipParams)
-
-  /if (${simpleTargetID}==0) {
-    |if 0 passed in, set it to whatever they are targeting
-    /varset simpleTargetID ${Target.ID}
-  }
-    |/echo building the spell array for heirlooms
-  /call BuildSingleSpellArrayBase "${spellName}" "castSimpleSpellArray2D" ${SkipParams}
-   
-    /call e3_Cast ${simpleTargetID} "castSimpleSpellArray2D" 1 False
-    /while (${Select[${castReturn},CAST_FIZZLE]}) {
-          /delay 1s
-          /call e3_Cast  ${simpleTargetID} "castSimpleSpellArray2D" 1 False
-    }
-
-/return
 |----------------------------------------------------------------------------|
 |- Whenever nothing else is going on will check if the toon has all the items in the gimme list
 |- and request items it doesn't have from the target character
@@ -2071,7 +2048,7 @@ SUB check_Supply
   /if (${Me.Combat}) /goto :endsupply
   /if (${Assisting}) /goto :endsupply
   /if (${Me.PctAggro} > 0) /goto :endsupply
-  
+ 
   /if (${Me.PctMana} == 100 && ${Me.PctHPs} == 100 ) { 
 		
     /if (!${Defined[Supply]}) /call IniToArrayV "${Character_Ini},Supply,Supply#" Supply
@@ -2109,11 +2086,23 @@ SUB check_Supply
 				}
 
 				/if (${supplyGem} == 0 || ${supplyGem} == NULL) { 
-           /echo Supply trying to get a:"${supplySpell}" 
-           /call castSimpleSpell "${supplySpell}" ${Me.ID}
+           
+           /call check_ReadySimple "${supplySpell}"
+           /if (${c_Ready}) {
+
+            /echo Supply trying to get a:"${supplySpell}" 
+            /call castSimpleSpell "${supplySpell}" ${Me.ID}
+
+           } else {
+             /echo Supply trying to get a:"${supplySpell}" failed for check_readySimplme
+           }
+           
        	} else {
            /echo Supply with Gem specific: ${supplySpell}/Gem|${supplyGem}
-           /call castSimpleSpellBase "${supplySpell}/Gem|${supplyGem}" ${Me.ID} False
+           /call check_ReadySimple "${supplySpell}" ${supplyGem}
+           /if (${c_Ready}) {
+              /call castSimpleSpellBase "${supplySpell}/Gem|${supplyGem}" ${Me.ID} False
+           }
 				}
 				/delay 20s ${Cursor.ID}
         /call ClearCursor
