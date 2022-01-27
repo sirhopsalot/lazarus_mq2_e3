@@ -2110,8 +2110,6 @@ SUB check_Supply
             /echo Supply trying to get a:"${supplySpell}" 
             /call castSimpleSpell "${supplySpell}" ${Me.ID}
 
-           } else {
-             /echo Supply trying to get a:"${supplySpell}" failed for check_readySimplme
            }
            
        	} else {
