@@ -1058,12 +1058,11 @@ sub castSimpleSpellBase(spellName, simpleTargetID, SkipParams)
 	/call check_Ready "castSimpleSpellArray2D" 1
 	/declare checkReadyCounter int local 0
     /while (!${c_Ready}) {
-		/echo castSimpleSpellBase:check_Ready: not ready, waiting: ${spellName}
+		
 		/delay 3
 		/call check_Ready "castSimpleSpellArray2D" 1		
 		/varcalc checkReadyCounter ${checkReadyCounter} +1
 		/if (${checkReadyCounter} > 6) {
-			/echo castSimpleSpellBase:check_Ready: failing after 6 attempts, kicking out. Things may break. 
 			/return
 		}
 	}

@@ -1840,28 +1840,45 @@ sub event_gimme(line, ChatSender, RequestedItem)
 		/if (${Bool[${Me.Book[${RequestedItem}]}]} || ${Bool[${Me.AltAbility[${RequestedItem}]}]}) {
 
 			/if (${DebugGimme}) /echo casting "${RequestedItem}"
-			/call castSimpleSpell "${RequestedItem}" ${Me.ID}
-     
+        /call check_ReadySimple "${RequestedItem}"
+        /if (${c_Ready}) {
+          /call castSimpleSpell "${RequestedItem}" ${Me.ID}
+        }     
     } else /if (${Bool[${Me.Book[Summon: ${RequestedItem}]}]}) {
 
 			/if (${DebugGimme}) /echo casting "Summon: ${RequestedItem}"
-      /call castSimpleSpell "Summon: ${RequestedItem}" ${Me.ID}
+      /call check_ReadySimple "Summon: ${RequestedItem}"
+      /if (${c_Ready}) {
+        /call castSimpleSpell "Summon: ${RequestedItem}" ${Me.ID}
+      }
+    
 		
 		} else /if (${Bool[${Me.Book[Summon ${RequestedItemStringWithoutSummoned}]}]}) {
 		
     	/if (${DebugGimme}) /echo casting "Summon ${RequestedItemStringWithoutSummoned}"
-      /call castSimpleSpell "Summon ${RequestedItemStringWithoutSummoned}" ${Me.ID}
+  
+      /call check_ReadySimple "Summon ${RequestedItemStringWithoutSummoned}"
+      /if (${c_Ready}) {
+        /call castSimpleSpell "Summon ${RequestedItemStringWithoutSummoned}" ${Me.ID}
+      }
     	/varset SummonSpellCast "Summon ${RequestedItemStringWithoutSummoned}"
 		
     } else /if (${Bool[${Me.Book[${RequestedItemStringWithoutSummoned}]}]} || ${Bool[${Me.AltAbility[${RequestedItemStringWithoutSummoned}]}]}) {
 		
     	/if (${DebugGimme}) /echo casting ${RequestedItemStringWithoutSummoned}
-	    /call castSimpleSpell "${RequestedItemStringWithoutSummoned}" ${Me.ID}
+      /call check_ReadySimple "${RequestedItemStringWithoutSummoned}"
+      /if (${c_Ready}) {
+        /call castSimpleSpell "${RequestedItemStringWithoutSummoned}" ${Me.ID}
+      }      
+	   
   
   	} else /if (${Bool[${RequestedItem.Find[Sanguine Mind Crystal]}]} && ${Bool[${Me.AltAbility[Sanguine Mind Crystal]}]}) {
 			/if (${DebugGimme}) /echo casting Sanguine Mind Crystal
-
-      /call castSimpleSpell "Sanguine Mind Crystal" ${Me.ID}
+      /call check_ReadySimple "Sanguine Mind Crystal"
+      /if (${c_Ready}) {
+         /call castSimpleSpell "Sanguine Mind Crystal" ${Me.ID}
+      }          
+     
 			
 		} else {
 			/delay 2s
