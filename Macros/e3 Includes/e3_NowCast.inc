@@ -112,6 +112,8 @@ SUB castNowSpells
         /call NowCast_CircularQueue_Pop
         /varset spellArgs ${Macro.Return}
         
+         /echo NowCast: pulling from queue:${spellArgs}
+
         /varset spellName ${spellArgs.Arg[1,,]}
         /varset spellTargetID ${spellArgs.Arg[2,,]}
 
@@ -179,6 +181,7 @@ SUB event_nowCast(line, ChatSender, Caster, spellName)
         /echo CastNow Queue is maxed, dropping ${spellName},${nowTargetID}
         /return
     }
+    /echo NowCast: Inserting into queue:  "${spellName},${nowTargetID}"
     /call NowCast_CircularQueue_Insert "${spellName},${nowTargetID}"
 	|c_SubToRun is used internally by e3_Cast, we are flaggint that if something was casting, we would like to interrupt 
     |once we leave this  e3_Casting should check the flag and then call an interrupt
