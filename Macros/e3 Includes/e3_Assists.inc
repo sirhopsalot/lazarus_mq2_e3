@@ -256,7 +256,7 @@ SUB check_AssistStatus
       /if (!${Me.AutoFire}) /autofire on
     }
   }
-  /if ((!${Me.Casting.ID} || ${Me.Class.ShortName.Equal[BRD]}) && (${Me.Combat} || ${Me.CombatState.Equal[Combat]} ||  ${AssistTarget} >0 ) && ${Defined[Abilities2D]}) /call CombatAbilities
+  /if ((!${Me.Casting.ID} || ${Me.Class.ShortName.Equal[BRD]}) && (${Me.Combat} || ${Me.CombatState.Equal[Combat]} ||  ${AssistTarget} >0 ) && ${Target.ID} == ${AssistTarget} && ${Defined[Abilities2D]}) /call CombatAbilities
 /if (${Debug} || ${Debug_Assists}) /echo <== check_AssistStatus -|
 /RETURN
 
