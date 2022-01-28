@@ -46,6 +46,59 @@ Sub NowCast_CircularQueue_Pop
     /varcalc nowSpellArrayQueueCount ${nowSpellArrayQueueCount}-1
 
 /return ${returnValue}
+
+
+Sub NowCast_CircularQueue_Empty
+    /varset nowSpellArrayQueueCount 0
+    /varset nowSpellArrayQueueIndexFront 0
+    /varset nowSpellArrayQueueIndexBack -1
+
+/return
+
+Sub NowCast_CircularQueue_Peek
+    /if (${nowSpellArrayQueueCount}==0) {
+        /echo NowCast Queue Empty Already
+        /return
+    }
+    /declare returnValue string local ${nowSpellArrayQueue[${Math.Calc[${nowSpellArrayQueueIndexFront}+1]}]}
+    
+/return ${returnValue}
+
+|0 based index
+Sub NowCast_CircularQueue_PeekIndex(indexValue)
+    /if (${nowSpellArrayQueueCount}==0) {
+        /echo NowCast Queue Empty Already
+        /return
+    }
+   
+    /declare arrayIndex int local  ${Math.Calc[(${nowSpellArrayQueueIndexFront} + ${indexValue} ) % ${nowSpellArrayQueueMax}]}
+    /varCalc arrayIndex ${arrayIndex}+1
+    /declare returnValue string local ${nowSpellArrayQueue[${arrayIndex}]}
+    |/echo PeekIndex Front:${nowSpellArrayQueueIndexFront} back:${nowSpellArrayQueueIndexBack}  of input index: ${indexValue}, array index:${arrayIndex} return value: ${returnValue}
+
+/return ${returnValue}
+
+Sub NowCast_CircularQueue_PrintQueue
+  /if (${nowSpellArrayQueueCount}==0) {
+    /echo NowCast Queue Empty Already
+    /return
+  }
+  /declare counter int local 0
+  /declare itemValue string local
+
+  |loop through the current queue,
+  /while (${counter}< ${nowSpellArrayQueueCount}) {
+    /call NowCast_CircularQueue_PeekIndex ${counter}
+    /varset itemValue ${Macro.Return}
+    /echo ${counter}) ${itemValue}
+    /varcalc counter ${counter}+1
+  }
+    
+/return
+
+
+
+
 | Casts the spell at the front of the queue
 SUB castNowSpells
     |a check to make double sure we notify the rest of the program we are not casting yet.
@@ -72,9 +125,8 @@ SUB castNowSpells
 
         /if (${Bool[${Me.Book[${spellName}]}]}) {
             |if this is a spell, delay up to 0.3 sec for the spell gems to be ready
-            /delay 3 ${Me.SpellReady[${spellName}]}
+            /delay 1s ${Me.SpellReady[${spellName}]}
         }
-       
         /if (${Me.SpellReady[${spellName}]} || ${Me.AltAbilityReady[${spellName}]} || ${Me.ItemReady[${spellName}]}) {
             /call castNowSpell "${spellName}" ${spellTargetID}
             /if (!(${ActionTaken} && ${castReturn.Equal[CAST_SUCCESS]})) {

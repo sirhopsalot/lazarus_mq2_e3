@@ -371,7 +371,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 |- check for reasons to cancel casting
 		
 		/if (${Window[CastingWindow].Open}) {
-		   /varset c_SubToRun True
+		 
 		  |dont allow item swap/must equip interrupts to avoid crashes
 			|/echo checking is still open
 		   	/if (${Me.Class.ShortName.Equal[BRD]}) {
@@ -395,10 +395,10 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 					/call ${${ArrayName}[${ArrayIndex},${iSubToRun}]} ${ArrayName} ${ArrayIndex}
 
 					/if (!${c_SubToRun}) {
-					
+						/varset c_SubToRun True
 						/echo [${Time}]: E3_Cast SubToRun called interrupt for spell: ${pendingCast}
 					 	/call interrupt
-						/delay 3
+						/delay 1s
 						/varset castReturn CAST_INTERRUPTED
 						/goto :skipCast
 					}
@@ -413,7 +413,8 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 				/doevents nowCast
 				|check to see if now Cast has decided to interrupt the casting.
 				/if (!${g_CastNowSpellCasting} && (!${c_SubToRun})) {
-							/echo [${Time}]: E3_Cast nowCast called interrupt ${${ArrayName}[${ArrayIndex},${iSubToRun}]}
+							/varset c_SubToRun True
+							/echo [${Time}]: E3_Cast nowCast called interrupt for ${pendingCast}
 							/call interrupt
 							/delay 3
 							/varset castReturn CAST_INTERRUPTED
@@ -761,6 +762,14 @@ Sub interrupt
     /if (!${NetBots[${Me.Name}].Mounted}) {
         /interrupt
     } 
+	|we don't leave this method unless the previous spell is stopped
+	|because of horses we just wait till the window is done, to preserve logic
+	|flow
+	/while (${Window[CastingWindow].Open}) {
+		/delay 1
+	}
+	
+
 /return
 
 |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
