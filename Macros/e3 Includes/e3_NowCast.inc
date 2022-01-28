@@ -112,22 +112,22 @@ SUB castNowSpell(spellName, targetID)
 SUB event_nowCast(line, ChatSender, Caster, spellName)
     /if (${Bool[${Caster}]} &&!${Me.Name.Equal[${Caster}]}) /return
 
-    /declare targetID int local ${Me.ID}
+    /declare nowTargetID int local ${Me.ID}
     /declare spellIndexStart int local 0
-    /declare targetIDIndex int local 0
+    /declare nowTargetIDIndex int local 0
 
     /if (${Bool[${spellName.Length}]}) {
-        /varset targetIDIndex ${spellName.Find[targetid]}
-        /if (${targetIDIndex}>0) {
-            /varset targetID ${spellName.Token[2,=]}
-            /varset spellName ${spellName.Left[${Math.Calc[${targetIDIndex}-2]}]}       
+        /varset nowTargetIDIndex ${spellName.Find[targetid]}
+        /if (${nowTargetIDIndex}>0) {
+            /varset nowTargetID ${spellName.Token[2,=]}
+            /varset spellName ${spellName.Left[${Math.Calc[${nowTargetIDIndex}-2]}]}       
         }
     }
     /if (${nowSpellArrayQueueCount}==${nowSpellArrayQueueMax}) {
-        /echo CastNow Queue is maxed, dropping ${spellName},${targetID}
+        /echo CastNow Queue is maxed, dropping ${spellName},${nowTargetID}
         /return
     }
-    /call NowCast_CircularQueue_Insert "${spellName},${targetID}"
+    /call NowCast_CircularQueue_Insert "${spellName},${nowTargetID}"
 	|c_SubToRun is used internally by e3_Cast, we are flaggint that if something was casting, we would like to interrupt 
     |once we leave this  e3_Casting should check the flag and then call an interrupt
     /if (!${g_CastNowSpellCasting}) /varset c_SubToRun FALSE
