@@ -159,6 +159,13 @@ sub check_BardSongs
       /varset songGemValue ${Macro.Return}
       /call BardClass_CircularQueue_Insert "${songGemValue}"      
     }
+  } else /if (${songGemValue.Equal[Requiem of Time]}) {
+    /if (${Target.Buff[Requiem of Time].Duration.TotalSeconds}>30) {
+      |If the target already has the slow on, ignore it. and skip to the next song.
+      /call BardClass_CircularQueue_Pop
+      /varset songGemValue ${Macro.Return}
+      /call BardClass_CircularQueue_Insert "${songGemValue}"      
+    }
   }
  
   |End figuring out what song/item
@@ -316,6 +323,7 @@ SUB EVENT_startMelody(line, ChatSender, melodyName)
           |let gems reset
           /delay 3
       }
+      /stopcast
      
     } else /if (${Select[${melodyName},Pause]}) { 
       
