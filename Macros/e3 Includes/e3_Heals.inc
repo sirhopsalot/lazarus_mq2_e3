@@ -755,7 +755,7 @@ SUB check_HealCasting_DuringBurns
 |---------------------------------------------------------------------------|
 |- Used with heals spells to interrupt so that we can heal tanks/xtargets  -|
 |---------------------------------------------------------------------------|
-SUB check_TankAndXTargetNeedHeal
+SUB check_TankAndXTargetNeedHeal(ArrayName)
 
 	/declare currentBot string local NULL
 	/declare currentSpellIndx int local
@@ -765,12 +765,14 @@ SUB check_TankAndXTargetNeedHeal
 	/declare s int local	
 
 	/varset c_SubToRun TRUE
+	 /if (!${Select[${ArrayName},hotSpells2D]}) {
 
-	/if (${Spawn[id ${Target.ID}].PctHPs} > ${interruptHealPct}) {
-		/echo [${Time}]: check_TankAndXTargetNeedHeal target above threshold for heals, setting interrupt flag
-		/varset c_SubToRun FALSE
-		/return
-	}
+		/if (${Spawn[id ${Target.ID}].PctHPs} > ${interruptHealPct}) {
+			/echo [${Time}]: check_TankAndXTargetNeedHeal target above threshold for heals, setting interrupt flag
+			/varset c_SubToRun FALSE
+			/return
+		}
+	 }
 	/if (${healTanks}) {
 		|/echo check_HealTankCasting_DuringDetrimental checking tank heals
 		/for t 1 to ${tanks.Size}
@@ -831,7 +833,7 @@ SUB check_TankAndXTargetNeedHeal
 
 
 |---------------------------------------------------------------------------|
-|- Used with heals spells to interrupt so that we can heal tanks/xtargets  -|
+|- Used with heals spells to interrupt so that we can heal tanks		   -|
 |---------------------------------------------------------------------------|
 SUB check_TankNeedHeal
 

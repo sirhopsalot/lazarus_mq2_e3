@@ -314,7 +314,7 @@ SUB CombatAbilities
         /if (!${Select[${Me.Inventory[Offhand].Type},Shield]} && !${Me.AltAbility[2 Hand Bash]}) /goto :skipAbility
         |can't do anything if stunned.
         /if (${Me.Stunned}) /goto :skipAbility
-        /if (${Target.Distance} >10) /goto :skipAbility
+        /if (${Target.Distance} >14) /goto :skipAbility
         
       }
       /if (${Me.AbilityReady[${Abilities2D[${i},${iCastName}]}]}) {
