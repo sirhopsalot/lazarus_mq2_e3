@@ -635,7 +635,10 @@ SUB check_OffAssistSpells
 |- Enables Debuffing on a Target                    -|
 |----------------------------------------------------|
 SUB check_Debuffs
-  /if (${Defined[Command_Debuffs2D]}) /call Debuffs_OnCommand
+  /if (${Defined[Command_Debuffs2D]}) {
+    /call Debuffs_OnCommand
+  } 
+  
   /if (${Defined[All_Debuffs2D]}) /call Debuffs_OnAll
 	/if (${Assisting} && ${Defined[Assist_Debuffs2D]}) /call cast_longTermSpells "${AssistTarget}" "Assist_Debuffs2D"
 /if (${Debug} || ${Debug_Assists}) /echo <== check_Debuffs -|
@@ -719,6 +722,7 @@ SUB cast_longTermSpells(int spellTarget, string ArrayName)
                /varset ${ArrayName}[${s},${iSubToRun}] check_HealCasting_DuringDetrimental
             }
           /call e3_Cast ${spellTarg} "${ArrayName}" "${s}"
+       
         } else {
           /if (${Debug} || ${Debug_Assists}) /echo ${spellTarg} out of range for ${${ArrayName}[${s},${iMyRange}]} ${${ArrayName}[${s},${iCastName}]}
           /goto :skipCast

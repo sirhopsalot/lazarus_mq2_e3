@@ -1372,7 +1372,7 @@ SUB checkEventArgs(ChatSender, eventLine, UZR, ArgData)
     /call argueString include| "${eventLine}"
     /if (${check_selectedBots[${c_argueString},${ChatSender}]}) /varset includeBot TRUE
   }
-  |/echo ${userValidated} && ${includeBot} && ${inRange} && ${inZone}
+  |/echo checkEventArgs:${userValidated} && ${includeBot} && ${inRange} && ${inZone}
   /if (${userValidated} && ${includeBot} && ${inRange} && ${inZone}) /varset c_eventArg TRUE
   /varset c_eventArgChatSender ${ChatSender}
   /if (${Bool[${ArgData}]}) {

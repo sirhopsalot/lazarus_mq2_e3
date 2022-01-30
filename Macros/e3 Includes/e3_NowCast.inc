@@ -106,13 +106,14 @@ SUB castNowSpells
     /declare spellArgs string local 
     /declare spellName string local
     /declare spellTargetID int local
-    
+    /declare GCDOver bool local false
+
     /while (${nowSpellArrayQueueCount}>0) {
         |get the value out of the queue
         /call NowCast_CircularQueue_Pop
         /varset spellArgs ${Macro.Return}
         
-         /echo NowCast: pulling from queue:${spellArgs}
+         |/echo NowCast: pulling from queue:${spellArgs}
 
         /varset spellName ${spellArgs.Arg[1,,]}
         /varset spellTargetID ${spellArgs.Arg[2,,]}
@@ -125,10 +126,29 @@ SUB castNowSpells
         /if (${DebugNowCast}) /echo nowCast targetID: ${spellTargetID} 	
         | Check if SpellReady/AltAbilityReady
 
-        /if (${Bool[${Me.Book[${spellName}]}]}) {
-            |if this is a spell, delay up to 0.3 sec for the spell gems to be ready
-            /delay 1s ${Me.SpellReady[${spellName}]}
-        }
+        /if (${Bool[${Me.Book[${spellName}]}]} && !${Me.Class.ShortName.Equal[BRD]}) {
+           
+            /varset GCDOver false
+            /while (!${GCDOver}) {
+                |/echo [${Time}] Now_cast: checking to see if GCD is over
+                /call check_GCD 
+                /varset GCDOver ${Macro.Return}
+                /delay 1
+            }
+        } else /if (${Me.Class.ShortName.Equal[BRD]}) {
+               
+                /while (${Window[CastingWindow].Open}) {
+                    /delay 1
+                }
+                /delay 1
+                /stopcast
+                /varset GCDOver false
+                /while (!${GCDOver}) {
+                    /call check_GCD 
+                    /varset GCDOver ${Macro.Return}
+                    /delay 1
+                }
+        }   
         /if (${Me.SpellReady[${spellName}]} || ${Me.AltAbilityReady[${spellName}]} || ${Me.ItemReady[${spellName}]}) {
             /call castNowSpell "${spellName}" ${spellTargetID}
             /if (!(${ActionTaken} && ${castReturn.Equal[CAST_SUCCESS]})) {
@@ -158,6 +178,7 @@ SUB castNowSpell(spellName, targetID)
         /varset g_CastNowSpellCasting TRUE
         /call castSimpleSpell "${whatToCast}" ${targetID}
         /varset g_CastNowSpellCasting False
+       
 	}
 /RETURN
 | Add a spell to the queue with no targetid
@@ -181,7 +202,7 @@ SUB event_nowCast(line, ChatSender, Caster, spellName)
         /echo CastNow Queue is maxed, dropping ${spellName},${nowTargetID}
         /return
     }
-    /echo NowCast: Inserting into queue:  "${spellName},${nowTargetID}"
+    |/echo NowCast: Inserting into queue:  "${spellName},${nowTargetID}"
     /call NowCast_CircularQueue_Insert "${spellName},${nowTargetID}"
 	|c_SubToRun is used internally by e3_Cast, we are flaggint that if something was casting, we would like to interrupt 
     |once we leave this  e3_Casting should check the flag and then call an interrupt

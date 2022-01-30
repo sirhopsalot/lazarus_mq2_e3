@@ -609,7 +609,7 @@ sub event_playerHammer(line, ChatSender)
 	  /if (${Bool[${FindItem[=Hammer of Damnation]}]}) {
         /ItemNotify "Hammer of Damnation" leftmouseup
       } else {
-		/call castSimpleSpell "Hammer of Damnation" 0
+		  /call castSimpleSpell "Hammer of Damnation" 0
 	  }
       /delay 6s ${Cursor.ID}
       /click left target

@@ -544,10 +544,10 @@ SUB loot_Setup
   /call iniToVarV "${genSettings_Ini},Loot,Loot in Combat" combatLooting bool outer
 	| Import character settings
 	/if (${Bool[${Ini[${Character_Ini},Misc,Auto-Loot (On/Off)]}]}) /call iniToVarV "${Character_Ini},Misc,Auto-Loot (On/Off)" Auto_Loot bool outer
-  	/if (${Ini[${genSettings_Ini},Loot,Loot Only Stackable: Enable (On/Off)].Length}) /call iniToVarV "${genSettings_Ini},Loot,Loot Only Stackable: Enable (On/Off)" LootOnlyStackableEnabled bool outer
-  	/if (${Ini[${genSettings_Ini},Loot,Loot Only Stackable: With Value Greater Than Or Equal in Copper].Length}) /call iniToVarV "${genSettings_Ini},Loot,Loot Only Stackable: With Value Greater Than Or Equal in Copper" LootOnlyStackableValueGreater int outer
-  	/if (${Ini[${genSettings_Ini},Loot,Loot Only Stackable: Loot common tradeskill items ie:pelts ores silks etc (On/Off)].Length}) /call iniToVarV "${genSettings_Ini},Loot,Loot Only Stackable: Loot common tradeskill items ie:pelts ores silks etc (On/Off)" LootOnlyStackableTradeSkillsCommon bool outer
-  	/if (${Ini[${genSettings_Ini},Loot,Loot Only Stackable: Loot all Tradeskill items (On/Off)].Length})  /call iniToVarV "${genSettings_Ini},Loot,Loot Only Stackable: Loot all Tradeskill items (On/Off)" LootOnlyStackableTradeSkillsALL bool outer
+  /if (${Ini[${genSettings_Ini},Loot,Loot Only Stackable: Enable (On/Off)].Length}) /call iniToVarV "${genSettings_Ini},Loot,Loot Only Stackable: Enable (On/Off)" LootOnlyStackableEnabled bool outer
+  /if (${Ini[${genSettings_Ini},Loot,Loot Only Stackable: With Value Greater Than Or Equal in Copper].Length}) /call iniToVarV "${genSettings_Ini},Loot,Loot Only Stackable: With Value Greater Than Or Equal in Copper" LootOnlyStackableValueGreater int outer
+  /if (${Ini[${genSettings_Ini},Loot,Loot Only Stackable: Loot common tradeskill items ie:pelts ores silks etc (On/Off)].Length}) /call iniToVarV "${genSettings_Ini},Loot,Loot Only Stackable: Loot common tradeskill items ie:pelts ores silks etc (On/Off)" LootOnlyStackableTradeSkillsCommon bool outer
+  /if (${Ini[${genSettings_Ini},Loot,Loot Only Stackable: Loot all Tradeskill items (On/Off)].Length})  /call iniToVarV "${genSettings_Ini},Loot,Loot Only Stackable: Loot all Tradeskill items (On/Off)" LootOnlyStackableTradeSkillsALL bool outer
 
 /if (${Debug} || ${Debug_Loot}) /echo <== _Setup -|
 /RETURN

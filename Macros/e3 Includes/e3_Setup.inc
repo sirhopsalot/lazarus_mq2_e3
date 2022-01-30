@@ -142,6 +142,7 @@ SUB e3_Setup(modeSelect)
 	/next i
   |Set Turbo per class based on configuration
   /if (${${IniMode}[${advSettings_Ini},Turbo,${Me.Class.ShortName}].Length}) /declare classTurbo int outer ${${IniMode}[${advSettings_Ini},Turbo,${Me.Class.ShortName}]}
+  
   /squelch /turbo ${classTurbo}
 
 	|Ewiclip: Adding auto-casting of Necromancer orb heals. 

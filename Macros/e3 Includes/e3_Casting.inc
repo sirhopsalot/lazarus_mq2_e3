@@ -30,6 +30,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 |StopEchos = Skips the /echo on successful cast if a value other than 0 is passed with the /call e3_Cast
 /if (${Debug} || ${Debug_Casting}) /echo |- e3_Cast ==>
 
+	/varset castReturn  
 	|if we are a bard, and not doing async twisting this section of code
 	|will 'block' as the check_BardSongs does not block on its call.
 	|this allows other check_ Methods to run to do their computation while the spell is running
@@ -269,7 +270,26 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 		}
 		
 		/if (${${ArrayName}[${ArrayIndex},${iTargetType}].Equal[Self]}) {
-			/casting "${pendingCast}|${pendingType}"
+			
+			|bards songs don't work with /casting, have to do it ourselves
+			/if (${Bool[${Me.Book[${pendingCast}]}]} && ${Me.Class.ShortName.Equal[BRD]}) {
+				/echo e3_Cast issuing a raw cast for :"${pendingCast}"
+				/cast "${pendingCast}"
+                /delay 5 ${Window[CastingWindow].Open}
+                /if (!${Window[CastingWindow].Open}) {
+					/echo e3_Cast issuing stopcast as cast window isn't open
+			        /stopcast
+                    /delay 1
+                    /cast ${pendingCast}
+                    /delay 3
+                }
+
+                /varset castReturn CAST_SUCCESS
+                /varset ActionTaken True
+
+			} else {
+				/casting "${pendingCast}|${pendingType}"
+			}
 			/delay 3
 			/declare castWindowWaitCounter int local 0
 			/if (${e3_CastTime}>500) {
@@ -286,31 +306,29 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 					}
 				}
 			}
-			|**/if (${pendingType.Equal[Item]}) {
-				/delay 3
-			} else {
-				/delay 5
-			}**|	
-			|**/if (${pendingType.Equal[Item]}) {
-
-				/useitem "${pendingCast}"
-				|set to a default good value unless overwritten for a reason
-				/varset castReturn CAST_SUCCESS
-				|Note when using /useitem, if the next 'cast' is a spell you need a 0.3 sec delay similar to bard songs.
-				|Possible optimizations to pass in to use the delay or not, but be warned, not using the delay
-				|and the spell is the next can get you to a point where your spell gems lock up and need to use an AA to fix.
-				/delay 3
-				
-
-			} else {
-				/casting "${pendingCastID}|${pendingType}"
-				/delay 3		
-			}**|
-
-		} else {
-			|/echo /casting "${pendingCast}|${pendingType}" "-targetid|${targetID}"
 			
-			/casting "${pendingCast}|${pendingType}" "-targetid|${targetID}"
+		} else {
+			
+			|bards songs don't work with /casting, have to do it ourselves
+			/if (${Bool[${Me.Book[${pendingCast}]}]} && ${Me.Class.ShortName.Equal[BRD]}) {
+				/cast "${pendingCast}"
+               
+                /delay 5 ${Window[CastingWindow].Open}
+                
+                /if (!${Window[CastingWindow].Open}) {
+                    /stopcast
+                    /delay 1
+                    /cast ${pendingCast}
+                    /delay 3
+                }
+
+                /varset castReturn CAST_SUCCESS
+                /varset ActionTaken True
+
+			} else {
+				/casting "${pendingCast}|${pendingType}" "-targetid|${targetID}"
+			}
+			
 			|delay 3 is enough time to have result come back with fizzle
 			/delay 3
 			/declare castWindowWaitCounter int local 0
@@ -329,37 +347,6 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 				}
 			}
 			
-			|**/if (${pendingType.Equal[Item]}) {
-				/delay 3
-			} else {
-				/delay 5
-			}**|		
-			|**/if (${pendingType.Equal[Item]}) {
-				/declare i_target int local 0
-				|/echo getting tareget for item
-				/for i 1 to 5
-					/if (${Bool[${Target.ID} != ${targetID}]}) {
-						/target id ${targetID}
-						/delay 1
-					} else {
-						|ExitLoop if target is correct
-						/break
-				}
-				/next i_target
-				|/echo casting item "${pendingCast}" on ${targetID}
-				/useitem "${pendingCast}"
-				|set to a default good value unless overwritten for a reason
-				/varset castReturn CAST_SUCCESS
-				|Note when using /useitem, if the next 'cast' is a spell you need a 0.3 sec delay similar to bard songs.
-				|Possible optimizations to pass in to use the delay or not, but be warned, not using the delay
-				|and the spell is the next can get you to a point where your spell gems lock up and need to use an AA to fix.
-				/delay 3
-				|set to a default good value unless overwritten for a reason
-				
-			} else {
-				/casting "${pendingCastID}|${pendingType}" "-targetid|${targetID}"
-				/delay 3
-			}**|
 		}
 		|- Memorizing spell
 		/if (${Cast.Status.Find[M]}) /delay 3s !${Cast.Status.Find[M]}
@@ -486,31 +473,34 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 		}
 		
   :interrupted
-		|At this point the cast window is closed, but we may need to delay to get the result. 
-		|note, if we don't find the result in 2 seconds, soemthing has gone wrong
-		|it will use the previous cast return instead. There is a bug here for item lockups
-		|so we let this continue to loop back around and remove the item lock
-		/delay 2s !${Cast.Status.Find[C]}
-		/varset castReturn ${Cast.Result}
-		|- Cast Result Processing
-		  /if (${castReturn.Equal[CAST_INTERRUPTED]} || ${interruptFlag}) {
-			/varset castReturn CAST_INTERRUPTED
-		} else /if (${castReturn.Equal[CAST_SUCCESS]}) {
-			/varset lastSuccessfulCast ${pendingCast}
-		} else /if (${castReturn.Equal[CAST_RESIST]}) {
-			/if (${Debug_Casting} && ${Target.ID}) /docommand ${ChatToggle} ** ${Target.Name} resisted ${pendingCast} **
-		} else /if (${castReturn.Equal[CAST_IMMUNE]}) {
-      /docommand ${ChatToggle} ${Target.Name} is immune to ${pendingCast} **
-			/varset immuneList ${immuneList}${pendingCastID}_${castTargetName},
-    |dont create a nohold timer for detrimental AE spells
-		} else /if (${castReturn.Equal[CAST_TAKEHOLD]} && ${Select[${ArrayName},TargetAE_Spells2D,PBAE_Spells2D]}==0) {
-     		 /if (${Target.ID}==${targetID}) {
-				/docommand ${ChatToggle} ** ${pendingCast} did not take hold on ${castTargetName} **
-       			/call CreateTimer "nht${targetID}-${pendingCastID}" "${noHoldDelay}"
+		|only check casting if its not a bard spell, as it uses raw /cast
+		/if (!(${Bool[${Me.Book[${pendingCast}]}]} && ${Me.Class.ShortName.Equal[BRD]})) { 
+			|At this point the cast window is closed, but we may need to delay to get the result. 
+			|note, if we don't find the result in 2 seconds, soemthing has gone wrong
+			|it will use the previous cast return instead. There is a bug here for item lockups
+			|so we let this continue to loop back around and remove the item lock
+			/delay 2s !${Cast.Status.Find[C]}
+			/varset castReturn ${Cast.Result}
+			|- Cast Result Processing
+				/if (${castReturn.Equal[CAST_INTERRUPTED]} || ${interruptFlag}) {
+				/varset castReturn CAST_INTERRUPTED
+			} else /if (${castReturn.Equal[CAST_SUCCESS]}) {
+				/varset lastSuccessfulCast ${pendingCast}
+			} else /if (${castReturn.Equal[CAST_RESIST]}) {
+				/if (${Debug_Casting} && ${Target.ID}) /docommand ${ChatToggle} ** ${Target.Name} resisted ${pendingCast} **
+			} else /if (${castReturn.Equal[CAST_IMMUNE]}) {
+			/docommand ${ChatToggle} ${Target.Name} is immune to ${pendingCast} **
+				/varset immuneList ${immuneList}${pendingCastID}_${castTargetName},
+			|dont create a nohold timer for detrimental AE spells
+			} else /if (${castReturn.Equal[CAST_TAKEHOLD]} && ${Select[${ArrayName},TargetAE_Spells2D,PBAE_Spells2D]}==0) {
+					/if (${Target.ID}==${targetID}) {
+					/docommand ${ChatToggle} ** ${pendingCast} did not take hold on ${castTargetName} **
+					/call CreateTimer "nht${targetID}-${pendingCastID}" "${noHoldDelay}"
+				}
+			} else /if (${Select[${castReturn},CAST_OUTDOORS,CAST_COMPONENTS,CAST_UNKNOWN]}) {
+				/docommand ** ${ChatToggle} Adding to failureList due to Return Events CAST_OUTDOORS,CAST_COMPONENT,CAST_UNKNOWN
+				/varset failureList ${failureList}${pendingCastID},		
 			}
-		} else /if (${Select[${castReturn},CAST_OUTDOORS,CAST_COMPONENTS,CAST_UNKNOWN]}) {
-			/docommand ** ${ChatToggle} Adding to failureList due to Return Events CAST_OUTDOORS,CAST_COMPONENT,CAST_UNKNOWN
-			/varset failureList ${failureList}${pendingCastID},		
 		}
   }
 
