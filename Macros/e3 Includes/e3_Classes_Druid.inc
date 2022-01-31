@@ -64,7 +64,9 @@ Sub DRU_Background_Events
 
 | Automatically cast group AA Communion of the Cheetah whenever the buff is missing on the Druid and the druid doesn't have Selo's Sonata
 SUB autoCheetah
-  /if (${autoCheetahOn} && !${Me.Buff[Selo's Sonata].ID} && (!${Me.Buff[Spirit of Cheetah].ID} || ${Me.Buff[Spirit of Cheetah].Duration.TotalSeconds} < 10) && !${Me.Invis} && ${Me.AltAbilityReady[Communion of the Cheetah]}) {
+
+
+  /if (${autoCheetahOn} && !${Me.Buff[Selo's Sonata].ID} && !${Me.Buff[Selo's Accelerating Chorus].ID} && (!${Me.Buff[Spirit of Cheetah].ID} || ${Me.Buff[Spirit of Cheetah].Duration.TotalSeconds} < 10) && !${Me.Invis} && ${Me.AltAbilityReady[Communion of the Cheetah]}) {
 	/alt act 939
   }
 /RETURN

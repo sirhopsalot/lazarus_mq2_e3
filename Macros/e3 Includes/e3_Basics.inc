@@ -2083,7 +2083,7 @@ SUB check_Supply
 			/varset supplyGem ${Supply[${i}].Arg[4,|]}
 			/if (!${Defined[SupplyTimer${i}]}) /declare SupplyTimer${i} timer outer 0
 			/if (!${Bool[${FindItem[=${supplyItem}]}]} && ${SupplyTimer${i}} == 0) {
-				/echo ==> Supply: Creating a ${supplyItem} using ${supplySpell}
+				/echo [${Time}]: Supply: Creating a ${supplyItem} using ${supplySpell}
 				/delay 1
 				/tar ${Me}
 				/delay 1
@@ -2107,13 +2107,13 @@ SUB check_Supply
            /call check_ReadySimple "${supplySpell}"
            /if (${c_Ready}) {
 
-            /echo Supply trying to get a:"${supplySpell}" 
+            /echo [${Time}]: Supply trying to get a:"${supplySpell}" 
             /call castSimpleSpell "${supplySpell}" ${Me.ID}
 
            }
            
        	} else {
-           /echo Supply with Gem specific: ${supplySpell}/Gem|${supplyGem}
+           /echo [${Time}]: Supply with Gem specific: ${supplySpell}/Gem|${supplyGem}
            /call check_ReadySimple "${supplySpell}" ${supplyGem}
            /if (${c_Ready}) {
               /call castSimpleSpellBase "${supplySpell}/Gem|${supplyGem}" ${Me.ID} False

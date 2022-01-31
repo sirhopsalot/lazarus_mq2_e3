@@ -55,7 +55,6 @@ SUB Main(modeSelect)
       /if (${mainLoop_IsHealer}) {
         /call check_Heals
       }
-      
       /for i 1 to ${mainLoop_Array.Size}
 				/if (${Bool[${mainLoop_Array[${i}]}]}) {
           /call ${mainLoop_Array[${i}]}

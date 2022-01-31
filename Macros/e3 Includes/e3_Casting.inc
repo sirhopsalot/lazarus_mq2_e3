@@ -579,10 +579,12 @@ Sub check_Ready(ArrayName, int ArrayIndex)
   | Memorize the spell if it is not memorized
   
   /if (${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Spell]}) {
+ 
     /if (!${Bool[${Me.Gem[${${ArrayName}[${ArrayIndex},${iCastName}]}]}]}) {
  		/call memorize_spell "${${ArrayName}[${ArrayIndex},${iCastName}]}" ${${ArrayName}[${ArrayIndex},${iSpellGem}]}
 	}
 	/if (${Me.SpellReady[${${ArrayName}[${ArrayIndex},${iCastName}]}]}) /varset c_Ready TRUE
+ 
   } else /if (${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Item]}) {
 	|Need to check if we already have this item on cooldown
 	/declare itemID int local ${FindItem[=${${ArrayName}[${ArrayIndex},${iCastName}]}].ID}
@@ -638,7 +640,7 @@ Sub check_ReadySimple(spellName, gemToUse)
   /if (${spellType.Equal[Spell]}) {
     /if (!${Bool[${Me.Gem[${spellName}]}]}) {
 		/declare tempGemNum int local ${DefaultGem}
-		/if (${Bool[gemTouse]}) {
+		/if (${Bool[${gemToUse}]}) {
 			/varset tempGemNum ${gemToUse}
 		}
 		/call memorize_spell "${spellName}" ${tempGemNum}
