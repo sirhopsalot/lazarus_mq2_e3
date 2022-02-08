@@ -1465,8 +1465,8 @@ SUB useBurns(ArrayName)
       /if (${Debug} || ${Debug_Assists}) /echo useBurns ${ArrayName}: NotReady: ${i} ${${ArrayName}[${i},${iCastName}]}
     }
     :skipCurrent
-    /if (${isHealer}) {
-        |interupt stoning if we have someone to heal
+    /if (${isHealer} && !${${ArrayName}[${i},${iNoInterrupt}]} && !${ArrayName.Equal[EPICBurns2D]}) {
+        |interupt burning if we have someone to heal
         /call check_HealCasting_DuringBurns
         /if (!${c_SubToRun}) {
           	/echo [${Time}]: useBurns: ${ArrayName}: healer needs to heal jumping out of burn.
