@@ -202,8 +202,29 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 	} else /if (${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Ability]}) {
 		/if (${Me.AbilityReady[${pendingCast}]}) {
       	   /varset ActionTaken TRUE
-			/doability "${pendingCast}"
-			/delay 3 !${Me.AbilityReady[${pendingCast}]}
+		   |Slam is a special case and doesn't work with the normal /doability, this is a work around
+		   /if (${pendingCast.Equal[Slam]}) {
+
+				/if (${Window[ActionsAbilitiesPage].Child[AAP_FirstAbilityButton].Text.Equal[Slam]}) {
+					/doability 1
+				} else /if (${Window[ActionsAbilitiesPage].Child[AAP_SecondAbilityButton].Text.Equal[Slam]}) {
+					/doability 2
+				} else /if (${Window[ActionsAbilitiesPage].Child[AAP_ThirdAbilityButton].Text.Equal[Slam]}) {
+					/doability 3
+				} else /if (${Window[ActionsAbilitiesPage].Child[AAP_FourthAbilityButton].Text.Equal[Slam]}) {
+					/doability 4
+				} else /if (${Window[ActionsAbilitiesPage].Child[AAP_FifthAbilityButton].Text.Equal[Slam]}) {
+					/doability 5
+				} else /if (${Window[ActionsAbilitiesPage].Child[AAP_SixthAbilityButton].Text.Equal[Slam]}) {
+					/doability 6
+				}
+
+		   } else {
+		
+			   /doability "${pendingCast}"
+		
+		   }
+		   /delay 3 !${Me.AbilityReady[${pendingCast}]}
     	}
 	|-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	|- Spells, AA, Items
