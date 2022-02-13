@@ -989,51 +989,59 @@ sub BardSongWaitLockPumpQueue
   } 
 |Block in case we are currently casting a previous song
   /while (${Window[CastingWindow].Open}) {
-  /doevents startMelody
-  /if (!${playingMelody}) {
-    /echo issuing stopcast and kicking out
-    /stopcast
-    /return
-  }
-  /call ActivateSelosKick
+    
+    /doevents nowCast
 
-  /doevents Follow
-  /if (!${Window[CastingWindow].Open}) {
-    /break
+    /if (${nowSpellArrayQueueCount}>0) {
+        |check to see if we have spell(s) ready in nowCast that may have interrupted the above call
+        /call castNowSpells
+
+    }
+    /doevents startMelody
+    /if (!${playingMelody}) {
+      /echo issuing stopcast and kicking out
+      /stopcast
+      /return
+    }
+    /call ActivateSelosKick
+
+    /doevents Follow
+    /if (!${Window[CastingWindow].Open}) {
+      /break
+    }
+    /doevents Stop
+    /if (!${Window[CastingWindow].Open}) {
+      /break
+    }
+    /doevents MoveHere
+    /if (!${Window[CastingWindow].Open}) {
+      /break
+    }
+    /doevents BackOff
+    /if (!${Window[CastingWindow].Open}) {
+      /break
+    }
+    /doevents clickit
+    /if (!${Window[CastingWindow].Open}) {
+      /break
+    }
+    /doevents bark
+    /if (!${Window[CastingWindow].Open}) {
+      /break
+    }
+    /call alerts_Background_Events
+    /if (!${Window[CastingWindow].Open}) {
+      /break
+    }
+    /doevents Assist
+    /if (!${Window[CastingWindow].Open}) {
+      /break
+    }
+    /doevents BackOff
+    /if (!${Window[CastingWindow].Open}) {
+      /break
+    }
+    /delay 1
   }
-  /doevents Stop
-  /if (!${Window[CastingWindow].Open}) {
-    /break
-  }
-  /doevents MoveHere
-  /if (!${Window[CastingWindow].Open}) {
-    /break
-  }
-  /doevents BackOff
-  /if (!${Window[CastingWindow].Open}) {
-    /break
-  }
-  /doevents clickit
-  /if (!${Window[CastingWindow].Open}) {
-    /break
-  }
-  /doevents bark
-  /if (!${Window[CastingWindow].Open}) {
-    /break
-  }
-  /call alerts_Background_Events
-  /if (!${Window[CastingWindow].Open}) {
-    /break
-  }
-  /doevents Assist
-  /if (!${Window[CastingWindow].Open}) {
-    /break
-  }
-  /doevents BackOff
-  /if (!${Window[CastingWindow].Open}) {
-    /break
-  }
-  /delay 1
-}
 
 /RETURN
