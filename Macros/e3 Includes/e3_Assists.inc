@@ -252,7 +252,13 @@ SUB check_AssistStatus
       }
     } else /if (${AssistType.Equal[Autofire]} && !${pauseRanged}) {
       /squelch /face fast id ${AssistTarget}
-      |dont play chase
+      /if (${Target.Distance} > 200) {
+        /squelch /stick moveback 195
+      } 
+      |keep out of AE rampage range
+      /if (${Target.Distance} < 35) {
+        /squelch /stick moveback 35
+      } 
       /if (!${Me.AutoFire}) /autofire on
     }
   }

@@ -1,7 +1,8 @@
 |---------------------------------------------------|
-|- e3.mac	v7.0				                             -|
+|- e3.mac	v8.0				                             -|
 |- Originally written by Killians of PEQ.	         -|
 |- Enhanced and maintained by Creamo of PEQ.       -|
+|- Enhanced for Laz server by Rekka and Ewiclip    -|
 |- Thanks to Vysra for IDE,additional plugins,code -|
 |---------------------------------------------------|
 |#warning
@@ -9,7 +10,7 @@
 #include e3 Includes\e3_Setup.inc
 
 SUB Main(modeSelect)
-  /declare macroVersion string outer 7.0
+  /declare macroVersion string outer 8.0
   /declare Debug bool outer false
   /declare IniMode string outer Ini
   /if (${Bool[${Plugin[MQ2IniExt]}]}) {
