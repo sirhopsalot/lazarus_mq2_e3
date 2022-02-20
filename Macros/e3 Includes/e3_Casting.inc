@@ -85,7 +85,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
     /if (${Me.Class.ShortName.Equal[Rog]}) {
       /if (!${Me.Combat} && ${SpawnCount[pc radius 40]} > 2 && !${SpawnCount[npc radius 100 zradius 100]} && ${idleTimer}<${Math.Calc[${idleInterval}*600 - 100]}) /makemevisible
     } else /if (!${${ArrayName}[${ArrayIndex},${iCastInvis}]}) {
-      /varset castReturn CAST_INVISIBLE
+      		/varset castReturn CAST_INVISIBLE
 			/echo SkipCast-Invis ${pendingCast} ${Spawn[id ${targetID}].Name} ${targetID}
 			/varset ActionTaken TRUE
       /goto :skipCast

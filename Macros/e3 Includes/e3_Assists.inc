@@ -71,7 +71,10 @@ SUB event_Assist(line, ChatSender, int MobID)
         } else /if (${AssistType.Equal[ranged]}) {
           /if (${Debug} || ${Debug_Assists}) /echo autofire on
           /squelch /face fast id ${AssistTarget}
-          /if (!${Me.AutoFire}) /autofire on
+          /if (!${Me.AutoFire}) {
+            /delay 1s
+            /autofire
+          } 
           /if (${RangedStickDistance.Equal[Clamp]}) {
             /if (${Target.Distance} >=30 && ${Target.Distance} <=200) {
               /squelch /stick hold moveback ${Target.Distance}
@@ -248,7 +251,10 @@ SUB check_AssistStatus
         } else {
           /squelch /stick hold moveback ${RangedStickDistance}
         }
-        /if (!${Me.AutoFire}) /autofire on
+        /if (!${Me.AutoFire}) {
+            /delay 1s
+            /autofire
+      } 
       }
     } else /if (${AssistType.Equal[Autofire]} && !${pauseRanged}) {
       /squelch /face fast id ${AssistTarget}
@@ -256,10 +262,13 @@ SUB check_AssistStatus
         /squelch /stick moveback 195
       } 
       |keep out of AE rampage range
-      /if (${Target.Distance} < 35) {
-        /squelch /stick moveback 35
+      |/if (${Target.Distance} < 35) {
+       | /squelch /stick moveback 35
+      |} 
+      /if (!${Me.AutoFire}) {
+            /delay 1s
+            /autofire
       } 
-      /if (!${Me.AutoFire}) /autofire on
     }
   }
   /if ((!${Me.Casting.ID} || ${Me.Class.ShortName.Equal[BRD]}) && (${Me.Combat} || ${Me.CombatState.Equal[Combat]} ||  ${AssistTarget} >0 ) && ${Target.ID} == ${AssistTarget} && ${Defined[Abilities2D]}) /call CombatAbilities

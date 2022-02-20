@@ -1091,6 +1091,8 @@ SUB TrueTarget(TargetID)
 	/if (${SpawnCount[id ${TargetID}]}) {
 			/squelch /target id ${TargetID}
 			/delay 3s ${Target.ID} == ${TargetID}
+			|turn off autofire between targets
+			/if (${Me.AutoFire}) /autofire 
 	} else {
 		/echo TrueTarget has no spawncount
 	}
