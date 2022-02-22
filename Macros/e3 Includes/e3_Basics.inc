@@ -1171,23 +1171,20 @@ SUB EVENT_gate(line, ChatSender)
   /if (!${Me.Book[gate]}) {
     /if (${FindItem[Philter of Major Translocation].ID}) {
       /docommand ${ChatToggle} Preparing to gate...
-      /casting "Philter of Major Translocation" -maxtries|2
+      /call castSimpleSpell "Philter of Major Translocation" ${Me.ID}
     } else /if (${FindItem[Vial of Swirling Smoke].ID}) {
       /docommand ${ChatToggle} Preparing to gate...
-      /casting "Vial of Swirling Smoke" -maxtries|2
+      /call castSimpleSpell "Vial of Swirling Smoke" ${Me.ID}
     } else /if (${FindItem[Gate Potion].ID}) {
       /docommand ${ChatToggle} Preparing to gate...
-      /casting "Gate Potion" -maxtries|2
+      /call castSimpleSpell "Gate Potion" ${Me.ID}
     } else {
       /docommand ${ChatToggle} I am not able to gate at this time.
     }
   } else {
     /docommand ${ChatToggle} Preparing to gate...
-    /call interrupt
-    /delay 3s !${Me.Casting.ID}
-    /casting "Gate" -maxtries|2
-    /delay 3s !${Me.Casting.ID}
-  }
+    /call castSimpleSpell "Gate" ${Me.ID}
+   }
 /RETURN 
 
 |--------------------------------------------------------|
@@ -1210,15 +1207,13 @@ SUB EVENT_Evacuate(line, ChatSender)
       /delay 3
       /docommand ${ChatToggle} Evacuating!
       /call interrupt
-      /delay 3s !${Me.Casting.ID}
-      /casting "Exodus" alt
+      /call castSimpleSpell "Exodus" ${Me.ID}
+	  
     } else /if (${Me.Book[${Evac_Spell.Arg[1,/]}]}) {
       /docommand ${ChatToggle} Evacuating!
       /call interrupt
-      /delay 3s !${Me.Casting.ID}
-      /casting "${Evac_Spell.Arg[1,/]}" -maxtries|2
-      /delay 3s !${Me.Casting.ID}
-    } else {
+      /call castSimpleSpell "${Evac_Spell.Arg[1,/]}" ${Me.ID}
+	} else {
       /docommand ${ChatToggle} I am not able to Evac at this time.
     }
   }
@@ -1845,28 +1840,45 @@ sub event_gimme(line, ChatSender, RequestedItem)
 		/if (${Bool[${Me.Book[${RequestedItem}]}]} || ${Bool[${Me.AltAbility[${RequestedItem}]}]}) {
 
 			/if (${DebugGimme}) /echo casting "${RequestedItem}"
-			/call castSimpleSpell "${RequestedItem}" ${Me.ID}
-     
+        /call check_ReadySimple "${RequestedItem}"
+        /if (${c_Ready}) {
+          /call castSimpleSpell "${RequestedItem}" ${Me.ID}
+        }     
     } else /if (${Bool[${Me.Book[Summon: ${RequestedItem}]}]}) {
 
 			/if (${DebugGimme}) /echo casting "Summon: ${RequestedItem}"
-      /call castSimpleSpell "Summon: ${RequestedItem}" ${Me.ID}
+      /call check_ReadySimple "Summon: ${RequestedItem}"
+      /if (${c_Ready}) {
+        /call castSimpleSpell "Summon: ${RequestedItem}" ${Me.ID}
+      }
+    
 		
 		} else /if (${Bool[${Me.Book[Summon ${RequestedItemStringWithoutSummoned}]}]}) {
 		
     	/if (${DebugGimme}) /echo casting "Summon ${RequestedItemStringWithoutSummoned}"
-      /call castSimpleSpell "Summon ${RequestedItemStringWithoutSummoned}" ${Me.ID}
+  
+      /call check_ReadySimple "Summon ${RequestedItemStringWithoutSummoned}"
+      /if (${c_Ready}) {
+        /call castSimpleSpell "Summon ${RequestedItemStringWithoutSummoned}" ${Me.ID}
+      }
     	/varset SummonSpellCast "Summon ${RequestedItemStringWithoutSummoned}"
 		
     } else /if (${Bool[${Me.Book[${RequestedItemStringWithoutSummoned}]}]} || ${Bool[${Me.AltAbility[${RequestedItemStringWithoutSummoned}]}]}) {
 		
     	/if (${DebugGimme}) /echo casting ${RequestedItemStringWithoutSummoned}
-	    /call castSimpleSpell "${RequestedItemStringWithoutSummoned}" ${Me.ID}
+      /call check_ReadySimple "${RequestedItemStringWithoutSummoned}"
+      /if (${c_Ready}) {
+        /call castSimpleSpell "${RequestedItemStringWithoutSummoned}" ${Me.ID}
+      }      
+	   
   
   	} else /if (${Bool[${RequestedItem.Find[Sanguine Mind Crystal]}]} && ${Bool[${Me.AltAbility[Sanguine Mind Crystal]}]}) {
 			/if (${DebugGimme}) /echo casting Sanguine Mind Crystal
-
-      /call castSimpleSpell "Sanguine Mind Crystal" ${Me.ID}
+      /call check_ReadySimple "Sanguine Mind Crystal"
+      /if (${c_Ready}) {
+         /call castSimpleSpell "Sanguine Mind Crystal" ${Me.ID}
+      }          
+     
 			
 		} else {
 			/delay 2s
@@ -1949,30 +1961,7 @@ sub notifyViaBCTell(targetToTell, messageToSend)
     }
 
 /return
-|--------------------------------------------------------------------------------------------|
-|- Used to call the e3_Cast for simple spells that cannot normally fail.                   	-|
-|--------------------------------------------------------------------------------------------|
-sub castSimpleSpell(spellNameToBase, simpleTargetIDToBase)
 
-    /call castSimpleSpellBase "${spellNameToBase}" ${simpleTargetIDToBase} True
-
-/return
-sub castSimpleSpellBase(spellName, simpleTargetID, SkipParams)
-
-  /if (${Defined[castSimpleSpellArray]}) /deletevar castSimpleSpellArray
-  /declare castSimpleSpellArray[1] string outer ${spellName}
-  /if (${castSimpleSpellArray.Size}) {
-    |/echo building the spell array for heirlooms
-    /call BuildSpellArrayBase "castSimpleSpellArray" "castSimpleSpellArray2D" ${SkipParams}
-   
-    /call e3_Cast ${simpleTargetID} "castSimpleSpellArray2D" 1 False
-    /while (${Select[${castReturn},CAST_FIZZLE]}) {
-          /delay 1s
-          /call e3_Cast  ${simpleTargetID} "castSimpleSpellArray2D" 1 False
-    }
-    /if (${Defined[castSimpleSpellArray]}) /deletevar castSimpleSpellArray
-  }
-/return
 |----------------------------------------------------------------------------|
 |- Whenever nothing else is going on will check if the toon has all the items in the gimme list
 |- and request items it doesn't have from the target character
@@ -2076,7 +2065,7 @@ SUB check_Supply
   /if (${Me.Combat}) /goto :endsupply
   /if (${Assisting}) /goto :endsupply
   /if (${Me.PctAggro} > 0) /goto :endsupply
-  
+ 
   /if (${Me.PctMana} == 100 && ${Me.PctHPs} == 100 ) { 
 		
     /if (!${Defined[Supply]}) /call IniToArrayV "${Character_Ini},Supply,Supply#" Supply
@@ -2094,7 +2083,7 @@ SUB check_Supply
 			/varset supplyGem ${Supply[${i}].Arg[4,|]}
 			/if (!${Defined[SupplyTimer${i}]}) /declare SupplyTimer${i} timer outer 0
 			/if (!${Bool[${FindItem[=${supplyItem}]}]} && ${SupplyTimer${i}} == 0) {
-				/echo ==> Supply: Creating a ${supplyItem} using ${supplySpell}
+				/echo [${Time}]: Supply: Creating a ${supplyItem} using ${supplySpell}
 				/delay 1
 				/tar ${Me}
 				/delay 1
@@ -2114,12 +2103,21 @@ SUB check_Supply
 				}
 
 				/if (${supplyGem} == 0 || ${supplyGem} == NULL) { 
-           /echo Supply trying to get a:"${supplySpell}" 
-           /call castSimpleSpell "${supplySpell}" ${Me.ID}
+           
+           /call check_ReadySimple "${supplySpell}"
+           /if (${c_Ready}) {
+
+            /echo [${Time}]: Supply trying to get a:"${supplySpell}" 
+            /call castSimpleSpell "${supplySpell}" ${Me.ID}
+
+           }
+           
        	} else {
-           /echo Supply with Gem specific: ${supplySpell}/Gem|${supplyGem}
-           /call castSimpleSpellBase "${supplySpell}/Gem|${supplyGem}" ${Me.ID} False
-					 |/casting "${supplySpell}" ${supplyGem}
+           /echo [${Time}]: Supply with Gem specific: ${supplySpell}/Gem|${supplyGem}
+           /call check_ReadySimple "${supplySpell}" ${supplyGem}
+           /if (${c_Ready}) {
+              /call castSimpleSpellBase "${supplySpell}/Gem|${supplyGem}" ${Me.ID} False
+           }
 				}
 				/delay 20s ${Cursor.ID}
         /call ClearCursor
@@ -2624,6 +2622,25 @@ SUB ItemDeleteSummoned(ItemString)
     } 
 
 /RETURN
+
+|--------------------
+|Method currently used in bard twisting, but can be useful for other areas.
+|takes a snapshot of spells that were cast (non insta casts), to be used for later. 
+|possibly update e3cast to also update this, but was written to be used with /twist
+|as it doesn't go through e3_Cast
+|------------------
+sub check_PreviousSpell
+
+  /if (!${Bool[${Me.Casting.ID}]}) /return
+  /declare currentSpellCasting int local 0
+  /varset currentSpellCasting ${Me.Gem[${Me.Casting}]}
+
+  /if (${Bool[${currentSpellCasting}]}) {
+    /varset previousSpellGemThatWasCast ${currentSpellCasting}
+  }
+
+/return
+
 |---------------------------------------------------------------------------------|
 | Centralized area to call methods that will be called every event loop
 | Warning only put things that check very quickly if they should be called or not.
@@ -2631,4 +2648,9 @@ SUB ItemDeleteSummoned(ItemString)
 |---------------------------------------------------------------------------------|
 Sub check_Basics
   /call check_ResistCounters
+  /call check_PreviousSpell
+  
+
 /return
+
+

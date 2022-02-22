@@ -3,7 +3,7 @@
 |--------------------------------------------------------------------------------|
 SUB check_Buffs
 	/if (${Debug} || ${Debug_BuffCheck}) /echo |- buffCheck ==>
-	/if (${BuffCheck} && !${ActionTaken} && !${activeTimer} && !${rebuffTimer}) {
+  	/if (${BuffCheck} && !${ActionTaken} && !${activeTimer} && !${rebuffTimer}) {
 		/if (!${idle} && ${BuffCombatCheck} && !${Me.Moving} && ${Assisting})	/call buffBots "CombatBuffs2D"
 		/if (${procBuff} && !${idle} && !${Me.Moving} && ${Assisting}) /call buffProcs
 		/if (${Defined[auraSpells2D]} && (${auraCombat} || ${Me.CombatState.NotEqual[COMBAT]}) && !${Me.Moving}) /call checkAuras
@@ -143,8 +143,9 @@ SUB meleeCombatBuffs(ArrayName, int s)
               /if (${c_Ready}) {
                 /if (${buffTargetID}!=${Me.ID}) /call TrueTarget ${buffTargetID}
                 /delay 1
-                /disc ${${ArrayName}[${s},${iCastName}]}
-                /delay 1
+                /call castSimpleSpell "${${ArrayName}[${s},${iCastName}]}" 0
+                |/disc ${${ArrayName}[${s},${iCastName}]}
+                |/delay 3
               }
           }
         }
@@ -218,19 +219,54 @@ SUB checkAuras
     /if (!${ActionTaken})  /next s
   } else /if (!${Bool[${Me.Aura[1]}]}) {
     /if (${Me.Class.ShortName.Equal[BRD]}) {
-      /if (${Twist.Twisting}) /call pauseTwist
-      /if (${Me.Casting.ID}) /call interrupt
+     
+      /if (${songPlayer.Equal["MQ2Twist"]}) {
+        
+        /if (${Twist.Twisting}) /call pauseTwist
+        /if (${Me.Casting.ID}) /call interrupt
+
+      } else {
+
+        /while (${Window[CastingWindow].Open}) {
+          /delay 1
+        }
+        /delay 1
+        |tap the current gem if we are casting 
+        /if (${Bool[${Me.Casting.ID}]} ) {
+          /stopcast
+        }
+      }
       /declare previousSpell string local ${Me.Gem[${DefaultGem}]}
+
+      
+
+      /memorize "${auraSpells2D[1,${iCastName}]}" "${DefaultGem}"
+
+      |a delay check, for sync 
+      /while (!${Me.SpellReady[${auraSpells2D[1,${iCastName}]}]}) {
+       /delay 1
+      } 
+      /delay 1
+
       /call check_Ready "auraSpells2D" 1
       /if (${c_Ready}) {
-        /cast ${Me.Gem[${auraSpells2D[1,${iCastName}]}]}
-        /delay 7s !${Me.Casting.ID}
+        /cast "${auraSpells2D[1,${iCastName}]}"
+        /delay 3
+        /while (${Window[CastingWindow].Open}) {
+          /delay 1
+        }
+        /delay 3
         /if (${Bool[${previousSpell}]}) {
           /echo Re-memorizing ${previousSpell} after aura cast
           /memorize "${previousSpell}" "${DefaultGem}"
         }
       }
-      /call unpauseTwist
+      /if (${songPlayer.Equal["MQ2Twist"]}) {
+        
+        /call unpauseTwist
+
+      }
+      
     } else {
       /declare previousSpell string local ${Me.Gem[${DefaultGem}]}
       /call check_Ready "auraSpells2D" 1

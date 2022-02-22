@@ -54,12 +54,8 @@ Sub event_AE_POS(string line)
 	/if (${Me.Class.ShortName.Equal[BST]}) {
 		/if (${Me.AltAbilityReady[Mass Group Buff]} && ${Me.AltAbilityReady[Paragon of Spirit]}) {
 			/bc MGB Paragon of Spirit inc...
-			/casting "Mass Group Buff|alt" -maxtries|3
-			/delay 5 !${Me.AltAbilityReady[Mass Group Buff]}
-			/delay 5
-			/casting "Paragon of Spirit|alt" -maxtries|3
-			/delay 5 !${Me.AltAbilityReady[Paragon of Spirit]}
-			/casting "Paragon of Spirit|alt" -maxtries|3
+			/call castSimpleSpell "Mass Group Buff" 0
+			/call castSimpleSpell "Paragon of Spirit" 0
 			/rs MGB Paragon of Spirit inc...
 		} else /if (!${Me.AltAbilityReady[Mass Group Buff]}) {
 			/bc Mass Group Buff is not available...

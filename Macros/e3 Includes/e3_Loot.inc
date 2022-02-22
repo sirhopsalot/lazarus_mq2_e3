@@ -194,7 +194,7 @@ SUB lootCorpse
       |Stackable check code      
       /if (${Corpse.Item[${i}].Stackable}) {
 
-        /echo Loot Only Stackable: value of item=${Corpse.Item[${i}].Value} vs setting=${LootOnlyStackableValueGreater}
+        /echo [${Time}]: Loot Only Stackable: value of item=${Corpse.Item[${i}].Value} vs setting=${LootOnlyStackableValueGreater}
         
         /varset lootSetting Skip
         /varset importantItem FALSE
@@ -220,7 +220,7 @@ SUB lootCorpse
         }
         /if (${importantItem}) {
 
-          /echo Loot Only Stackable:hard coded important item ${Corpse.Item[${i}].Name}
+          /echo [${Time}]: Loot Only Stackable:hard coded important item ${Corpse.Item[${i}].Name}
         }
         |end items that are tackable but have no vendor value.
 
@@ -230,7 +230,7 @@ SUB lootCorpse
 
             /if (${Corpse.Item[${i}].Value} >=${LootOnlyStackableValueGreater} ) {
               /varset importantItem True
-              /echo Loot Only Stackable:Keeping item ${Corpse.Item[${i}].Name} as its value is above or equal to threshhold
+              /echo [${Time}]: Loot Only Stackable:Keeping item ${Corpse.Item[${i}].Name} as its value is above or equal to threshhold
             } 
         }
         
@@ -238,7 +238,7 @@ SUB lootCorpse
 
           |We loot all trade skills 
             /varset importantItem TRUE
-            /echo Loot Only Stackable:Keeping item ${Corpse.Item[${i}].Name} as its a tradeskill item and we are set to loot all tradeskills.
+            /echo [${Time}]: Loot Only Stackable:Keeping item ${Corpse.Item[${i}].Name} as its a tradeskill item and we are set to loot all tradeskills.
         } 
         |/echo common trades skill var setting = ${LootOnlyStackableTradeSkillsCommon}
         /if (!${importantItem} && ${LootOnlyStackableTradeSkillsCommon}) {
@@ -254,7 +254,7 @@ SUB lootCorpse
           }
 
           /if (${importantItem}) {
-            /echo Loot Only Stackable:Keeping item ${Corpse.Item[${i}].Name} as its a common tradeskill item.
+            /echo [${Time}]: Loot Only Stackable:Keeping item ${Corpse.Item[${i}].Name} as its a common tradeskill item.
           }
           
         }
@@ -328,34 +328,46 @@ SUB lootCorpse
           /goto :skipItem
         }
       } else /if (${Me.LargestFreeInventory} < ${Corpse.Item[${i}].Size}) {
-        /echo [Loot]: I don't have a free inventory space large enough to hold [${itemName}].
+        /echo [${Time}]: Loot: I don't have a free inventory space large enough to hold [${itemName}].
         /goto :skipItem
       }  else /if (!${Me.FreeInventory}) {
         /if (${Debug} || ${Debug_Loot}) /bc [+g+] [Auto-Loot]: No Free Space
         /goto :skipItem
       }
       |/if (${Debug} || ${Debug_Loot}) /bc [+g+] [Auto-Loot]: Looting [${itemName}] keep
-      /call loot_Handle ${i} keep
+      
+      |if we are keeping the item simply right click it for **far** faster looting.
+      |delay 4 is needed per item so we don't accidently skip. Unsure how much delay will be impacted. 
+      |if it is, uncomment out loot_handle and commonent out the itemnotify and /delay 4
+      /itemnotify loot${i} rightmouseup
+      /delay 4
+      |/call loot_Handle ${i} keep
       |/if (${Debug} || ${Debug_Loot}) /echo Done Looting i: ${i}
-      /delay 1
+     
     }
   :skipItem
 
   |/if (${Debug} || ${Debug_Loot}) /echo Done with slot i: ${i}
   /next i
-  /delay 1
+  |/delay 1
   |looting done, if items leftover link them
-  /if (${Corpse.Items}) {
-    /keypress /
-    /delay 1
-    /call Type "${linkChannel} ${Target.ID}-"
-    /delay 1
-    /notify LootWnd BroadcastButton leftmouseup
-    /delay 1
-    /keypress enter chat
+  |if numitems was 0, no reason to query the corpse again.
+  /if (${numItems}>0) {
+    /if (${Corpse.Items}) {
+      /keypress /
+      /delay 1
+      /call Type "${linkChannel} ${Target.ID}-"
+      /delay 1
+      /notify LootWnd BroadcastButton leftmouseup
+      /delay 1
+      /keypress enter chat
+    }
   }
   :skipLoot
-  /if (${Corpse.Open}) /notify LootWnd DoneButton leftmouseup
+  /if (${Corpse.Open}) {
+    /keypress esc
+    |/notify LootWnd DoneButton leftmouseup
+  } 
   /delay 1s !${Window[LootWnd].Open}
   |/if (${Debug} || ${Debug_Loot}) /echo Done Looting ${Time}
 /return
@@ -433,7 +445,8 @@ SUB loot_Handle(int slotNum, handle)
 	/declare lootTimer timer local 3s
 	:retry_Loot
 	| Try to loot the specified item from the corpse.
-	/itemnotify loot${slotNum} leftmouseup
+	/itemnotify loot${slotNum} rightmouseup
+
 	/delay 1s ${Cursor.ID} || ${Window[ConfirmationDialogBox].Open} || ${Window[QuantityWnd].Open}
 	| If the item has been looted, decide what to do with it.
 	/if (${Cursor.ID}) {
@@ -544,10 +557,10 @@ SUB loot_Setup
   /call iniToVarV "${genSettings_Ini},Loot,Loot in Combat" combatLooting bool outer
 	| Import character settings
 	/if (${Bool[${Ini[${Character_Ini},Misc,Auto-Loot (On/Off)]}]}) /call iniToVarV "${Character_Ini},Misc,Auto-Loot (On/Off)" Auto_Loot bool outer
-  	/if (${Ini[${genSettings_Ini},Loot,Loot Only Stackable: Enable (On/Off)].Length}) /call iniToVarV "${genSettings_Ini},Loot,Loot Only Stackable: Enable (On/Off)" LootOnlyStackableEnabled bool outer
-  	/if (${Ini[${genSettings_Ini},Loot,Loot Only Stackable: With Value Greater Than Or Equal in Copper].Length}) /call iniToVarV "${genSettings_Ini},Loot,Loot Only Stackable: With Value Greater Than Or Equal in Copper" LootOnlyStackableValueGreater int outer
-  	/if (${Ini[${genSettings_Ini},Loot,Loot Only Stackable: Loot common tradeskill items ie:pelts ores silks etc (On/Off)].Length}) /call iniToVarV "${genSettings_Ini},Loot,Loot Only Stackable: Loot common tradeskill items ie:pelts ores silks etc (On/Off)" LootOnlyStackableTradeSkillsCommon bool outer
-  	/if (${Ini[${genSettings_Ini},Loot,Loot Only Stackable: Loot all Tradeskill items (On/Off)].Length})  /call iniToVarV "${genSettings_Ini},Loot,Loot Only Stackable: Loot all Tradeskill items (On/Off)" LootOnlyStackableTradeSkillsALL bool outer
+  /if (${Ini[${genSettings_Ini},Loot,Loot Only Stackable: Enable (On/Off)].Length}) /call iniToVarV "${genSettings_Ini},Loot,Loot Only Stackable: Enable (On/Off)" LootOnlyStackableEnabled bool outer
+  /if (${Ini[${genSettings_Ini},Loot,Loot Only Stackable: With Value Greater Than Or Equal in Copper].Length}) /call iniToVarV "${genSettings_Ini},Loot,Loot Only Stackable: With Value Greater Than Or Equal in Copper" LootOnlyStackableValueGreater int outer
+  /if (${Ini[${genSettings_Ini},Loot,Loot Only Stackable: Loot common tradeskill items ie:pelts ores silks etc (On/Off)].Length}) /call iniToVarV "${genSettings_Ini},Loot,Loot Only Stackable: Loot common tradeskill items ie:pelts ores silks etc (On/Off)" LootOnlyStackableTradeSkillsCommon bool outer
+  /if (${Ini[${genSettings_Ini},Loot,Loot Only Stackable: Loot all Tradeskill items (On/Off)].Length})  /call iniToVarV "${genSettings_Ini},Loot,Loot Only Stackable: Loot all Tradeskill items (On/Off)" LootOnlyStackableTradeSkillsALL bool outer
 
 /if (${Debug} || ${Debug_Loot}) /echo <== _Setup -|
 /RETURN

@@ -6,7 +6,7 @@ SUB event_manastone
 /if (${Me.Sitting}) {
   		/sit off
 		}
-	/casting "Holy Elixir" "-targetid|${Me.ID}"
+  /call castSimpleSpell "Holy Elixir" ${Me.ID}
 	:Loop
 	/if (${Me.PctMana} < 100) {
 			/casting "Manastone"
@@ -16,11 +16,11 @@ SUB event_manastone
 |----------------------------------------------------------------------------|
 SUB check_Yaulp
 /if (${Debug}) /echo |- check_clrYaulp ==>
-  /if (${AutoYaulp} && !${medBreak} && !${Me.Moving})  {
+  /if (${AutoYaulp} && !${medBreak} && !${Me.Moving} && !${Me.Invis}) {
     /declare castName string local ${yaulpSpell.Arg[1,/]}
     /if (!${Bool[${Me.Buff[${castName}]}]} && ${Me.PctMana} < 95 && ${Spell[${castName}].NewStacks}) {
       /if (${Target.ID}) /declare tempTarget int local ${Target.ID}
-      /casting "${castName}" -invis
+      /call castSimpleSpell "${castName}" 0
     }
   }
 /if (${Debug}) /echo <== check_clrYaulp -|
@@ -396,12 +396,8 @@ sub Event_AE_CR(string line)
 /if (${Me.Class.ShortName.Equal[CLR]}) {
    /if (${Me.AltAbilityReady[Mass Group Buff]} && ${Me.AltAbilityReady[Celestial Regeneration]}) {
      /bc MGB Celestial Regeneration inc...
-     /casting "Mass Group Buff|alt" -maxtries|3
-     /delay 5 !${Me.AltAbilityReady[Mass Group Buff]}
-     /delay 5
-     /casting "Celestial Regeneration|alt" -maxtries|3
-     /delay 5 !${Me.AltAbilityReady[Celestial Regeneration]}
-     /casting "Celestial Regeneration|alt" -maxtries|3
+     /call castSimpleSpell "Mass Group Buff" 0
+     /call castSimpleSpell "Celestial Regeneration" 0
      /rs MGB Celestial Regeneration inc...
    } else /if (!${Me.AltAbilityReady[Mass Group Buff]}) {
       /bc Mass Group Buff is not available...
@@ -414,12 +410,8 @@ sub Event_AE_HP(string line)
 /if (${Me.Class.ShortName.Equal[CLR]}) {
    /if (${Me.AltAbilityReady[Mass Group Buff]} && ${Bool[${Me.Book[Ancient: Gift of Aegolism]}]}) {
      /bc MGB Ancient: Gift of Aegolism inc...
-     /casting "Mass Group Buff|alt" "-maxtries|3"
-     /delay 5 !${Me.AltAbilityReady[Mass Group Buff]}
-     /delay 5
-     /casting "Ancient: Gift of Aegolism" "-maxtries|3"
-     /delay 5 !${Me.SpellReady[Ancient: Gift of Aegolism]}
-     /casting "Ancient: Gift of Aegolism" "-maxtries|3"
+     /call castSimpleSpell "Mass Group Buff" 0
+     /call castSimpleSpell "Ancient: Gift of Aegolism" 0
    } else /if (!${Me.AltAbilityReady[Mass Group Buff]}) {
       /bc Mass Group Buff is not available...
    } else /bc Ancient: Gift of Aegolism is not in your Spell Book noob...
@@ -617,7 +609,7 @@ sub event_playerHammer(line, ChatSender)
 	  /if (${Bool[${FindItem[=Hammer of Damnation]}]}) {
         /ItemNotify "Hammer of Damnation" leftmouseup
       } else {
-		/cast "Hammer of Damnation"
+		  /call castSimpleSpell "Hammer of Damnation" 0
 	  }
       /delay 6s ${Cursor.ID}
       /click left target

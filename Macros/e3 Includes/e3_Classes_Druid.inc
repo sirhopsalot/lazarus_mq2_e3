@@ -33,12 +33,8 @@ sub Event_AE_SOW(string line)
 	/if (${Me.Class.ShortName.Equal[DRU]}) {
 	 /if (${Me.AltAbilityReady[Mass Group Buff]} && ${Me.AltAbilityReady[Spirit of the Wood]}) {
 		 /bc MGB Spirit of the Wood inc...
-		 /casting "Mass Group Buff|alt" -maxtries|3
-		 /delay 5 !${Me.AltAbilityReady[Mass Group Buff]}
-		 /delay 5
-		 /casting "Spirit of the Wood|alt" -maxtries|3
-		 /delay 5 !${Me.AltAbilityReady[Spirit of the Wood]}
-		 /casting "Spirit of the Wood|alt" -maxtries|3
+		 /call castSimpleSpell "Mass Group Buff" 0
+		 /call castSimpleSpell "Spirit of the Wood" 0
 		 /rs MGB Spirit of the Wood inc...
 	 } else /if (!${Me.AltAbilityReady[Mass Group Buff]}) {
 			/bc Mass Group Buff is not available...
@@ -51,12 +47,8 @@ sub Event_AE_FOE(string line)
 	/if (${Me.Class.ShortName.Equal[DRU]}) {
 	 /if (${Me.AltAbilityReady[Mass Group Buff]} && ${Bool[${Me.Book[Flight of Eagles]}]}) {
 		 /bc MGB Flight of Eagles inc...
-		 /casting "Mass Group Buff|alt" -maxtries|3
-		 /delay 5 !${Me.AltAbilityReady[Mass Group Buff]}
-		 /delay 5
-		 /casting "Flight of Eagles" -maxtries|3
-		 /delay 5 !${Me.AltAbilityReady[Spirit of the Wood]}
-		 /casting "Flight of Eagles" -maxtries|3
+		 /call castSimpleSpell "Mass Group Buff" 0
+		 /call castSimpleSpell "Flight of Eagles" 0
 		 /rs MGB Spirit of the Wood inc...
 	 } else /if (!${Me.AltAbilityReady[Mass Group Buff]}) {
 			/bc Mass Group Buff is not available...
@@ -72,8 +64,9 @@ Sub DRU_Background_Events
 
 | Automatically cast group AA Communion of the Cheetah whenever the buff is missing on the Druid and the druid doesn't have Selo's Sonata
 SUB autoCheetah
-  /if (${autoCheetahOn} && !${Me.Buff[Selo's Sonata].ID} && (!${Me.Buff[Spirit of Cheetah].ID} || ${Me.Buff[Spirit of Cheetah].Duration} < 10000) && !${Me.Invis} && ${Me.AltAbilityReady[Communion of the Cheetah]}) {
-    /call TrueTarget ${Me.ID}
+
+
+  /if (${autoCheetahOn} && !${Me.Buff[Selo's Sonata].ID} && !${Me.Buff[Selo's Accelerating Chorus].ID} && (!${Me.Buff[Spirit of Cheetah].ID} || ${Me.Buff[Spirit of Cheetah].Duration.TotalSeconds} < 10) && !${Me.Invis} && ${Me.AltAbilityReady[Communion of the Cheetah]}) {
 	/alt act 939
   }
 /RETURN

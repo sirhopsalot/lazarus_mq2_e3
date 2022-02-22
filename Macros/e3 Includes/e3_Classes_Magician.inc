@@ -246,25 +246,18 @@ sub event_armPets(line, ChatSender, loadType)
 /return
 sub summonUnpackAndSelect(targetID, spellName, ItemName, primaryItem, secondaryItem)
 
-      /if (${Defined[armPetArray]}) /deletevar armPetArray
-      /declare armPetArray[1] string outer ${spellName}
-      /if (${armPetArray.Size}) {
-      
-        /call BuildSpellArray "armPetArray" "armPetArray2D"
-        /call e3_Cast ${Me.ID} "armPetArray2D" 1 False
-        /while (!${Select[${castReturn},CAST_SUCCESS]}) {
-             /call e3_Cast ${Me.ID} "armPetArray2D" 1 False
-        }
-        /if (${Defined[armPetArray]}) /deletevar armPetArray
-
-        /delay 1s
+     
+        /call castSimpleSpell "${spellName}" ${Me.ID}
+        /delay 3s ${Bool[${Cursor.ID}]}
         |/echo done casting, put in inventory
         /call ClearCursor
+        /delay 3s !${Bool[${Cursor.ID}]}
         /delay 1s
         |/echo unfolding the bag to cursor
         /ItemNotify "${ItemName}" rightmouseup
-        /delay 4s 
+        /delay 3s ${Bool[${Cursor.ID}]}
         /call ClearCursor
+        /delay 3s !${Bool[${Cursor.ID}]}
         /delay 1s
         /itemnotify "${primaryItem}" leftmouseup
         /delay 5s ${Bool[${Cursor.ID}]}
@@ -298,23 +291,16 @@ sub summonUnpackAndSelect(targetID, spellName, ItemName, primaryItem, secondaryI
             /echo summonUnpackAndSelect: Could not destroy bag, exiting
             /return
           }
-           /if (${Defined[armPetArray]}) /deletevar armPetArray
-          /declare armPetArray[1] string outer ${spellName}
-          /call BuildSpellArray "armPetArray" "armPetArray2D"
-          /call e3_Cast ${Me.ID} "armPetArray2D" 1 False
-          /while (!${Select[${castReturn},CAST_SUCCESS]}) {
-              /call e3_Cast ${Me.ID} "armPetArray2D" 1 False
-          }
-          /if (${Defined[armPetArray]}) /deletevar armPetArray
-          /delay 1s
+          /call castSimpleSpell "${spellName}" ${Me.ID}
+          /delay 3s ${Bool[${Cursor.ID}]}
           |/echo done casting, put in inventory
           /call ClearCursor
-          /delay 1s
+          /delay 3s !${Bool[${Cursor.ID}]}
           |/echo unfolding the bag to cursor
           /ItemNotify "${ItemName}" rightmouseup
-          /delay 4s 
+          /delay 3s ${Bool[${Cursor.ID}]}
           /call ClearCursor
-          /delay 1s
+          /delay 3s !${Bool[${Cursor.ID}]}
           /call TrueTarget ${targetID}
         } 
        
@@ -345,23 +331,14 @@ sub summonUnpackAndSelect(targetID, spellName, ItemName, primaryItem, secondaryI
           /return
         }
 
-      }
+      
 
 /return
 sub summonUnpackAndGive(targetID, spellName, ItemName)
 
-     /if (${Defined[armPetArray]}) /deletevar armPetArray
-      /declare armPetArray[1] string outer ${spellName}
-      /if (${armPetArray.Size}) {
-        |/echo building the spell array for heirlooms
-
-        /call BuildSpellArray "armPetArray" "armPetArray2D"
-        /call e3_Cast ${Me.ID} "armPetArray2D" 1 False
-        /while (!${Select[${castReturn},CAST_SUCCESS]}) {
-             /call e3_Cast ${Me.ID} "armPetArray2D" 1 False
-        }
-        
-         /if (${Defined[armPetArray]}) /deletevar armPetArray
+     
+        /call castSimpleSpell "${spellName}" ${Me.ID}
+        /delay 3s ${Bool[${Cursor.ID}]}
         /delay 1s
         |/echo done casting, put in inventory
         /autoinventory
@@ -369,7 +346,7 @@ sub summonUnpackAndGive(targetID, spellName, ItemName)
         /delay 1s
         |/echo unfolding the bag to cursor
         /ItemNotify "${ItemName}" rightmouseup
-        /delay 3s
+         /delay 3s ${Bool[${Cursor.ID}]}
         |/echo getting the target of the pet
         /call TrueTarget ${targetID}
         /if (${Target.ID} && ${Target.Distance}>19) /call MoveToLoc ${Target.Y} ${Target.X} 50 15
@@ -378,7 +355,7 @@ sub summonUnpackAndGive(targetID, spellName, ItemName)
           /echo summonUnpackAndGive: Something went wrong and something is on your cursor, exiting.
           /return
         }
-      }
+      
 
 /return
 sub giveItemOnCursorToTarget()
@@ -710,7 +687,7 @@ SUB check_OrbOfMasteryCharges
     | if toon has no orb of mastery
     /if (!${Bool[${FindItem[=Orb of Mastery]}]}) {
       /docommand ${ChatToggle} No Orb of Mastery in inventory, summoning an Orb of Mastery
-      /casting "Summon Orb"
+      /call castSimpleSpell "Summon Orb" 0
       /delay 12s ${Cursor.ID}
       /while (${Cursor.ID}) {
         /autoinv
