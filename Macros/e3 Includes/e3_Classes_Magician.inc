@@ -97,7 +97,7 @@ sub event_armPets(line, ChatSender, loadType)
     /varset foldedPackInSlot ${InvSlot[pack${i}].Item.Name}
     /goto :bagslotcheckdone
   } else /if (${Bool[${InvSlot[pack${i}].Item.Name.Equal[Phantom Satchel]}]} || ${Bool[${InvSlot[pack${i}].Item.Name.Equal[Pouch of Quellious]}]}) {
-    /echo Found an opened pack, checking and destroying.
+    /echo Found an opened summoned pack, checking and destroying.
     | Just in case mage has been looting and items ended up in an old phantom pack
     /declare j int local 1
     /for j 1 to 10 
@@ -109,11 +109,11 @@ sub event_armPets(line, ChatSender, loadType)
     /itemnotify pack${i} leftmouseup
     /if (${Cursor.Name.Find[Phantom Satchel]} || ${Cursor.Name.Find[Pouch of Quellious]}) {
       /destroy
+      /varset BackSlotThatIsOpen ${i}
     } else {
       /echo Could not destroy bag, exiting.
       /goto :armpetend
     }
-    /varset BackSlotThatIsOpen ${i}
     /goto :bagslotcheckdone
   }
   /next i
