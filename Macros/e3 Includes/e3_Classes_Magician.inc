@@ -84,14 +84,60 @@ sub event_armPets(line, ChatSender, loadType)
   
   |first check that we have an empty slot
   /declare BackSlotThatIsOpen int 0
+  /declare foldedPackInSlotID int local 0
+  /declare foldedPackInSlot string local NULL
   /declare i int local
   /for i 1 to 10
   /if (!${Bool[${InvSlot[pack${i}].Item.ID}]}) {
     /varset BackSlotThatIsOpen ${i}
     /goto :bagslotcheckdone
+  } else /if (${Bool[${InvSlot[pack${i}].Item.Name.Equal[Folded Pack of Enibik's Heirlooms]}]} || ${Bool[${InvSlot[pack${i}].Item.Name.Equal[Folded Pack of Spectral Plate]}]} || ${Bool[${InvSlot[pack${i}].Item.Name.Equal[Folded Pack of Spectral Armaments]}]}) {
+    /varset BackSlotThatIsOpen ${i}
+    /varset foldedPackInSlotID ${i}
+    /varset foldedPackInSlot ${InvSlot[pack${i}].Item.Name}
+    /goto :bagslotcheckdone
+  } else /if (${Bool[${InvSlot[pack${i}].Item.Name.Equal[Phantom Satchel]}]} || ${Bool[${InvSlot[pack${i}].Item.Name.Equal[Pouch of Quellious]}]}) {
+    /echo Found an opened pack, checking and destroying.
+    | Just in case mage has been looting and items ended up in an old phantom pack
+    /declare j int local 1
+    /for j 1 to 10 
+      /if (!${InvSlot[pack${i}].Item.Item[${j}].NoRent}) {
+        /tell ${ChatSender} Arm Pets: Non-Temporary Item found in Phantom Satchel. Exiting.
+        /return
+      }
+    /next j
+    /itemnotify pack${i} leftmouseup
+    /if (${Cursor.Name.Find[Phantom Satchel]} || ${Cursor.Name.Find[Pouch of Quellious]}) {
+      /destroy
+    } else {
+      /echo Could not destroy bag, exiting.
+      /goto :armpetend
+    }
+    /varset BackSlotThatIsOpen ${i}
+    /goto :bagslotcheckdone
   }
   /next i
   :bagslotcheckdone
+
+  /if (${foldedPackInSlotID} > 0) {
+    /declare m int local 1
+    /declare n int local 1
+    /for m 1 to 10
+    /for n 1 to 10 
+    /if (!${InvSlot[pack${m}].Item.Item[${n}].ID}) {
+      /itemnotify pack${foldedPackInSlotID} leftmouseup
+      /itemnotify in pack${m} ${n} leftmouseup
+      /goto :bagslotcleared
+    }
+    /next n
+    /next m
+    /if (${Cursor.ID}) {
+      /tell ${ChatSender} Arm Pets: Unable to clear bagslot. Exiting
+      /goto :armpetend
+    }
+  }
+  :bagslotcleared
+
   /if (${BackSlotThatIsOpen}==0) {
     |no empty bag slot available
     /tell ${ChatSender}  Arm Pets: No empty bag slot on mage. Exiting.
@@ -197,7 +243,7 @@ sub event_armPets(line, ChatSender, loadType)
         
           }
           |grouped mage/nec/enc here, will probably have to split out depending on new payloads
-        } else /if (${char_class.Find[Magician]} || ${char_class.Find[Necro]} || ${char_class.Find[Enchanter]}) {
+        } else /if (${char_class.Find[Magician]} || ${char_class.Find[Necro]} || ${char_class.Find[Enchanter]} || ${char_class.Find[Beastlord]}) {
           |/echo Arm Pet: Doing ${char_class} loadout
           /if (${loadType.Find[fire]}) {
 
@@ -232,6 +278,22 @@ sub event_armPets(line, ChatSender, loadType)
         /bc Arm Pets: Creating Weapons
         /call summonUnpackAndSelect ${Spawn[${Group.Member[${counter}]}].Pet.ID} "Grant Spectral Armaments" "Folded Pack of Spectral Armaments" ${primaryWeapon} ${secondaryWeapon}
       }
+      /if (${foldedPackInSlotID} > 0) {
+        /echo Item to put back ${foldedPackInSlot}
+        /if (${FindItemCount[${foldedPackInSlot}]} > 0) {
+          /itemnotify "${foldedPackInSlot}" leftmouseup
+        } else {
+          /if (${foldedPackInSlot.Equal[Folded Pack of Spectral Armaments]}) {
+            /call castSimpleSpell "Grant Spectral Armaments" ${Me.ID}
+          } else /if (${foldedPackInSlot.Equal[Folded Pack of Enibik's Heirlooms]}) {
+            /call castSimpleSpell "Grant Enibik's Heirlooms" ${Me.ID}
+          } else /if (${foldedPackInSlot.Equal[Folded Pack of Spectral Plate]}) {
+            /call castSimpleSpell "Grant Spectral Plate" ${Me.ID}
+          }
+        }
+        /delay 1s
+        /call ClearCursor
+      }
       /if (${Cursor.ID}) {
         /bc Arm Pets: Something went wrong and something is on your cursor, exiting.
         /goto :armpetend
@@ -242,6 +304,8 @@ sub event_armPets(line, ChatSender, loadType)
   /next counter
   /tell ${ChatSender} Finished arming pets.
 :armpetend
+| TODO - move heirloom/spectral pack back into bag slot.
+
 /if (${Debug} || ${Debug_MAG}) /echo <== event_armPets -|
 /return
 sub summonUnpackAndSelect(targetID, spellName, ItemName, primaryItem, secondaryItem)
@@ -249,15 +313,21 @@ sub summonUnpackAndSelect(targetID, spellName, ItemName, primaryItem, secondaryI
       /if (${Defined[armPetArray]}) /deletevar armPetArray
       /declare armPetArray[1] string outer ${spellName}
       /if (${armPetArray.Size}) {
-      
-        /call BuildSpellArray "armPetArray" "armPetArray2D"
-        /call e3_Cast ${Me.ID} "armPetArray2D" 1 False
-        /while (!${Select[${castReturn},CAST_SUCCESS]}) {
+        
+        /if (${FindItemCount[${ItemName}]} > 0) {
+          /echo found ${ItemName}
+          /itemnotify "${ItemName}" leftmouseup
+        } else {
+          /call BuildSpellArray "armPetArray" "armPetArray2D"
+          /call e3_Cast ${Me.ID} "armPetArray2D" 1 False
+          /while (!${Select[${castReturn},CAST_SUCCESS]}) {
              /call e3_Cast ${Me.ID} "armPetArray2D" 1 False
+          }
         }
         /if (${Defined[armPetArray]}) /deletevar armPetArray
 
         /delay 1s
+        
         |/echo done casting, put in inventory
         /call ClearCursor
         /delay 1s
@@ -269,7 +339,7 @@ sub summonUnpackAndSelect(targetID, spellName, ItemName, primaryItem, secondaryI
         /itemnotify "${primaryItem}" leftmouseup
         /delay 5s ${Bool[${Cursor.ID}]}
         /if (!${Cursor.ID}) {
-          /echo summonUnpackAndSelect: Could not load parimary item to cursor, exiting
+          /echo summonUnpackAndSelect: Could not load primary item to cursor, exiting
           /return
         }
 
@@ -350,20 +420,25 @@ sub summonUnpackAndSelect(targetID, spellName, ItemName, primaryItem, secondaryI
 /return
 sub summonUnpackAndGive(targetID, spellName, ItemName)
 
-     /if (${Defined[armPetArray]}) /deletevar armPetArray
+
+      /if (${Defined[armPetArray]}) /deletevar armPetArray
       /declare armPetArray[1] string outer ${spellName}
       /if (${armPetArray.Size}) {
-        |/echo building the spell array for heirlooms
-
-        /call BuildSpellArray "armPetArray" "armPetArray2D"
-        /call e3_Cast ${Me.ID} "armPetArray2D" 1 False
-        /while (!${Select[${castReturn},CAST_SUCCESS]}) {
+        /if (${FindItemCount[${ItemName}]} > 0) {
+          /echo ItemFound: ${ItemName}
+          /itemnotify "${ItemName}" leftmouseup
+        } else {
+          /echo ItemNotFound ${ItemName}
+          |/echo building the spell array for heirlooms
+          /call BuildSpellArray "armPetArray" "armPetArray2D"
+          /call e3_Cast ${Me.ID} "armPetArray2D" 1 False
+          /while (!${Select[${castReturn},CAST_SUCCESS]}) {
              /call e3_Cast ${Me.ID} "armPetArray2D" 1 False
+          }
         }
-        
-         /if (${Defined[armPetArray]}) /deletevar armPetArray
+        /if (${Defined[armPetArray]}) /deletevar armPetArray
         /delay 1s
-        |/echo done casting, put in inventory
+      |/echo done casting, put in inventory
         /autoinventory
         /delay 3s !${Bool[${Cursor.ID}]}
         /delay 1s
@@ -379,6 +454,7 @@ sub summonUnpackAndGive(targetID, spellName, ItemName)
           /return
         }
       }
+    
 
 /return
 sub giveItemOnCursorToTarget()

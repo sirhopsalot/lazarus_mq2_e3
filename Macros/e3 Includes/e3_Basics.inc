@@ -2065,6 +2065,9 @@ SUB check_Supply
 	/if (${Debug}) /echo |- check_Supply ==>
   /if (${Waiting4Rez}) /return
   /if (${Bool[${Me.Buff[Resurrection Sickness]}]}) /return
+  | Extra check because sometimes Waiting4Rez is incorrectly set
+  /if (!${Bool[${InvSlot[pack8].Item.ID}]}) /return 
+  /if (${Me.MaxHPs} < 10000) /return
 	/if (!${Defined[SupplyEnabled]}) /declare SupplyEnabled bool outer ${Bool[${Ini[${Character_Ini},Supply]}]}
   
   /if (!${SupplyEnabled}) /goto :endsupply
@@ -2085,16 +2088,23 @@ SUB check_Supply
 		/if (!${Defined[supplySpell]}) /declare supplySpell string local NULL
 		/if (!${Defined[supplyTimeout]}) /declare supplyTimeout timer local NULL
 		/if (!${Defined[supplyGem]}) /declare supplyGem int local NULL
-	
+    /if (!${Defined[supplyQuantity]}) /declare supplyQuantity int local NULL
+  
     | Loop through the string, then loop through each of the items on that key	
 		/for i 1 to ${Supply.Size}
-			/varset supplyItem ${Supply[${i}].Arg[1,|]}
+      /varset supplyItem ${Supply[${i}].Arg[1,|]}
 			/varset supplySpell ${Supply[${i}].Arg[2,|]}
 			/varset supplyTimeout ${Supply[${i}].Arg[3,|]}
 			/varset supplyGem ${Supply[${i}].Arg[4,|]}
+      /if (${Supply[${i}].Arg[5,|]}) {
+        /varset supplyQuantity ${Supply[${i}].Arg[5,|]}
+      } else {
+        /varset supplyQuantity 1
+      }
 			/if (!${Defined[SupplyTimer${i}]}) /declare SupplyTimer${i} timer outer 0
-			/if (!${Bool[${FindItem[=${supplyItem}]}]} && ${SupplyTimer${i}} == 0) {
-				/echo ==> Supply: Creating a ${supplyItem} using ${supplySpell}
+			|/if (!${Bool[${FindItem[=${supplyItem}]}]} && ${SupplyTimer${i}} == 0) {
+      /if (${FindItemCount[${supplyItem}]} < ${supplyQuantity} && ${SupplyTimer${i}} == 0 && ) {
+				/echo ==> Supply: Creating a ${supplyItem} using ${supplySpell} need ${supplyQuantity}
 				/delay 1
 				/tar ${Me}
 				/delay 1
@@ -2169,7 +2179,7 @@ SUB event_collect(line, ChatSender, RequestedItem)
   /if (${Me.Name.Equal[${ChatSender}]}) {
     /declare i int local
     /for i 1 to ${Group.Members}
-      /t ${Group.Member[${i}]} Gimme ${RequestedItem}
+      /bct ${Group.Member[${i}]} Gimme ${RequestedItem}
       /delay 4s
     /next i 
   }
