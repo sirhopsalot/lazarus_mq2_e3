@@ -1,42 +1,160 @@
 --------- To Dos:
+	- Modify DoT code to apply /MaxTries|# to TriggerSpells
+	- Migrate "Smart Taunt" to use E3_Cast now that this function has been drastically improved
+	- Update gimme to allow alias of items
+	- Rework /AERez
+	- Rework /quickburns, /fullburns /longburns & /epicburns to fire faster
+	
+===============================================================================================================================================================================================
+===============================================================================================================================================================================================
 
-. Create a default routes file, with routes from the guild lobby to common destinations
+v5.1 r9 Change log:
+--------- Fixed:
+	- When using Gimme to your mage for Mod Shards, characters will no longer will disconnect if they are in the middle of a cast. 
+	***NOTE*** If you use /itemnotify <item> leftmouseup while casting, your toon will DC! Avoid this with customizations!
+	- Gimme large shard delete feature now works with all versions of Mod Shards 
+	- Self Mod Shard for Supply mage now works
+	- Fix for /GoM on spells in the nuke section. This should work properly now.
+	- Gimme will now recast on fizzles and uses BC tells instead of /tell for group members.
+	- Gimme will use e3_Cast now instead of raw /cast function
+--------- Changed:
+	- Optimizations for BuildSpellArray. Originally BuildSpellArray was for one time builds for spell casts at initial startup and the results saved and thus speed wasn't an important consideration. 
+		> However the new method castSimpleSpellArray uses BuildSpellArray and thus a passthrough was neeeded. Entire method was reworked and reorganized. Over 140+ conditionals/checks/method calls removed in most circumstances.
+	- /ClickIt will now dismount and call /stopcast before *IF* you are in the middle of a spell cast before clicking. This helps prevent crashes related to casting-while-initiating a zone
+	- /SwarmPets changes:
+		> Swarm Pets now trigger significantly quicker than before
+		> Necromancer AA 'Rise of Bones' is correctly added to the swarpPets array when you own the AA
+		> Necromancer Epic 1.5 / 2.0 are both now included as a swarm pet
+		> Graverobber's Icon from HCUR is now included as a swarm pet
+		> Necromancer "Wake the Dead" has been REMOVED from /SwarmPets because it is known to cause zone crashes. You can still include it in other parts of your INI like Burns at your own risk.
+	- Old #inst add code has been completely removed.
+--------- Added:
+	- New Magician feature for gearing group pets automatically (details below)
+	- A timer on nukes was created to prevent an item from being 'attempted' to be cast mutiple times even if it was on cooldown. 
+		> E3 would cast the item, then loop back around and it would see the item as a valid cast again as "cooldown" would not be set yet. 
+		> Now a 1 second timer is created for any item based nuke to give time for the client to get the updated value and start the items cooldown.  
+		> This probably should be done in other areas but at the time I was testing Molten Orb from the mage.
+	- Players can now send the expedition leader a tell saying "dzadd" to automatically get invites. 
+	***EXAMPLE*** "/t Ewiclip dzadd" (single player) or "/bcaa //t Ewiclip dzadd" (all eqbcs players)
+	- Necromancer "Orb of Shadows" and "Orb of Souls" will now automatically cast on Tank Heals and XTarget Heal if the target is below 90% HP immediately following a heal. This can be toggled on/off inside the Heal Section of the INI. This feature is ON by default. 
+	***NOTE*** E3 WILL NOT BEEP IF YOU'RE OUT OF ORBS. It is completely up to you to ensure your healers have orbs in their inventory if you'd like to use this feature. 
+	- castSimpleSpell "spellName" "targetid"
+	> This will use e3 Cast but is far simpler to use. Used for spells that are non combat related and you don't expect to fail
+		Stop using /casting please :)
+	- notifyViaBCTell  ${ChatSender} "Message"
+		> this will try and use /bct if the ChatSender is in your group of bots, else it uses /tell
+	- check_Basics
+		>This is added for a check method you want to work across all toons, to limit the pollution of the Adv.ini 
 
-. Set up some type of fix for 'you can use the ability X again in Y minute(s) Z seconds
-	This should be easy enough to set up as event that creates a timer.
+	- PrivateCode.inc created and included for everyone. This is a place to include your personal customizations that you don't want to lose with future updates. 
+	***We will not provide future updates to this file. **NOTE** be sure to not overwrite your file with a future "BLANK" file***
+	***if you contribute to the github repository you can use this command to prevent git from uploading your private code ***
+	*** 	> git update-index --skip-worktree e3_PrivateCode.inc ****
+	
+--------- Pet Arming Changes:
+	- New Arm Pets feature which opens up new commands to the mage in your group.
+		> From the non-mage send a /tell to your mage
+		-> "arm pets", 
+		-> "arm pets fire" , 
+		-> "arm pets ice", 
+		-> "arm pets 2dispel", 
+		-> "arm pets default <character>", 
+		-> "arm pets ice <character>", 
+		-> "arm pets fire <character>" 
+		-> "arm pets 2dispel <character>"
+	
+	This will equip all the members of your group (if you don't specify character) with the spectral plate/heirlooms + configured loadouts for your class.
+	***NOTE*** a free bag space is required from your mage. 
 
-. Fix Auto-forage ( this is very very very...very minor )
+	- If you have any particular loadouts that you want to see, please let me know so I can include them. 
+		> Currently:
+		-> Mage/Enc/Nec default is Slow/Dispell.  SK/Druid default is Dispell/Mala, Everyone else is also Dispell/Mala. 
+		-> Mage/Enc/Nec fire is Fire/Fire, Sk/Druid is Fire/Mala
+		-> Mage/Enc/Nec ice is ice/ice, SK/Druid is ice/mala.
+		-> Mage/Enc/Nec 2dispel is dispel/dispel, SK/Druid is dispel/dispel.
+===============================================================================================================================================================================================
+===============================================================================================================================================================================================
 
-. Request- Add auto trade functions. Possibly auto accept trade with bots and a /bc notification when a non-bot is trading with a bot?
- 
-. Heal Chain.  I hate heal chains.
+v5.1 r8 Change log:
 
-. Drag Corpses.  This was taken out due to issues with server stability.
+--------- Fixed:
 
-. Add a function to cast a buff on a given bot
+	- Fixed issue with Magicians not summoning Mod Rods unless they had spell casting haste AAs.
+	- Fixed issue with e3_casting not properly  using items.
+	- Fixed issue with unpauseTwist not getting called in e3_Casting.
+	- Fixed issue with /Rotate trying to cast abilities/spells that were on cooldown already.
+	- Fixed memory leak caused by resist check timers not getting removed when a player switched targets.
+	
+--------- Changed:
+	
+	- Old mod rods get automatically deleted before Magicians summon new mod rods.
+	- Healers will now interrupt detrimental spells and HoTs to cast direct heals on Tank & XTarget as needed.
+	- AutoSetPctAAExp is now defaulted to OFF
+	- Damage Over Time casting has been completely overhauled. (details below)
+	- Nukes defined with a /GoM flag will no longer pause if that specific nuke is on cooldown
+	- e3_Cast can now be called with an additional parameter to silence the echo received from a successful cast. (EX: /call e3_Cast ${TargetID} ${ArrayName} ${i} 1)
+	- e3 Data.ini no longer hardcodes a server name.
+	- Character INIs created while logged into Project Lazarus are now named "CharacterName_Lazarus" instead of "CharacterName_PEQTGC" (EX: Ewiclip_Lazarus.ini)
+		***NOTE: Project Lazarus players can continue to use INI files with PEQTGC in the name but new INIs are created with Lazarus in the name.***
+	- Project Lazarus "Gift of Mana" proc spells now work with the /GoM flag
+	
+--------- Added:
 
-. Create an event to allow users to search for settings, and change those settings on the fly
-	Something that would function much like the help file, but instead give you a read-out of different settings to toggle
+	- New Loot Only Stackable Feature Added. Loot only stackable over N value. Optional flags for looting common or all trade skill items included, as well as the N value.
+	- TimeLeftOnMySpell(SpellName) function added -- returns seconds remaining for spells / items casted on the NPC by you. 
+	- GetEmptySpellGem function added -- returns an empty spell gem # if one exists
+	
+--------- Damage Over Time Changes:
 
-. add enhancements to /only and /not so that you can set your own "groups".  also make another tag for group leader only
+	- /AllowSpellSwap added : Allows DoTs to self-shuffle without getting stuck in a "mem -> demem -> mem" loop
+	- /TriggerSpell|SpellName added : Allows DoTs that put 2 Detrimental Effects on the NPC to recast if either the primary or secondary DoT is missing
+	- /NoEarlyRecast added : Allows you to define that a spell should NOT be recasted before it has worn off. (Think Splort/Splurt)
+	- /NoStack added : Allows you to skip this spell if anyone else has already casted it onto the NPC. (Most debuffs cannot be stacked from 2 people even if they have a DoT component)
+	- Damage Over Time spells now read the Target data instead of timer data for recasting.
+	- "QuickCast" feature added to allow items/AAs to cast immediately after spells without pausing for the universal cooldown. INIs need to define an item/AA immediately after a spell to take advantage of this.
+	- DoTs defined in the INI will automatically mem into open spell gems regardless of if the /Gem|# flag is passed or not.
+	
+===============================================================================================================================================================================================
+===============================================================================================================================================================================================
 
-. rework auto assist.  This one sucks
+v5.1 r7 Change log:
 
-. raid invite stuff
+--------- Fixed:
 
-. group check function to tell you if groups are all formed correctly
+	- Fixed issue with Magicians not summoning Mod Rods unless they had spell casting haste AAs.
+	- Fixed issue with e3_casting not properly  using items.
+	- Fixed issue with unpauseTwist not getting called in e3_Casting.
+	- Fixed issue with /Rotate trying to cast abilities/spells that were on cooldown already.
+	- Fixed memory leak caused by resist check timers not getting removed when a player switched targets.
+	
+--------- Changed:
+	
+	- Old mod rods get automatically deleted before Magicians summon new mod rods.
+	- Healers will now interrupt detrimental spells and HoTs to cast direct heals on Tank & XTarget as needed.
+	- AutoSetPctAAExp is now defaulted to OFF
+	- Damage Over Time casting has been completely overhauled. (details below)
+	- Nukes defined with a /GoM flag will no longer pause if that specific nuke is on cooldown
+	- e3_Cast can now be called with an additional parameter to silence the echo received from a successful cast. (EX: /call e3_Cast ${TargetID} ${ArrayName} ${i} 1)
+	- e3 Data.ini no longer hardcodes a server name.
+	- Character INIs created while logged into Project Lazarus are now named "CharacterName_Lazarus" instead of "CharacterName_PEQTGC" (EX: Ewiclip_Lazarus.ini)
+	- Project Lazarus "Gift of Mana" proc spells now work with the /GoM flag
+	
+--------- Added:
 
-. Multiple inis
+	- New Loot Only Stackable Feature Added. Loot only stackable over N value. Optional flags for looting common or all trade skill items included, as well as the N value.
+	- TimeLeftOnMySpell(SpellName) function added -- returns seconds remaining for spells / items casted on the NPC by you. 
+	- GetEmptySpellGem function added -- returns an empty spell gem # if one exists
+	
+--------- Damage Over Time Changes:
 
-. heals + / -
-
-
-| finish auto destroy stuff
-| Create toggles for various functions to be listed in either e3_Settings, or e3_Data.  These should be added to the set / toggle function list
-	/declare reagentCheckInterval int outer 60
-	/if (${Ini[${genSettings_Ini},Background,Reagent Check Interval (Min)].Length}) /varset reagentCheckInterval ${Ini[${genSettings_Ini},Background,Reagent Check Interval (Min)]}
-
-
+	- /AllowSpellSwap added : Allows DoTs to self-shuffle without getting stuck in a "mem -> demem -> mem" loop
+	- /TriggerSpell|SpellName added : Allows DoTs that put 2 Detrimental Effects on the NPC to recast if either the primary or secondary DoT is missing
+	- /NoEarlyRecast added : Allows you to define that a spell should NOT be recasted before it has worn off. (Think Splort/Splurt)
+	- /NoStack added : Allows you to skip this spell if anyone else has already casted it onto the NPC. (Most debuffs cannot be stacked from 2 people even if they have a DoT component)
+	- Damage Over Time spells now read the Target data instead of timer data for recasting.
+	- "QuickCast" feature added to allow items/AAs to cast immediately after spells without pausing for the universal cooldown. INIs need to define an item/AA immediately after a spell to take advantage of this.
+	- DoTs defined in the INI will automatically mem into open spell gems regardless of if the /Gem|# flag is passed or not.
+	
 ===============================================================================================================================================================================================
 ===============================================================================================================================================================================================
 

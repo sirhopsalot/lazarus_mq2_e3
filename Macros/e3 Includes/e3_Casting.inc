@@ -26,7 +26,8 @@
 | CAST_DISTRACTED      | To Distracted ( spell book open )                                    |
 | CAST_COMPONENTS| Missing Component													                                |
 |---------------------------------------------------------------------------------------------|
-Sub e3_Cast(int targetID, ArrayName, int ArrayIndex)
+Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
+|StopEchos = Skips the /echo on successful cast if a value other than 0 is passed with the /call e3_Cast
 /if (${Debug} || ${Debug_Casting}) /echo |- e3_Cast ==>
 	/varset pendingCast		${${ArrayName}[${ArrayIndex},${iCastName}]}
 	/varset pendingCastID	${${ArrayName}[${ArrayIndex},${iCastID}]}
@@ -138,7 +139,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex)
 |  Casting
 :cast_spell
   |/if (${Me.Name.Equal[Lube]}) /gu Casting ${pendingCast} ${pendingCastID} ${Spawn[id ${targetID}].Name} ${targetID}
-	/echo Casting ${pendingCast} ${pendingCastID} ${Spawn[id ${targetID}].Name} ${targetID}
+	/if (!${StopEchos}) /echo Casting ${pendingCast} ${pendingCastID} ${Spawn[id ${targetID}].Name} ${targetID} in ${e3CastTime}
 	|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	|Use Disc
 	/if (${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Disc]}) {
@@ -152,7 +153,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex)
 				/squelch /target id ${targetID}
 				/delay 5 ${Target.ID} == ${targetID}
 			}
-      /varset ActionTaken TRUE
+			/varset ActionTaken TRUE
 			/disc ${pendingCast}
 		}
 	|-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -173,12 +174,13 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex)
 			/delay 3 !${Me.Moving}
 		}
 		|- Equip an item that must be equipped to cast and is not currently equipped.  must use base inventory slots 24 through 31
-		/if (${Bool[${${ArrayName}[${ArrayIndex},${iItemMustEquip}]}]}) {
-		  /if (${FindItem[=${pendingCast}].ItemSlot} >=23) {
-        /varset oldItem ${Me.Inventory[${${ArrayName}[${ArrayIndex},${iItemMustEquip}]}].Name}
-        /call WriteToIni "${MacroData_Ini},${Me.CleanName}-${MacroQuest.Server},Pending Exchange" "${oldItem}/${${ArrayName}[${ArrayIndex},${iItemMustEquip}]}" 1
-        /call SwapItem "${pendingCast}" "${${ArrayName}[${ArrayIndex},${iItemMustEquip}]}"
-      }
+	    /if (${Bool[${${ArrayName}[${ArrayIndex},${iItemMustEquip}]}]}) {
+			
+			/if (${FindItem[=${pendingCast}].ItemSlot} >=23) {
+        	/varset oldItem ${Me.Inventory[${${ArrayName}[${ArrayIndex},${iItemMustEquip}]}].Name}
+        	/call WriteToIni "${MacroData_Ini},${Me.CleanName}-${MacroQuest.Server},Pending Exchange" "${oldItem}/${${ArrayName}[${ArrayIndex},${iItemMustEquip}]}" 1
+        	/call SwapItem "${pendingCast}" "${${ArrayName}[${ArrayIndex},${iItemMustEquip}]}"
+      		}
 		}
 		|- Define item|alt|gem# parameter
 		/if (${${ArrayName}[${ArrayIndex},${iCastType}].Equal[AA]}) {
@@ -194,11 +196,50 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex)
 			}
 		}
     |/echo AT pendingCastID ${pendingCastID} pendingType ${pendingType}" "-targetid|${targetID}"
-		/varset ActionTaken TRUE
+	/varset ActionTaken TRUE
+	
+
     /if (${${ArrayName}[${ArrayIndex},${iTargetType}].Equal[Self]}) {
-		  /casting "${pendingCastID}|${pendingType}"
+		/if (${Bool[${FindItem[=${pendingCast}]}]}) {
+
+			/useitem "${pendingCast}"
+			|set to a default good value unless overwritten for a reason
+			/varset castReturn CAST_SUCCESS
+			|Note when using /useitem, if the next 'cast' is a spell you need a 0.3 sec delay similar to bard songs.
+			|Possible optimizations to pass in to use the delay or not, but be warned, not using the delay
+			|and the spell is the next can get you to a point where your spell gems lock up and need to use an AA to fix.
+			/delay 3
+			
+
+		} else {
+			/casting "${pendingCastID}|${pendingType}"		
+		}
     } else {
-      /casting "${pendingCastID}|${pendingType}" "-targetid|${targetID}"
+		/if (${Bool[${FindItem[=${pendingCast}]}]}) {
+		    /declare i_target int local 0
+    		|/echo getting tareget for item
+			/for i 1 to 5
+				/if (${Bool[${Target.ID} != ${targetID}]}) {
+      				/target id ${targetID}
+      				/delay 1
+    			} else {
+					|ExitLoop if target is correct
+					/break
+			}
+			/next i_target
+			|/echo casting item "${pendingCast}" on ${targetID}
+			/useitem "${pendingCast}"
+			|set to a default good value unless overwritten for a reason
+			/varset castReturn CAST_SUCCESS
+			|Note when using /useitem, if the next 'cast' is a spell you need a 0.3 sec delay similar to bard songs.
+			|Possible optimizations to pass in to use the delay or not, but be warned, not using the delay
+			|and the spell is the next can get you to a point where your spell gems lock up and need to use an AA to fix.
+			/delay 3
+			|set to a default good value unless overwritten for a reason
+			
+		} else {
+			/casting "${pendingCastID}|${pendingType}" "-targetid|${targetID}"
+		}
     }
 		|- Memorizing spell
 		/if (${Cast.Status.Find[M]}) /delay 3s !${Cast.Status.Find[M]}
@@ -214,83 +255,90 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex)
 		  }
 			/if (!${interruptFlag}) {
 			   |- Run SubToRun
-			   |/varset Debug_Casting TRUE
+			    |/varset Debug_Casting TRUE
 				/if (${Bool[${${ArrayName}[${ArrayIndex},${iSubToRun}]}]}) {
+					
+					|call interrupt check
 					/call ${${ArrayName}[${ArrayIndex},${iSubToRun}]} ${ArrayName} ${ArrayIndex}
+
 					/if (!${c_SubToRun} && ${Me.Casting.ID}) {
-           /if (${Debug} || ${Debug_Casting}) /echo SubToRun called interrupt ${${ArrayName}[${ArrayIndex},${iSubToRun}]}
-					 /call interrupt
-					 /goto :interrupted
+           				/if (${Debug} || ${Debug_Casting}) /echo SubToRun called interrupt ${${ArrayName}[${ArrayIndex},${iSubToRun}]}
+					 	/call interrupt
+						/delay 3
+						/goto :interrupted
 					}
-        |-no SubToRun
+					  /delay 1
+        		|-no SubToRun
 				} else {
 				  /delay 1
 				}
 				|this will make tank and important heals ignore everything but subToRun
-        /if (${Select[${ArrayName},tankHeals2D,importantHeals2D]}) /goto :cast_still_pending
+       			 /if (${Select[${ArrayName},tankHeals2D,importantHeals2D]}) /goto :cast_still_pending
 				|- Other reasons to cancel
-        /if (!${Assisting} && ${Following}) {
-          /if (${SpawnCount[=${FollowTarget}]} && ${Spawn[=${FollowTarget}].Distance} < ${LeashLength}) {
-            /if ((${Spawn[=${FollowTarget}].Distance} > 20 || ${NetBots[${FollowTarget}].Moving})) {
-              /if (${Debug} || ${Debug_Casting}) /echo following interrupt
-              |/bc following interrupt ${Time}  ${NetBots[${FollowTarget}].Moving}  ${Spawn[${FollowTarget}].Moving} ${Spawn[${FollowTarget}].Distance}
-              /call interrupt
-              /goto :interrupted
-            }
-          }
-        }
-        |- goose
-				/if (${Me.State.Equal[DUCK]}) {
-          /if (${Debug} || ${Debug_Casting}) /echo duck called interrupt
+				/if (!${Assisting} && ${Following}) {
+				/if (${SpawnCount[=${FollowTarget}]} && ${Spawn[=${FollowTarget}].Distance} < ${LeashLength}) {
+					/if ((${Spawn[=${FollowTarget}].Distance} > 20 || ${NetBots[${FollowTarget}].Moving})) {
+					/if (${Debug} || ${Debug_Casting}) /echo following interrupt
+					|/bc following interrupt ${Time}  ${NetBots[${FollowTarget}].Moving}  ${Spawn[${FollowTarget}].Moving} ${Spawn[${FollowTarget}].Distance}
 					/call interrupt
-          /goto :interrupted
-				}
-				|-Dead target and I'm not using a detrimental AE or self buff
-				/if (!${Select[${${ArrayName}[${ArrayIndex},${iTargetType}]},PB AE,Targeted AE,Corpse,Self]}) {
-				  /if ((!${Bool[${Target.ID}]} || ${Spawn[${Target.ID}].Dead})) {
-            /if (${Debug} || ${Debug_Casting}) /echo target corpse called interrupt
-            /call interrupt
-            /goto :interrupted
-          }
-				}
-				|-Target is out of range
-				/if (${targetID} != ${Me.ID} && !${Select[${${ArrayName}[${ArrayIndex},${iTargetType}]},PB AE,Self]}) {
-				  /if (${Target.Distance} > ${${ArrayName}[${ArrayIndex},${iMyRange}]}) {
-            /if (${Debug} || ${Debug_Casting}) /echo target range called interrupt
-            /call interrupt
-            /goto :interrupted
-          }
-				}
-				|-Moved since casting began
-				/if (${castEndTime}>5) {
-					/if (${Math.Distance[${startingLoc}]}>=8) {
-            /if (${Debug} || ${Debug_Casting}) /echo moved 8+ units after casting: called interrupt
-						/call interrupt
-            /goto :interrupted
+					/goto :interrupted
 					}
 				}
-				|-Check LifeSupport if more than 1.5 sec left to cast end
-				/if (${Defined[lifeSupport2D]}) {
-				  /if (${Me.PctHPs}<70 && ${castEndTime}>15) /call check_lifeSupport
-        }
-        |-check only select background events
-				/doevents Follow
-				/doevents Stop
-				/doevents MoveHere
-				/doevents BackOff
-				/doevents clickit
-				/doevents bark
-				/call alerts_Background_Events
+				}
+				|- goose
+				/if (${Me.State.Equal[DUCK]}) {
+					
+					/if (${Debug} || ${Debug_Casting}) /echo duck called interrupt
+							/call interrupt
+							/goto :interrupted
+				}
+						|-Dead target and I'm not using a detrimental AE or self buff
+				/if (!${Select[${${ArrayName}[${ArrayIndex},${iTargetType}]},PB AE,Targeted AE,Corpse,Self,Group v1]}) {
+					/if ((!${Bool[${Target.ID}]} || ${Spawn[${Target.ID}].Dead})) {
+						/if (${Debug} || ${Debug_Casting}) /echo target corpse called interrupt
+						/call interrupt
+						/goto :interrupted
+					}
+				}
+						|-Target is out of range
+				/if (${targetID} != ${Me.ID} && !${Select[${${ArrayName}[${ArrayIndex},${iTargetType}]},PB AE,Self]}) {
+					/if (${Target.Distance} > ${${ArrayName}[${ArrayIndex},${iMyRange}]}) {
+						/if (${Debug} || ${Debug_Casting}) /echo target range called interrupt
+						/call interrupt
+						/goto :interrupted
+					}
+				}
+						|-Moved since casting began
+				/if (${castEndTime}>5) {
+					
+					/if (${Math.Distance[${startingLoc}]}>=8) {
+						/if (${Debug} || ${Debug_Casting}) /echo moved 8+ units after casting: called interrupt
+						/call interrupt
+						/goto :interrupted
+					}
+				}
+						|-Check LifeSupport if more than 1.5 sec left to cast end
+						/if (${Defined[lifeSupport2D]}) {
+						/if (${Me.PctHPs}<70 && ${castEndTime}>15) /call check_lifeSupport
+				}
+				|-check only select background events
+						/doevents Follow
+						/doevents Stop
+						/doevents MoveHere
+						/doevents BackOff
+						/doevents clickit
+						/doevents bark
+						/call alerts_Background_Events
 			}
 			/goto :cast_still_pending
 		}
   :interrupted
 		/varset castReturn ${Cast.Result}
 		|- Cast Result Processing
-		/if (${castReturn.Equal[CAST_SUCCESS]}) {
-			/varset lastSuccessfulCast ${pendingCast}
-		} else /if (${castReturn.Equal[CAST_INTERRUPTED]} || ${interruptFlag}) {
+		  /if (${castReturn.Equal[CAST_INTERRUPTED]} || ${interruptFlag}) {
 			/varset castReturn CAST_INTERRUPTED
+		} else /if (${castReturn.Equal[CAST_SUCCESS]}) {
+			/varset lastSuccessfulCast ${pendingCast}
 		} else /if (${castReturn.Equal[CAST_RESIST]}) {
 			/if (${Debug_Casting} && ${Target.ID}) /docommand ${ChatToggle} ** ${Target.Name} resisted ${pendingCast} **
 		} else /if (${castReturn.Equal[CAST_IMMUNE]}) {
@@ -314,8 +362,9 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex)
 	}
 	/if (${Following} && !${Assisting}) /call AcquireFollow
   /if (${Me.Class.ShortName.Equal[BRD]}) /varset resumeTwistDelay 5
-  |/if (${returnTwist})	/call unpauseTwist
+  /if (${returnTwist})	/call unpauseTwist
 	/if (${Debug} || ${Debug_Casting})  /echo |- e3_Cast -| castReturn= ${Cast.Result} ${castReturn}
+
 |/varset Debug_Casting FALSE
 /return
 
