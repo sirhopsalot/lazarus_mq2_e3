@@ -2104,6 +2104,10 @@ SUB check_Supply
 			/if (!${Defined[SupplyTimer${i}]}) /declare SupplyTimer${i} timer outer 0
 			|/if (!${Bool[${FindItem[=${supplyItem}]}]} && ${SupplyTimer${i}} == 0) {
       /if (${FindItemCount[${supplyItem}]} < ${supplyQuantity} && ${SupplyTimer${i}} == 0 && ) {
+        /if (${FindItem[${supplyItem}].Lore} && ${supplyQuantity} > 1 && !${supplyItem.Equal[Summoned: Large Modulation Shard]}) {
+          /if (${Debug}) /echo Supply item ${supplyItem} is Lore but has a specified quantity of ${supplyQuantity}
+          /return
+        }
 				/echo ==> Supply: Creating a ${supplyItem} using ${supplySpell} need ${supplyQuantity}
 				/delay 1
 				/tar ${Me}
@@ -2123,17 +2127,24 @@ SUB check_Supply
             /delay 2s
 				}
 
-				/if (${supplyGem} == 0 || ${supplyGem} == NULL) { 
-           /echo Supply trying to get a:"${supplySpell}" 
-           /call castSimpleSpell "${supplySpell}" ${Me.ID}
-       	} else {
-           /echo Supply with Gem specific: ${supplySpell}/Gem|${supplyGem}
-           /call castSimpleSpellBase "${supplySpell}/Gem|${supplyGem}" ${Me.ID} False
-					 |/casting "${supplySpell}" ${supplyGem}
-				}
-				/delay 20s ${Cursor.ID}
+        /declare j int local
+        /for j 1 to ${supplyQuantity}
+        /if (${supplyGem} == 0 || ${supplyGem} == NULL) { 
+          /echo Supply trying to get a:"${supplySpell}" 
+          /call castSimpleSpell "${supplySpell}" ${Me.ID}
+        } else {
+          /echo Supply with Gem specific: ${supplySpell}/Gem|${supplyGem}
+          /call castSimpleSpellBase "${supplySpell}/Gem|${supplyGem}" ${Me.ID} False
+          |/casting "${supplySpell}" ${supplyGem}
+        }
+        /delay 20s ${Cursor.ID}
         /call ClearCursor
         /delay 1s
+        /if (${FindItemCount[${supplyItem}]} >= ${supplyQuantity}) {
+          /goto :supplyFinished
+        }
+        /next j
+        :supplyFinished
   		  
 				| If the item is a modulation shard, tell everyone to put it in their bag
 				/if (${supplyItem.Find[Modulation Shard]}) {

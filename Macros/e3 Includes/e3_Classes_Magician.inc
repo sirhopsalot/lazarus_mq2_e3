@@ -84,17 +84,18 @@ sub event_armPets(line, ChatSender, loadType)
   
   |first check that we have an empty slot
   /declare BackSlotThatIsOpen int 0
-  /declare foldedPackInSlotID int local 0
-  /declare foldedPackInSlot string local NULL
+  /declare itemInSlotID int local 0
+  /declare itemInSlot string local NULL
   /declare i int local
   /for i 1 to 10
   /if (!${Bool[${InvSlot[pack${i}].Item.ID}]}) {
     /varset BackSlotThatIsOpen ${i}
     /goto :bagslotcheckdone
-  } else /if (${Bool[${InvSlot[pack${i}].Item.Name.Equal[Folded Pack of Enibik's Heirlooms]}]} || ${Bool[${InvSlot[pack${i}].Item.Name.Equal[Folded Pack of Spectral Plate]}]} || ${Bool[${InvSlot[pack${i}].Item.Name.Equal[Folded Pack of Spectral Armaments]}]}) {
+  |} else /if (${Bool[${InvSlot[pack${i}].Item.Name.Equal[Folded Pack of Enibik's Heirlooms]}]} || ${Bool[${InvSlot[pack${i}].Item.Name.Equal[Folded Pack of Spectral Plate]}]} || ${Bool[${InvSlot[pack${i}].Item.Name.Equal[Folded Pack of Spectral Armaments]}]} || !${InvSlot[pack${i}].Item.Container}) {
+  } else /if (!${InvSlot[pack${i}].Item.Container}) {
     /varset BackSlotThatIsOpen ${i}
-    /varset foldedPackInSlotID ${i}
-    /varset foldedPackInSlot ${InvSlot[pack${i}].Item.Name}
+    /varset itemInSlotID ${i}
+    /varset itemInSlot ${InvSlot[pack${i}].Item.Name}
     /goto :bagslotcheckdone
   } else /if (${Bool[${InvSlot[pack${i}].Item.Name.Equal[Phantom Satchel]}]} || ${Bool[${InvSlot[pack${i}].Item.Name.Equal[Pouch of Quellious]}]}) {
     /echo Found an opened summoned pack, checking and destroying.
@@ -119,13 +120,13 @@ sub event_armPets(line, ChatSender, loadType)
   /next i
   :bagslotcheckdone
 
-  /if (${foldedPackInSlotID} > 0) {
+  /if (${itemInSlotID} > 0) {
     /declare m int local 1
     /declare n int local 1
     /for m 1 to 10
     /for n 1 to 10 
     /if (!${InvSlot[pack${m}].Item.Item[${n}].ID}) {
-      /itemnotify pack${foldedPackInSlotID} leftmouseup
+      /itemnotify pack${itemInSlotID} leftmouseup
       /itemnotify in pack${m} ${n} leftmouseup
       /goto :bagslotcleared
     }
@@ -134,6 +135,9 @@ sub event_armPets(line, ChatSender, loadType)
     /if (${Cursor.ID}) {
       /tell ${ChatSender} Arm Pets: Unable to clear bagslot. Exiting
       /goto :armpetend
+    }
+    /if (${Bool[${InvSlot[pack${itemInSlotID}].Item.ID}]}) {
+      /echo "Arm Pets: Bag slot not cleared. Exiting"
     }
   }
   :bagslotcleared
@@ -167,9 +171,9 @@ sub event_armPets(line, ChatSender, loadType)
     |/echo checking character: [${characterToWorkOn}] vs [${Spawn[${Group.Member[${counter}]}].Name}]
    
     /if (${characterToWorkOn.Length}>0 && !${characterToWorkOn.Equal[${Spawn[${Group.Member[${counter}]}].Name}]}) /continue
-    
+
     /varset bodytype ${Spawn[${Group.Member[${counter}]}].Pet.Body}
-    
+
     /if (${Spawn[${Group.Member[${counter}]}].Pet.ID} && !${Spawn[${Group.Member[${counter}]}].Pet.Name.Find[familiar]} && ${Spawn[${Group.Member[${counter}]}].Pet.Level}>1) {
       
       /bc Arm Pets: Working on ${Spawn[${Group.Member[${counter}]}].Name} 's pet
@@ -278,16 +282,17 @@ sub event_armPets(line, ChatSender, loadType)
         /bc Arm Pets: Creating Weapons
         /call summonUnpackAndSelect ${Spawn[${Group.Member[${counter}]}].Pet.ID} "Grant Spectral Armaments" "Folded Pack of Spectral Armaments" ${primaryWeapon} ${secondaryWeapon}
       }
-      /if (${foldedPackInSlotID} > 0) {
-        /echo Item to put back ${foldedPackInSlot}
-        /if (${FindItemCount[${foldedPackInSlot}]} > 0) {
-          /itemnotify "${foldedPackInSlot}" leftmouseup
+      /if (${itemInSlotID} > 0) {
+        |/echo Item to put back ${itemInSlot}
+        /if (${FindItemCount[${itemInSlot}]} > 0) {
+          /itemnotify "${itemInSlot}" leftmouseup
         } else {
-          /if (${foldedPackInSlot.Equal[Folded Pack of Spectral Armaments]}) {
+          |/echo Could not find item to put back ${itemInSlot}
+          /if (${itemInSlot.Equal[Folded Pack of Spectral Armaments]}) {
             /call castSimpleSpell "Grant Spectral Armaments" ${Me.ID}
-          } else /if (${foldedPackInSlot.Equal[Folded Pack of Enibik's Heirlooms]}) {
+          } else /if (${itemInSlot.Equal[Folded Pack of Enibik's Heirlooms]}) {
             /call castSimpleSpell "Grant Enibik's Heirlooms" ${Me.ID}
-          } else /if (${foldedPackInSlot.Equal[Folded Pack of Spectral Plate]}) {
+          } else /if (${itemInSlot.Equal[Folded Pack of Spectral Plate]}) {
             /call castSimpleSpell "Grant Spectral Plate" ${Me.ID}
           }
         }
@@ -315,7 +320,7 @@ sub summonUnpackAndSelect(targetID, spellName, ItemName, primaryItem, secondaryI
       /if (${armPetArray.Size}) {
         
         /if (${FindItemCount[${ItemName}]} > 0) {
-          /echo found ${ItemName}
+          |/echo found ${ItemName}
           /itemnotify "${ItemName}" leftmouseup
         } else {
           /call BuildSpellArray "armPetArray" "armPetArray2D"
@@ -425,10 +430,10 @@ sub summonUnpackAndGive(targetID, spellName, ItemName)
       /declare armPetArray[1] string outer ${spellName}
       /if (${armPetArray.Size}) {
         /if (${FindItemCount[${ItemName}]} > 0) {
-          /echo ItemFound: ${ItemName}
+          |/echo ItemFound: ${ItemName}
           /itemnotify "${ItemName}" leftmouseup
         } else {
-          /echo ItemNotFound ${ItemName}
+          |/echo ItemNotFound ${ItemName}
           |/echo building the spell array for heirlooms
           /call BuildSpellArray "armPetArray" "armPetArray2D"
           /call e3_Cast ${Me.ID} "armPetArray2D" 1 False
