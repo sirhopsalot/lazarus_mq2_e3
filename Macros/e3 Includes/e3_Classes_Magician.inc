@@ -239,7 +239,7 @@ sub event_armPets(line, ChatSender, loadType)
   }
 
   /tell ${ChatSender} Finished arming pets.
-  /if (${Group.Leader.ID}) {
+  /if (${Group.Leader.ID}>0) {
     | Move mage back to group 
     /call TrueTarget ${Group.Leader.ID}
     /call MoveToLoc ${Target.Y} ${Target.X} 50 15
@@ -434,15 +434,7 @@ sub summonUnpackAndSelect(targetID, spellName, ItemName, primaryItem, secondaryI
         /delay 1s
 
         | If its a cleric hammer and mage does not have one already, just skip the primary section
-        /if (!${primaryItem.Find[${clericHammer}]}) {
-          /itemnotify "${primaryItem}" leftmouseup
-          /delay 5s ${Bool[${Cursor.ID}]}
-          /if (!${Cursor.ID}) {
-            /echo summonUnpackAndSelect: Could not load primary item to cursor, exiting
-            /return
-          }
-        } else /if (${primaryItem.Find[${clericHammer}]} && ${FindItemCount[${clericHammer}]}>0) {
-          /echo Giving Cleric Hammer to pet.
+        /if (!${primaryItem.Find[${clericHammer}]} || (${primaryItem.Find[${clericHammer}]} && ${FindItemCount[${clericHammer}]}>0)) {
           /itemnotify "${primaryItem}" leftmouseup
           /delay 5s ${Bool[${Cursor.ID}]}
           /if (!${Cursor.ID}) {
@@ -570,10 +562,8 @@ sub findAndDestroyOldSatchels()
           /echo findAndDestroyOldSatchels: Unable to clear bagslot.
           /return
         }
-        /goto :packDestroyed
       }
     }
-    :packDestroyed
     /next m
   /return
 
@@ -583,13 +573,12 @@ sub summonUnpackAndGive(targetID, spellName, ItemName)
       |/echo ItemFound: ${ItemName}
       /itemnotify "${ItemName}" leftmouseup
     } else {
-
       /call castSimpleSpell "${spellName}" ${Me.ID}
       /delay 3s ${Bool[${Cursor.ID}]}
     }
-    |/if (${Defined[armPetArray]}) /deletevar armPetArray
+
     /delay 1s
-  |/echo done casting, put in inventory
+    |/echo done casting, put in inventory
     /autoinventory
     /delay 3s !${Bool[${Cursor.ID}]}
     /delay 1s
