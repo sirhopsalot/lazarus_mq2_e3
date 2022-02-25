@@ -1,15 +1,16 @@
 |---------------------------------------------------|
-|- e3.mac	v7.0				                             -|
+|- e3.mac	v8.0				                             -|
 |- Originally written by Killians of PEQ.	         -|
 |- Enhanced and maintained by Creamo of PEQ.       -|
+|- Enhanced for Laz server by Rekka and Ewiclip    -|
 |- Thanks to Vysra for IDE,additional plugins,code -|
 |---------------------------------------------------|
 |#warning
-#turbo 100
+#turbo 240
 #include e3 Includes\e3_Setup.inc
 
 SUB Main(modeSelect)
-  /declare macroVersion string outer 7.0
+  /declare macroVersion string outer 8.0
   /declare Debug bool outer false
   /declare IniMode string outer Ini
   /if (${Bool[${Plugin[MQ2IniExt]}]}) {
@@ -22,10 +23,15 @@ SUB Main(modeSelect)
 		/delay 5
 	}
   /declare i int local
+  /declare mainLoop_IsHealer bool local False
+  /if (${Select[${Me.Class.ShortName},CLR,DRU,SHM]}) {
+    /varset mainLoop_IsHealer True
+  } 
 
 :MainLoop
 /if (${Debug}) /echo |- MainLoop ==>
 		/varset ActionTaken FALSE
+    
     /call check_Basics
  		/call check_Active
 		/call check_Idle
@@ -41,34 +47,58 @@ SUB Main(modeSelect)
 		| If I'm not active, call mainFunctions
 		/if (!${activeTimer}) {
       |These are functions in the e3_setup/Advanced.ini class sections... ex CLR Function#1=check_DivineArb
-			/for i 1 to ${mainLoop_Array.Size}
-				/if (${Bool[${mainLoop_Array[${i}]}]}) /call ${mainLoop_Array[${i}]}
-			/if (!${ActionTaken}) /next i
+			
+
+      :restartMainLoopSubLoop
+      |if you are a healer, hard coding a check_heals. This is to deal with sub methods being able to call
+      |interrupts for heals and then then ActionTaken is set to true, which may never get to your check_heals
+      |all healers should have check_Heals as their #1, this is just making sure it is. 
+      /if (${mainLoop_IsHealer}) {
+        /call check_Heals
+      }
+      /for i 1 to ${mainLoop_Array.Size}
+				/if (${Bool[${mainLoop_Array[${i}]}]}) {
+          /call ${mainLoop_Array[${i}]}
+          /if (${castReturn.Equal[CAST_INTERRUPTED]}) {
+            /if (${mainLoop_IsHealer}) {
+              /call check_Heals
+            }
+          }
+          /varset castReturn  
+          |check to see if anything has been set to try and cast without an interrupt
+          /doevents nowCast
+          /varset castReturn  
+				  |check to see if we have spell(s) ready in nowCast that may have interrupted the above call
+          /call castNowSpells
+          /varset castReturn  
+        } 
+      /if (!${ActionTaken}) /next i
 
       /if (${Me.CombatState.NotEqual[COMBAT]}) {
         /if ((!${Me.Casting.ID} || ${Me.Class.ShortName.Equal[BRD]}) && !${use_TargetAE}) /call completePendingExchange
         /if (!${Me.Moving} && !${Following} && !${Me.Casting.ID}) {
           /if ((${Me.PctMana} < ${autoMedPctMana} && ${Me.MaxMana} > 1 && ${autoMedChar}) || (${Me.PctEndurance} < ${autoMedPctMana} && ${autoMedChar})) {
             /varset medBreak TRUE
-			/if ((${Defined[AssistType]}) && (${Select[${Me.Class.ShortName},CLR,DRU,ENC,MAG,NEC,SHM,WIZ]})) {
-			  /varset AssistType Off 
-			} else {
-			  /declare AssistType string Off
-			}
+            /if ((${Defined[AssistType]}) && (${Select[${Me.Class.ShortName},CLR,DRU,ENC,MAG,NEC,SHM,WIZ]})) {
+            /varset AssistType Off 
+            } else {
+            /declare AssistType string Off
+            }
           }
         }
       }
       /if (${medBreak}) /call check_MedBreak
 		}
 
-  /if (${MoveUtils.GM}) {
+  |**/if (${MoveUtils.GM}) {
     /squelch /stick imsafe
     /echo GM Safe kicked in, issued /stick imsafe.  you may need to reissue /followme or /assiston
-  }
+  }**|
 /if (${Debug}) {
 	/echo <== MainLoop -|
 	/delay 5
 }
+/delay 1
 /goto :MainLoop	
 /RETURN
 

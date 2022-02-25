@@ -23,6 +23,7 @@
 #include e3 Includes\e3_Utilities.inc
 #include e3 Includes\e3_Wait4Rez.inc
 #include e3 Includes\e3_QueueCast.inc
+#include e3 Includes\e3_NowCast.inc
 #include e3 Includes\e3_ClearXTargets.inc
 
 #include e3 Includes\e3_Classes_Bard.inc
@@ -53,7 +54,10 @@ SUB e3_Setup(modeSelect)
 	/declare reloadOnLoot bool outer FALSE
 	/declare missingSpellItem string outer
 	/declare numInventorySlots int outer 10
+	/declare previousSpellGemThatWasCast int outer -1
 	/call BuildSpellArrayDefinedValues
+	/call NowCastDefinedValues
+	/call BardClassDefinedValues
 
 	/if (${modeSelect.Equal[Debug]}) /varset Debug TRUE
 	| The file path for e3 Data.ini will still need to be updated in corresponding includes because you must use /noparse to write variables to inis.
@@ -138,6 +142,7 @@ SUB e3_Setup(modeSelect)
 	/next i
   |Set Turbo per class based on configuration
   /if (${${IniMode}[${advSettings_Ini},Turbo,${Me.Class.ShortName}].Length}) /declare classTurbo int outer ${${IniMode}[${advSettings_Ini},Turbo,${Me.Class.ShortName}]}
+  
   /squelch /turbo ${classTurbo}
 
 	|Ewiclip: Adding auto-casting of Necromancer orb heals. 

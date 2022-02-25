@@ -82,10 +82,10 @@ SUB check_petHeal
 		/if (${Defined[petMendPct]}) {
       /if (${Me.Pet.PctHPs} < ${petMendPct}) {
         /if (${Me.AltAbilityReady[Replenish Companion]}) {
-          /casting "Replenish Companion" "-targetid|${Me.Pet.ID}"
+          /call castSimpleSpell "Replenish Companion" ${Me.Pet.ID}
           /varset petMended TRUE
         } else /if (${Me.AltAbilityReady[Mend Companion]}) {
-          /casting "Mend Companion" "-targetid|${Me.Pet.ID}"
+          /call castSimpleSpell "Mend Companion" ${Me.Pet.ID}
           /varset petMended TRUE
         }
       }
@@ -151,8 +151,7 @@ SUB event_suspendMinion(live, ChatSender)
     /docommand ${ChatToggle} Suspending my pet...
     /if (${Me.AltAbilityReady[Suspended Minion]}) {
       /if (${Me.Casting.ID}) /call interrupt
-      /casting "Suspended Minion|alt" -maxtries|2
-      /delay 5s !${Me.Pet.ID}
+      /call castSimpleSpell "Suspended Minion" 0
       /varset currently_Suspended TRUE
     }
     /if (${Me.Pet.ID}) /pet get lost
@@ -171,7 +170,7 @@ SUB event_returnMinion(line, ChatSender)
     /if (${suspend_Pets}) {
       /docommand ${ChatToggle} Returning my pet...
       /if (${currently_Suspended}) {
-        /casting "Suspended Minion|alt" -maxtries|2
+        /call castSimpleSpell "Suspended Minion" 0
         /varset currently_Suspended FALSE
       }
       /varset suspend_Pets FALSE

@@ -71,7 +71,10 @@ SUB event_Assist(line, ChatSender, int MobID)
         } else /if (${AssistType.Equal[ranged]}) {
           /if (${Debug} || ${Debug_Assists}) /echo autofire on
           /squelch /face fast id ${AssistTarget}
-          /if (!${Me.AutoFire}) /autofire on
+          /if (!${Me.AutoFire}) {
+            /delay 1s
+            /autofire
+          } 
           /if (${RangedStickDistance.Equal[Clamp]}) {
             /if (${Target.Distance} >=30 && ${Target.Distance} <=200) {
               /squelch /stick hold moveback ${Target.Distance}
@@ -201,9 +204,9 @@ SUB check_AssistStatus
     /if (${AllowControl} || !${Select[${Me.Class.ShortName},NEC,SHD,MNK]}) /stand
   }
   | If the character is macro controlled
-  /if (${AllowControl} && ((${AssistType.Equal[melee]} || ${AssistType.Equal[ranged]}))) {
+  /if (${AllowControl} && ((${AssistType.Equal[melee]} || ${AssistType.Equal[ranged]} || ${AssistType.Equal[Autofire]} ))) {
     | Check Target: this only forces retarget for melee/autofire bots and lets casters/priests do their thing
-    /if (${Target.ID} != ${AssistTarget} && (!${Bool[${Me.Casting}]} || ${Me.Class.ShortName.Equal[BRD]}) && (${AssistType.Equal[melee]} || ${AssistType.Equal[ranged]})) /call TrueTarget ${AssistTarget}
+    /if (${Target.ID} != ${AssistTarget} && (!${Bool[${Me.Casting}]} || ${Me.Class.ShortName.Equal[BRD]}) && (${AssistType.Equal[melee]} || ${AssistType.Equal[ranged]}|| ${AssistType.Equal[Autofire]} )) /call TrueTarget ${AssistTarget}
     |----- Melee functions-------------------------------------------------------------------------------------------------------------|
       /if (${AssistType.Equal[Melee]} || ${pauseRanged}) {
         /if (${isEnraged}) {
@@ -248,11 +251,27 @@ SUB check_AssistStatus
         } else {
           /squelch /stick hold moveback ${RangedStickDistance}
         }
-        /if (!${Me.AutoFire}) /autofire on
+        /if (!${Me.AutoFire}) {
+            /delay 1s
+            /autofire
+      } 
       }
+    } else /if (${AssistType.Equal[Autofire]} && !${pauseRanged}) {
+      /squelch /face fast id ${AssistTarget}
+      /if (${Target.Distance} > 200) {
+        /squelch /stick moveback 195
+      } 
+      |keep out of AE rampage range
+      |/if (${Target.Distance} < 35) {
+       | /squelch /stick moveback 35
+      |} 
+      /if (!${Me.AutoFire}) {
+            /delay 1s
+            /autofire
+      } 
     }
   }
-  /if ((!${Me.Casting.ID} || ${Me.Class.ShortName.Equal[BRD]}) && ${Me.Combat} && ${Defined[Abilities2D]}) /call CombatAbilities
+  /if ((!${Me.Casting.ID} || ${Me.Class.ShortName.Equal[BRD]}) && (${Me.Combat} || ${Me.CombatState.Equal[Combat]} ||  ${AssistTarget} >0 ) && ${Target.ID} == ${AssistTarget} && ${Defined[Abilities2D]}) /call CombatAbilities
 /if (${Debug} || ${Debug_Assists}) /echo <== check_AssistStatus -|
 /RETURN
 
@@ -261,6 +280,8 @@ SUB check_AssistStatus
 |- e3_casting is not used, for performance, as these are short recast low impact only
 |------------------------------------------------|
 SUB CombatAbilities
+
+  
   /if (${Debug} || ${Debug_Assists}) /echo |- CombatAbilities ==>
   /declare i int local
   | Prereq/priorities
@@ -282,10 +303,11 @@ SUB CombatAbilities
           |   /doability "Bazu Bellow"
           } else /if (${Me.AltAbilityReady[Divine Stun]}) {
             /bc Divine Stun on ${Target.CleanName}: ${Me.TargetOfTarget.Class.ShortName}-${Me.TargetOfTarget} has aggro
-            /casting "Divine Stun"
+            /call castSimpleSpell "Divine Stun" ${Target.ID}
+
           } else /if (${Me.SpellReady[Terror of Discord]}) {
             /bc Terror of Discord on ${Target.CleanName}: ${Me.TargetOfTarget.Class.ShortName}-${Me.TargetOfTarget} has aggro
-            /casting "Terror of Discord"
+            /call castSimpleSpell "Terror of Discord" ${Target.ID}
           }
         }
       }
@@ -302,28 +324,33 @@ SUB CombatAbilities
       /goto :skipAbility
     }
     /if (${Abilities2D[${i},${iCastType}].Equal[Ability]}) {
+
       /if (${Abilities2D[${i},${iCastName}].Equal[Bash]}) {
         /if (!${Select[${Me.Inventory[Offhand].Type},Shield]} && !${Me.AltAbility[2 Hand Bash]}) /goto :skipAbility
+        |can't do anything if stunned.
+        /if (${Me.Stunned}) /goto :skipAbility
+        /if (${Target.Distance} >14) /goto :skipAbility
+        
       }
       /if (${Me.AbilityReady[${Abilities2D[${i},${iCastName}]}]}) {
-        /doability "${Abilities2D[${i},${iCastName}]}"
-        /delay 2 !${Me.AbilityReady[${Abilities2D[${i},${iCastName}]}]}
+        
+        /call castSimpleSpell "${Abilities2D[${i},${iCastName}]}" 0
       }
       |- AA, only those with 0 cast time can go here
     } else /if (${Abilities2D[${i},${iCastType}].Equal[AA]}) {
       /if (${Me.AltAbilityReady[${Abilities2D[${i},${iCastName}]}]}) {
-        /casting "${Abilities2D[${i},${iCastName}]}" alt
-        /delay 3 !${Me.AltAbilityReady[${Abilities2D[${i},${iCastName}]}]}
+        /call castSimpleSpell "${Abilities2D[${i},${iCastName}]}" 0
       }
       |- Discipline, no disc with a duration can go here
     } else /if (${Abilities2D[${i},${iCastType}].Equal[Disc]}) {
     |/echo car ${Me.CombatAbilityReady[${abilityName}]} ${Me.CombatAbility[${abilityName}]} ${abilityName} ${Me.CombatAbilityReady[${abilityName}]} ${Me.CombatAbilityReady[Backstab]}
-      /if (${Me.CombatAbilityReady[${Abilities2D[${i},${iCastName}]}]}) {
+      /if (${Me.CombatAbilityReady[${Abilities2D[${i},${iCastName}]}]} && !${Me.ActiveDisc.Name.Find[${Abilities2D[${i},${iCastName}]}]}) {
         |/echo ${Abilities2D[${i},${iCastName}]} myend ${Me.PctEndurance} >= minend ${Abilities2D[${i},${iMinEnd}]} and endcost ${Spell[${Abilities2D[${i},${iCastName}]}].EnduranceCost} <= ${Me.Endurance}
         /if (${Me.PctEndurance} >= ${Abilities2D[${i},${iMinEnd}]} && ${Spell[${Abilities2D[${i},${iCastName}]}].EnduranceCost} <= ${Me.Endurance} && ${Abilities2D[${i},${iIfs}]}) {
           |/echo ready ${abilityName} ${Me.CombatAbilityReady[${abilityName}]}
-          /disc ${Abilities2D[${i},${iCastName}]}
-          /delay 3 !${Me.CombatAbilityReady[${Abilities2D[${i},${iCastName}]}]}
+          /if (!(${Me.ActiveDisc.ID} && ${Abilities2D[${i},${iCastType}].Equal[Disc]} && ${Spell[${Abilities2D[${i},${iCastName}]}].TargetType.Equal[Self]})) {
+              /call castSimpleSpell "${Abilities2D[${i},${iCastName}]}" 0
+          }
         }
       }
     }
@@ -427,14 +454,7 @@ SUB check_Nukes
       }
     } else {
 
-      |When an item delay is applied to an entry, check to see if the delay is still active
-      |Check lower comment after the spell is cast for more information.
-      /if (${Defined[nukeSpellRecast_${Nukes2D[${castIndex},${iSpellID}]}]}) {
-        /if (${nukeSpellRecast_${Nukes2D[${castIndex},${iSpellID}]}}) {
-          |/bc check_nuke: skipping nukes as its timer isn't met yet:${Nukes2D[${castIndex},${iCastName}]} time left:${nukeSpellRecast_${Nukes2D[${castIndex},${iSpellID}]}}
-          /goto :skipCast
-        }
-      }
+     
       | skip casting if a delay is defined and active
       /if (${Defined[castDelay${Nukes2D[${castIndex},${iCastID}]}]}) {
         /if (${castDelay${Nukes2D[${castIndex},${iCastID}]}}) {
@@ -467,13 +487,6 @@ SUB check_Nukes
         /if (!${Nukes2D[${i},${iCastName}].Equal[${currentCastName}]}) {
           
           /call check_Ready "Nukes2D" ${i}
-          |When an item delay is applied to an entry, check to see if the delay is still active
-          |Check lower comment after the spell is cast for more information.
-          /if (${Defined[nukeSpellRecast_${Nukes2D[${i},${iSpellID}]}]}) {
-            /if (${nukeSpellRecast_${Nukes2D[${i},${iSpellID}]}}) {
-              /varset c_Ready FALSE
-            }
-          }
           /if (${c_Ready} && ${Nukes2D[${i},${iIfs}]}) {
             /if (${Bool[${Nukes2D[${i},${iGiftOfMana}]}]}) {
               |its specified to use gift of mana, well do we have it?
@@ -580,16 +593,9 @@ SUB check_Nukes
       }
       
 
-      /if (${Select[${castReturn},CAST_SUCCESS]} && ${typeOfCast.Equal[Item]}) {
-          |when an item is click/cast, the server sends over the cooldown of said item
-          |so for a breif time between clicking there is an 'unkown' state where the items
-          |cooldown is still 0, even tho it isn't valid. Noticed this when using molten orbs.
-          |Adding a small delay to any item that is cast to prevent it from being a valid target
-          |on the next event cycle as event cycles in e3 are far faster than the server can send us
-          |the cooldown information
-          /call CreateTimer nukeSpellRecast_${Nukes2D[${castIndex},${iSpellID}]} "1s"
-      }
+     
       |if the nuke was succesful, see if there is a delay defined and create a timer which locks out all nukes for the duration
+      |mainly used for PBAOE stuns
       /if (${Bool[${Nukes2D[${castIndex},${iDelay}]}]} && ${Select[${castReturn},CAST_SUCCESS]}) {
         /if (${Debug} || ${Debug_Assists}) /echo delaying ${Nukes2D[${castIndex},${iCastName}]} for ${Nukes2D[${castIndex},${iDelay}]}
         /call CreateTimer "castDelay${Nukes2D[${castIndex},${iCastID}]}" "${Nukes2D[${castIndex},${iDelay}]}"
@@ -644,7 +650,10 @@ SUB check_OffAssistSpells
 |- Enables Debuffing on a Target                    -|
 |----------------------------------------------------|
 SUB check_Debuffs
-  /if (${Defined[Command_Debuffs2D]}) /call Debuffs_OnCommand
+  /if (${Defined[Command_Debuffs2D]}) {
+    /call Debuffs_OnCommand
+  } 
+  
   /if (${Defined[All_Debuffs2D]}) /call Debuffs_OnAll
 	/if (${Assisting} && ${Defined[Assist_Debuffs2D]}) /call cast_longTermSpells "${AssistTarget}" "Assist_Debuffs2D"
 /if (${Debug} || ${Debug_Assists}) /echo <== check_Debuffs -|
@@ -728,6 +737,7 @@ SUB cast_longTermSpells(int spellTarget, string ArrayName)
                /varset ${ArrayName}[${s},${iSubToRun}] check_HealCasting_DuringDetrimental
             }
           /call e3_Cast ${spellTarg} "${ArrayName}" "${s}"
+       
         } else {
           /if (${Debug} || ${Debug_Assists}) /echo ${spellTarg} out of range for ${${ArrayName}[${s},${iMyRange}]} ${${ArrayName}[${s},${iCastName}]}
           /goto :skipCast
@@ -1135,8 +1145,8 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
           /if (${${resistCount}} >= ${${ArrayName}[${i},${iMaxTries}]}) {
             /varset ${resistCount} 0
             /call createTimer "${spellTimer}" "1m"
+          }
         }
-      }
       | If the spell did not take hold.
       } else /if (${Cast.Stored.Name.Equal[${${ArrayName}[${i},${iSpellName}]}]} && ${castReturn.Equal[CAST_TAKEHOLD]} && !${Cast.Stored.Name.Equal[${spammableSpell}]}) {
         /if (${Defined[${resistCount}]}) {
@@ -1439,28 +1449,48 @@ SUB event_Burns(line, ChatSender, burnType)
 |--------------------------------------------------------------------------------|
 SUB useBurns(ArrayName)
 /if (${Debug} || ${Debug_Assists}) /echo |- useBurns Array=${ArrayName} ==>
+
 	/declare i int local
+  /declare isHealer bool Local ${Select[${Me.Class.ShortName},CLR,DRU,SHM]}
 	/for i 1 to ${${ArrayName}.Size[1]}
 
     /call check_Ready "${ArrayName}" ${i}
-    |/echo ${i} ${${ArrayName}[${i},${iCastName}]} tgt ${AssistTarget} rng ${${ArrayName}[${i},${iMyRange}]}
-    |/echo ${i} rdy ${c_Ready} dist ${check_Distance[${AssistTarget},${${ArrayName}[${i},${iMyRange}]}]}
     /if (${c_Ready} && ${${ArrayName}[${i},${iIfs}]}) {
+
       /if (${check_Distance[${AssistTarget},${${ArrayName}[${i},${iMyRange}]}]}) {
+       
         /if (${Me.ActiveDisc.ID} && ${${ArrayName}[${i},${iCastName}].Equal[Savage Spirit]}) /goto :skipCurrent
-        /if (${Me.ActiveDisc.ID} && ${${ArrayName}[${i},${iCastType}].Equal[Disc]} && ${Bool[${${ArrayName}[${i},${iDuration}]}]}) /goto :skipCurrent
-        /call e3_Cast ${AssistTarget} "${ArrayName}" "${i}"
-        /delay 2
-        |/varset ActionTaken TRUE
-        /call check_Ready "${ArrayName}" ${i}
-        /if (!${c_Ready}) /g ${ArrayName}-${${ArrayName}[${i},${iCastName}]}
+        /if (${Me.ActiveDisc.ID} && ${${ArrayName}[${i},${iCastType}].Equal[Disc]} && ${Spell[${${ArrayName}[${i},${iCastName}]}].TargetType.Equal[Self]}) {
+           | /echo Currently in disc and duration > 0. Skiping ${${ArrayName}[${i},${iCastName}]}. Duration: ${Bool[${${ArrayName}[${i},${iDuration}]}]} 
+           |/echo Burns-Skip: ${i} ${${ArrayName}[${i},${iCastName}]}
+         
+           /goto :skipCurrent
+
+        } 
+        /call e3_Cast ${AssistTarget} "${ArrayName}" "${i}" 0
+       
+        /if (${Select[${castReturn},CAST_SUCCESS]}) {
+          /g ${ArrayName}-${${ArrayName}[${i},${iCastName}]}
+        } else {
+          |/g ${castReturn}: ${ArrayName}-${${ArrayName}[${i},${iCastName}]}
+        }
+       
       }
     } else {
-      /if (${Debug} || ${Debug_Assists}) /echo NotReady: ${i} ${${ArrayName}[${i},${iCastName}]}
+      /if (${Debug} || ${Debug_Assists}) /echo useBurns ${ArrayName}: NotReady: ${i} ${${ArrayName}[${i},${iCastName}]}
     }
-  :skipCurrent
-  |/delay 1
-  /if (!${ActionTaken}) /next i
+    :skipCurrent
+    /if (${isHealer} && !${${ArrayName}[${i},${iNoInterrupt}]} && !${ArrayName.Equal[EPICBurns2D]}) {
+        |interupt burning if we have someone to heal
+        /call check_HealCasting_DuringBurns
+        /if (!${c_SubToRun}) {
+          	/echo [${Time}]: useBurns: ${ArrayName}: healer needs to heal jumping out of burn.
+            /break
+        }
+    } 
+
+  /next i
+
 /if (${Debug} || ${Debug_Assists}) /echo <== useBurns -|
 /RETURN
 

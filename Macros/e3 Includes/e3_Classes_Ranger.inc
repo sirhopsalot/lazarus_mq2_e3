@@ -34,11 +34,8 @@ sub Event_AE_AOH(string line)
   /if (${Me.Class.ShortName.Equal[RNG]}) {
    /if (${Me.AltAbilityReady[Mass Group Buff]} && ${Me.AltAbilityReady[Auspice of the Hunter]}) {
      /bc MGB Auspice of the Hunter inc...
-     /casting "Mass Group Buff|alt" -maxtries|3
-     /delay 5 !${Me.AltAbilityReady[Mass Group Buff]}
-     /delay 5
-     /delay 5 !${Me.AltAbilityReady[Auspice of the Hunter]}
-     /casting "Auspice of the Hunter|alt" -maxtries|3
+     /call castSimpleSpell "Mass Group Buff" 0
+     /call castSimpleSpell "Auspice of the Hunter" 0
      /rs MGB Auspice of the Hunter inc...
    } else /if (!${Me.AltAbilityReady[Mass Group Buff]}) {
       /bc Mass Group Buff is not available...
