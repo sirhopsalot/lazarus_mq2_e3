@@ -256,6 +256,8 @@ sub armOnePet(playerName, loadoutType, chatSender)
     /declare malaWeapon string local "Summoned: Spear of Maliciousness"
     /declare slowWeapon string local "Summoned: Mace of Temporal Distortion"
     /declare dispelWeapon string local "Summoned: Wand of Dismissal"
+    /declare drainingBuckler string local "Summoned: Buckler of Draining Defense"
+    /declare clericHammer string local "Hammer of Damnation"
 
     /declare bodytype string local
     /declare char_class string local
@@ -296,6 +298,19 @@ sub armOnePet(playerName, loadoutType, chatSender)
       
 
       /if (${Me.Book[Grant Spectral Armaments]} && !${loadoutType.Find[none]} && !${loadoutType.Find[noweapon]}) {
+        |/echo Pet level is ${Spawn[${playerName}].Pet.Level}
+        /if (${Spawn[${playerName}].Pet.Level}<45) {
+          | This will rely on gimme setup to get hammers from your cleric, otherwise we can just give the buckler
+          /echo Low level pet found
+          /varset loadoutType lowerPet | just dont want to fall into one of the other load options and give high level weapons to pet
+          /varset primaryWeapon ${clericHammer}
+          /varset secondaryWeapon ${drainingBuckler}
+          /if (!${FindItemCount[${clericHammer}]}>0) {
+            /delay 3s | safety delay so tell goes through
+            /tell ${chatSender} Pet ${Spawn[${playerName}].Pet.Name} is below level 45, you should /tell a cleric Pet Hammer when I am finished as I do not have one.
+          }
+        }
+
         |/echo the line to parse is:${loadoutType}
         /if (${loadoutType.Find[2fire]}) {
         
@@ -337,7 +352,7 @@ sub armOnePet(playerName, loadoutType, chatSender)
           /varset primaryWeapon ${slowWeapon}
           /varset secondaryWeapon ${malaWeapon}
 
-        } else {
+        } else /if (!${loadoutType.Find[lowerPet]}) {
           /varset char_class ${Spawn[${playerName}].Class} 
           /if (${char_class.Find[Shadow Knight]} || ${char_class.Find[Shaman]} || ${char_class.Find[Druid]} || ${char_class.Find[Enchanter]}) {
             
@@ -385,37 +400,28 @@ sub armOnePet(playerName, loadoutType, chatSender)
             /varset secondaryWeapon ${malaWeapon}
           }
         }
+        }
       }
 
       /bc Arm Pets: Selected Weapons are ${primaryWeapon} and ${secondaryWeapon}
       /bc Arm Pets: Creating Weapons
+
       /call summonUnpackAndSelect ${Spawn[${playerName}].Pet.ID} "Grant Spectral Armaments" "Folded Pack of Spectral Armaments" ${primaryWeapon} ${secondaryWeapon}
-    }
 
 /return
 
 sub summonUnpackAndSelect(targetID, spellName, ItemName, primaryItem, secondaryItem)
 
-      |/if (${Defined[armPetArray]}) /deletevar armPetArray
-      |/declare armPetArray[1] string outer ${spellName}
-      |/if (${armPetArray.Size}) {
-        
+        /declare clericHammer string local "Hammer of Damnation"
+        /declare drainingBuckler string local "Summoned: Buckler of Draining Defense"
         /if (${FindItemCount[${ItemName}]} > 0) {
           |/echo found ${ItemName}
           /itemnotify "${ItemName}" leftmouseup
         } else {
-          | /call BuildSpellArray "armPetArray" "armPetArray2D"
-          | /call e3_Cast ${Me.ID} "armPetArray2D" 1 False
-          | /while (!${Select[${castReturn},CAST_SUCCESS]}) {
-          |    /call e3_Cast ${Me.ID} "armPetArray2D" 1 False
-          | }
           /call castSimpleSpell "${spellName}" ${Me.ID}
           /delay 3s ${Bool[${Cursor.ID}]}
-       | }
-        |/if (${Defined[armPetArray]}) /deletevar armPetArray
+        }
 
-        |/delay 1s
-        
         |/echo done casting, put in inventory
         /call ClearCursor
         /delay 3s !${Bool[${Cursor.ID}]}
@@ -426,11 +432,23 @@ sub summonUnpackAndSelect(targetID, spellName, ItemName, primaryItem, secondaryI
         /call ClearCursor
         /delay 3s !${Bool[${Cursor.ID}]}
         /delay 1s
-        /itemnotify "${primaryItem}" leftmouseup
-        /delay 5s ${Bool[${Cursor.ID}]}
-        /if (!${Cursor.ID}) {
-          /echo summonUnpackAndSelect: Could not load primary item to cursor, exiting
-          /return
+
+        | If its a cleric hammer and mage does not have one already, just skip the primary section
+        /if (!${primaryItem.Find[${clericHammer}]}) {
+          /itemnotify "${primaryItem}" leftmouseup
+          /delay 5s ${Bool[${Cursor.ID}]}
+          /if (!${Cursor.ID}) {
+            /echo summonUnpackAndSelect: Could not load primary item to cursor, exiting
+            /return
+          }
+        } else /if (${primaryItem.Find[${clericHammer}]} && ${FindItemCount[${clericHammer}]}>0) {
+          /echo Giving Cleric Hammer to pet.
+          /itemnotify "${primaryItem}" leftmouseup
+          /delay 5s ${Bool[${Cursor.ID}]}
+          /if (!${Cursor.ID}) {
+            /echo summonUnpackAndSelect: Could not load primary item to cursor, exiting
+            /return
+          }
         }
 
         |/echo giving primary item to pet
@@ -463,16 +481,10 @@ sub summonUnpackAndSelect(targetID, spellName, ItemName, primaryItem, secondaryI
               /return
             }
             
-            |/if (${Defined[armPetArray]}) /deletevar armPetArray
             /if (${FindItemCount[${ItemName}]} > 0) {
               |/echo found ${ItemName}
               /itemnotify "${ItemName}" leftmouseup
             } else {
-              |/call BuildSpellArray "armPetArray" "armPetArray2D"
-              |/call e3_Cast ${Me.ID} "armPetArray2D" 1 False
-              |/while (!${Select[${castReturn},CAST_SUCCESS]}) {
-              |  /call e3_Cast ${Me.ID} "armPetArray2D" 1 False
-              |}
               /call castSimpleSpell "${spellName}" ${Me.ID}
               /delay 3s ${Bool[${Cursor.ID}]}
             }
@@ -489,14 +501,25 @@ sub summonUnpackAndSelect(targetID, spellName, ItemName, primaryItem, secondaryI
           } 
         
           |2ndary item
-          /itemnotify "${secondaryItem}" leftmouseup
+          /if (${secondaryItem.Find[${drainingBuckler}]}) {
+            /declare i int local
+            /for i 1 to 10
+            /if (${Bool[${InvSlot[pack${i}].Item.Name.Equal[Pouch of Quellious]}]}) {
+              /itemnotify in pack${i} 5 leftmouseup
+              /goto :pouchFound
+            }
+            /next i
+            :pouchFound
+          } else {
+            /itemnotify "${secondaryItem}" leftmouseup
+          }
+          
           /delay 5s ${Bool[${Cursor.ID}]}
           
           /if (!${Cursor.ID}) {
-            /echo summonUnpackAndSelect: Could not load secondary item to cursor, exiting
+            /echo summonUnpackAndSelect: Could not load secondary item to cursor.
             /return
           }
-
           
           |/echo giving secondary item to pet
           /call TrueTarget ${targetID}
@@ -509,7 +532,7 @@ sub summonUnpackAndSelect(targetID, spellName, ItemName, primaryItem, secondaryI
           }
         }
         /if (${Cursor.ID}) {
-          /echo summonUnpackAndSelect: Something went wrong and something is on your cursor, exiting.
+          /echo summonUnpackAndSelect: Something went wrong and something is on your cursor.
           /return
         }
       
@@ -519,11 +542,9 @@ sub summonUnpackAndSelect(targetID, spellName, ItemName, primaryItem, secondaryI
         /if (${Cursor.Name.Find[Pouch of Quellious]}) {
            /destroy
         } else {
-          /echo summonUnpackAndSelect: Could not destroy bag, exiting
+          /echo summonUnpackAndSelect: Could not destroy bag.
           /return
         }
-
-      }
 
 /return
 sub findAndDestroyOldSatchels()
@@ -536,7 +557,7 @@ sub findAndDestroyOldSatchels()
     /for m 1 to 10
     /if (${InvSlot[pack${m}].Item.Name.Equal[Phantom Satchel]} || ${InvSlot[pack${m}].Item.Name.Equal[Pouch of Quellious]}) {
       /for n 1 to 10
-      /echo Item ${InvSlot[pack${m}].Item.Item[${n}].Name}
+      |/echo Item ${InvSlot[pack${m}].Item.Item[${n}].Name}
       /if (!${InvSlot[pack${m}].Item.Item[${n}].NoRent} && ${InvSlot[pack${m}].Item.Item[${n}].ID} > 0) {
         /echo Arm Pets: Non-Temporary Item ${InvSlot[pack${m}].Item.Item[${n}]} found in ${InvSlot[pack${m}].Item.Name}. Exiting.
         /return
@@ -558,48 +579,36 @@ sub findAndDestroyOldSatchels()
 
 sub summonUnpackAndGive(targetID, spellName, ItemName)
 
+    /if (${FindItemCount[${ItemName}]} > 0) {
+      |/echo ItemFound: ${ItemName}
+      /itemnotify "${ItemName}" leftmouseup
+    } else {
 
-      |/if (${Defined[armPetArray]}) /deletevar armPetArray
-      |/declare armPetArray[1] string outer ${spellName}
-      |/if (${armPetArray.Size}) {
-        /if (${FindItemCount[${ItemName}]} > 0) {
-          |/echo ItemFound: ${ItemName}
-          /itemnotify "${ItemName}" leftmouseup
-        } else {
-          |/echo ItemNotFound ${ItemName}
-          |/echo building the spell array for heirlooms
-          |/call BuildSpellArray "armPetArray" "armPetArray2D"
-          |/call e3_Cast ${Me.ID} "armPetArray2D" 1 False
-          |/while (!${Select[${castReturn},CAST_SUCCESS]}) {
-          |   /call e3_Cast ${Me.ID} "armPetArray2D" 1 False
-          |}
-          /call castSimpleSpell "${spellName}" ${Me.ID}
-          /delay 3s ${Bool[${Cursor.ID}]}
-        }
-        |/if (${Defined[armPetArray]}) /deletevar armPetArray
-        /delay 1s
-      |/echo done casting, put in inventory
-        /autoinventory
-        /delay 3s !${Bool[${Cursor.ID}]}
-        /delay 1s
-        |/echo unfolding the bag to cursor
-        /ItemNotify "${ItemName}" rightmouseup
-        /delay 3s ${Bool[${Cursor.ID}]}
-        |/echo getting the target of the pet
-        /call TrueTarget ${targetID}
-        /if (${Target.ID} && ${Target.Distance}<50) {
-          /call MoveToLoc ${Target.Y} ${Target.X} 50 15
-          /call giveItemOnCursorToTarget
-        } else {
-          /echo Pet is too far away.
-          /return
-        }
-        /if (${Cursor.ID}) {
-          /echo summonUnpackAndGive: Something went wrong and something is on your cursor, exiting.
-          /return
-        }
-      }
-    
+      /call castSimpleSpell "${spellName}" ${Me.ID}
+      /delay 3s ${Bool[${Cursor.ID}]}
+    }
+    |/if (${Defined[armPetArray]}) /deletevar armPetArray
+    /delay 1s
+  |/echo done casting, put in inventory
+    /autoinventory
+    /delay 3s !${Bool[${Cursor.ID}]}
+    /delay 1s
+    |/echo unfolding the bag to cursor
+    /ItemNotify "${ItemName}" rightmouseup
+    /delay 3s ${Bool[${Cursor.ID}]}
+    |/echo getting the target of the pet
+    /call TrueTarget ${targetID}
+    /if (${Target.ID} && ${Target.Distance}<50) {
+      /call MoveToLoc ${Target.Y} ${Target.X} 50 15
+      /call giveItemOnCursorToTarget
+    } else {
+      /echo Pet is too far away.
+      /return
+    }
+    /if (${Cursor.ID}) {
+      /echo summonUnpackAndGive: Something went wrong and something is on your cursor, exiting.
+      /return
+    }
 
 /return
 sub giveItemOnCursorToTarget()
