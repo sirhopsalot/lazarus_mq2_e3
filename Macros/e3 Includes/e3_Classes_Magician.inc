@@ -1,25 +1,6 @@
 |----------------------------------------------------------------------------|
 | Magician Functions
 |----------------------------------------------------------------------------|
-#event magHelp "#1# tells you, 'MagHelp #2#'"
-sub event_magHelp(line, ChatSender, command) 
-/echo |- event_mageHelp ==>
-  /echo Event called, command ${command}
-  /if (${command.Find[ArmPet Help]}) {
-    /tell ${ChatSender} "Arm Pet help otpions: ArmPet, ArmPet Loadout, ArmPet Characters, ArmPet Group"
-  } else  /if (${command.Find[ArmPet Loadout]}) {
-    /tell ${ChatSender} "Arm Pet Loadouts: 2fire, 2ice, 2slow, 2dispell, 2mala, slowmala, dispelmala, slowdispel"
-  } else /if (${command.Find[ArmPet Characters]}) {
-    /tell ${ChatSender} "Arm Pet accepts a command separated list of characters to arm their pets, Example: /t ${Me.Name} arm pet 2fire Tokka,Leonecro,Splinter"
-  } else /if  (${command.Find[ArmPet Group]}) {
-    /tell ${ChatSender} "When the Mage is a member of your own group, they can automatically find and equip all of your pets with /t MageName arm pets"
-  } else  /if (${command.Find[ArmPet]}) {
-    /tell ${ChatSender} "Arm Pet: /t <Mage> arm pets <loadout>, Example: /t ${Me.Name} arm pet 2fire"
-  }
-
-/echo <== event_mageHelp -|
-/return 
-
 #event petWeapons "#1# tells you, 'Pet Weapon#*#'"
 #event petWeapons "#1# tells you, 'Distribute Pet Weapon#*#'"
 #event petWeapons "<#1#> Pet Weapon#*#"
@@ -917,7 +898,6 @@ SUB MAG_Background_Events
   /doevents auto_coh
   /doevents petWeapons
   /doevents armPets
-  /doevents magHelp
 /RETURN
 
 |----------------------------------------------------------------------------|
