@@ -3,7 +3,7 @@
 |----------------------------------------------------------------------------|
 |#event petWeapons "#1# tells you, 'Pet Weapon#*#'"
 #event petWeapons "#1# tells you, 'Distribute Pet Weapon#*#'"
-|#event petWeapons "<#1#> Pet Weapon#*#"
+#event petWeapons "<#1#> Pet Weapon#*#"
 #event petWeapons "<#1#> Distribute Pet Weapon#*#"
 sub event_petWeapons(line, ChatSender)
 /if (${Debug} || ${Debug_MAG}) /echo |- event_petWeapons ==>
