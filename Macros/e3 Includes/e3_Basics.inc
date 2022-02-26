@@ -2133,7 +2133,7 @@ SUB check_Supply
               /call castSimpleSpellBase "${supplySpell}/Gem|${supplyGem}" ${Me.ID} False
            }
 				}
-				/delay 20s ${Cursor.ID}
+				|/delay 20s ${Bool[${Cursor.ID}]}
         /call ClearCursor
         /delay 1s
         /if (${FindItemCount[${supplyItem}]} >= ${supplyQuantity}) {

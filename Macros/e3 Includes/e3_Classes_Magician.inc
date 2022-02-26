@@ -306,8 +306,8 @@ sub armOnePet(playerName, loadoutType, chatSender)
           /varset primaryWeapon ${clericHammer}
           /varset secondaryWeapon ${drainingBuckler}
           /if (!${FindItemCount[${clericHammer}]}>0) {
-            /delay 3s | safety delay so tell goes through
-            /tell ${chatSender} Pet ${Spawn[${playerName}].Pet.Name} is below level 45, you should /tell a cleric Pet Hammer when I am finished as I do not have one.
+            /delay 3s
+            /tell ${chatSender} Pet ${Spawn[${playerName}].Pet.CleanName} is below level 45, you should ask a cleric for a Pet Hammer when I am finished.
           }
         }
 
@@ -401,12 +401,12 @@ sub armOnePet(playerName, loadoutType, chatSender)
           }
         }
         }
+
+        /bc Arm Pets: Selected Weapons are ${primaryWeapon} and ${secondaryWeapon}
+        /bc Arm Pets: Creating Weapons
+
+        /call summonUnpackAndSelect ${Spawn[${playerName}].Pet.ID} "Grant Spectral Armaments" "Folded Pack of Spectral Armaments" ${primaryWeapon} ${secondaryWeapon}
       }
-
-      /bc Arm Pets: Selected Weapons are ${primaryWeapon} and ${secondaryWeapon}
-      /bc Arm Pets: Creating Weapons
-
-      /call summonUnpackAndSelect ${Spawn[${playerName}].Pet.ID} "Grant Spectral Armaments" "Folded Pack of Spectral Armaments" ${primaryWeapon} ${secondaryWeapon}
 
 /return
 
@@ -441,16 +441,15 @@ sub summonUnpackAndSelect(targetID, spellName, ItemName, primaryItem, secondaryI
             /echo summonUnpackAndSelect: Could not load primary item to cursor, exiting
             /return
           }
-        }
-
-        |/echo giving primary item to pet
-        /call TrueTarget ${targetID}
-        /if (${Target.ID} && ${Target.Distance}<50) {
-          /call MoveToLoc ${Target.Y} ${Target.X} 50 15
-          /call giveItemOnCursorToTarget
-        } else {
-          /echo Pet is too far away.
-          /return
+          |/echo giving primary item to pet
+          /call TrueTarget ${targetID}
+          /if (${Target.ID} && ${Target.Distance}<50) {
+            /call MoveToLoc ${Target.Y} ${Target.X} 50 15
+            /call giveItemOnCursorToTarget
+          } else {
+            /echo Pet is too far away.
+            /return
+          }
         }
 
         /if (${Cursor.ID}) {
