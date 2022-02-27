@@ -2645,13 +2645,13 @@ sub check_PreviousSpell
 
 /return
 sub check_Anchor
-  /if (${anchorChar.Length}>1 && ${Bool[${Spawn[${anchorChar}].ID}]} && ${Spawn[${anchorChar}].LineOfSight}) {
+  /if (${anchorChar.Length}>1 && !${Me.Moving} && ${Bool[${Spawn[${anchorChar}].ID}]} && ${Spawn[${anchorChar}].LineOfSight}) {
 
     /if (!(${Me.Combat} || ${Me.CombatState.Equal[Combat]} ||  ${AssistTarget} >0 )) {
 
       /if (${Spawn[${anchorChar}].Distance} > 15) {
         
-        /echo moving to ancor
+        /echo [${Time}] Anchor: Moving to Anchor
         /moveto id ${Spawn[${anchorChar}].ID}
       }
     }
