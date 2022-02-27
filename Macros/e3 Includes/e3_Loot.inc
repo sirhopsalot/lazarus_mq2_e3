@@ -218,6 +218,9 @@ SUB lootCorpse
          /if (!${importantItem} && ${Corpse.Item[${i}].Name.Equal[The Lady Luck blessings]}) {
             /varset importantItem TRUE
         }
+         /if (!${importantItem} && ${Corpse.Item[${i}].Name.Equal[Grobb Frenzy Maxx]}) {
+            /varset importantItem TRUE
+        }
         /if (${importantItem}) {
 
           /echo [${Time}]: Loot Only Stackable:hard coded important item ${Corpse.Item[${i}].Name}
