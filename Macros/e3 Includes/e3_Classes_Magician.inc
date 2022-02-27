@@ -70,6 +70,7 @@ sub event_petWeapons(line, ChatSender)
 #event armPets "#1# tells you, 'Arm Pet'"
 #event armPets "#1# tells you, 'Arm Pets'"
 #event armPets "#1# tells you, 'Pet Weapon#*#'"
+#event armPets "#1# tells you, 'Pet Armor*#'"
 #event armPets "#1# tells you, 'Arm Pet #2#'"
 #event armPets "#1# tells you, 'Arm Pets #2#'"
 sub event_armPets(line, ChatSender)
@@ -102,7 +103,7 @@ sub event_armPets(line, ChatSender)
     /varset BackSlotThatIsOpen ${i}
     /goto :bagslotcheckdone
 
-  } else /if (!${InvSlot[pack${i}].Item.Container}) {
+  } else /if (!${Bool[${InvSlot[pack${i}].Item.Container}]}) {
 
     /varset BackSlotThatIsOpen ${i}
     /varset itemInSlotID ${i}
@@ -173,10 +174,16 @@ sub event_armPets(line, ChatSender)
 
   |/echo Character to work on is: ${characterToWorkOn}
   /declare groupCounter int local
-  /if (${Bool[${line.Find[Pet Weapon]}]}) { 
+  /if (${Bool[${line.Find[pet weapon]}]} || ${Bool[${line.Find[pet armor]}]} || !${loadType.Length}>0) { 
     | For compatibility, if player calls pet weapon it will only give armor/heirloom
     /echo Pet Weapon was called, only handing armor/heirloom to pet
-    /call armOnePet ${ChatSender} ${ChatSender} noweapon
+    /if (${Spawn[${ChatSender}].Pet.Level}<45) {
+        /call armOnePet ${ChatSender} ${ChatSender} lowerpet
+    } else {
+      /delay 3s
+      /tell ${ChatSender}  Either Pet Weapon/Pet Armor was called or you did not specify a loadout, only givng Armor and Heirlooms to your pet.
+      /call armOnePet ${ChatSender} ${ChatSender} noweapon
+    }
 
   } else /if (${characterToWorkOn.Length} > 0) {
 
@@ -191,16 +198,19 @@ sub event_armPets(line, ChatSender)
       |/echo Working on ${Spawn[${characterToWorkOn.Arg[${groupCounter},,]}].Name}
       /if (${Spawn[${currentChar}].ID}>0) {
         /call armOnePet ${currentChar} ${ChatSender} ${loadType}
+        /if (${Cursor.ID}) {
+          /bc Arm Pets: Something went wrong and something is on your cursor, exiting.
+          /goto :armpetend
+        } 
       } else {
         /delay 3s
         /tell ${ChatSender} Could not locate ${currentChar}, skipping.
       }
-
       /next groupCounter
 
     } else {
       | Character name was provided, arm only their pet
-      |/echo Have one character to work on. ${characterToWorkOn} ${Spawn[${characterToWorkOn}].ID}
+      |/echo Have one character to work on. Char: ${characterToWorkOn} Spawn ID: ${Spawn[${characterToWorkOn}].ID}
       /if (${Spawn[${characterToWorkOn}].ID}>0) {
         |/echo found Character to work on.
 
@@ -251,6 +261,7 @@ sub event_armPets(line, ChatSender)
     /goto :armpetend
   }
 
+  /delay 3s
   /tell ${ChatSender} Finished arming pets.
   :armpetend
   /if (${Group.Leader.ID}>0) {
@@ -262,13 +273,14 @@ sub event_armPets(line, ChatSender)
 /if (${Debug} || ${Debug_MAG}) /echo <== event_armPets -|
 /return
 
-sub armOnePet(playerName, chatSender ,loadoutType)
+sub armOnePet(playerName, chatSender, loadoutType)
 
     /declare fireWeapon string local "Summoned: Fist of Flame"
     /declare iceWeapon string local "Summoned: Orb of Chilling Water"
     /declare malaWeapon string local "Summoned: Spear of Maliciousness"
     /declare slowWeapon string local "Summoned: Mace of Temporal Distortion"
     /declare dispelWeapon string local "Summoned: Wand of Dismissal"
+    /declare wardWeapon string local "Summoned: Short Sword of Warding"
     /declare drainingBuckler string local "Summoned: Buckler of Draining Defense"
     /declare clericHammer string local "Hammer of Damnation"
 
@@ -318,7 +330,6 @@ sub armOnePet(playerName, chatSender ,loadoutType)
         /if (${Spawn[${playerName}].Pet.Level}<45) {
           | This will rely on gimme setup to get hammers from your cleric, otherwise we can just give the buckler
           |/echo Pet is below 45, giving buckler and cleric hammer.
-          /varset loadoutType lowerPet 
 
           /varset secondaryWeapon ${drainingBuckler}
           /if (${FindItemCount[${clericHammer}]}>0) {
@@ -328,136 +339,106 @@ sub armOnePet(playerName, chatSender ,loadoutType)
             /delay 3s
             /tell ${chatSender} Pet ${Spawn[${playerName}].Pet.CleanName} is below level 45, you should ask a cleric for a Pet Hammer when I am finished.
           }
-        } else /if (${loadoutType.Find[2fire]}) {
-        
-          /varset primaryWeapon ${fireWeapon}
-          /varset secondaryWeapon ${fireWeapon}
 
-        } else /if (${loadoutType.Find[2ice]}) {
-          
-          /varset primaryWeapon ${iceWeapon}
-          /varset secondaryWeapon ${iceWeapon}
-        
-        } else /if (${loadoutType.Find[2dispel]}) {
-          
-          /varset primaryWeapon ${dispelWeapon}
-          /varset secondaryWeapon ${dispelWeapon}
+        } else /if (${loadoutType.Find[,]} || ${loadoutType.Find[2]}) {
+          |/echo Token1 ${loadoutType.Token[1,,]} Token2 ${loadoutType.Token[2,,]} 
+          /declare firstItem string local
+          /declare secondItem string local
 
-        } else /if (${loadoutType.Find[2slow]}) {
+          /if (${loadoutType.Find[2]}) {
+            |/echo Setting loadout type for same primary/secondary: ${loadoutType},${loadoutType}
+            /varset loadoutType ${loadoutType},${loadoutType}
+          }
           
-          /varset primaryWeapon ${slowWeapon}
-          /varset secondaryWeapon ${slowWeapon}
+          /if (${loadoutType.Token[1,,].Length}>0) {
+            /varset firstItem ${loadoutType.Token[1,,]}
 
-        } else /if (${loadoutType.Find[2mala]}) {
-          
-          /varset primaryWeapon ${malaWeapon}
-          /varset secondaryWeapon ${malaWeapon}
-
-        } else /if (${loadoutType.Find[malaslow]} || ${loadoutType.Find[slowmala]}) {
-          
-          /varset primaryWeapon ${malaWeapon}
-          /varset secondaryWeapon ${slowWeapon}
-
-        } else /if (${loadoutType.Find[dispelslow]} || ${loadoutType.Find[slowdispel]}) {
-          
-          /varset primaryWeapon ${slowWeapon}
-          /varset secondaryWeapon ${dispelWeapon}
-
-        } else /if (${loadoutType.Find[dispelmala]} || ${loadoutType.Find[maladispel]}) {
-          
-          /varset primaryWeapon ${dispelWeapon}
-          /varset secondaryWeapon ${malaWeapon}
-
-        } else /if (${loadoutType.Find[fireslow]} || ${loadoutType.Find[slowfire]}) {
-          
-          /varset primaryWeapon ${fireWeapon}
-          /varset secondaryWeapon ${slowWeapon}
-          
-        } else /if (${loadoutType.Find[fireice]} || ${loadoutType.Find[icefire]}) {
-          
-          /varset primaryWeapon ${fireWeapon}
-          /varset secondaryWeapon ${iceWeapon}
-          
-        } else /if (${loadoutType.Find[firemala]} || ${loadoutType.Find[malafire]}) {
-          
-          /varset primaryWeapon ${fireWeapon}
-          /varset secondaryWeapon ${malaWeapon}
-          
-        } else /if (${loadoutType.Find[firedispel]} || ${loadoutType.Find[dispelfire]}) {
-          
-          /varset primaryWeapon ${fireWeapon}
-          /varset secondaryWeapon ${dispelWeapon}
-          
-        } else /if (${loadoutType.Find[iceslow]} || ${loadoutType.Find[slowice]}) {
-          
-          /varset primaryWeapon ${iceWeapon}
-          /varset secondaryWeapon ${slowWeapon}
-          
-        } else /if (${loadoutType.Find[icemala]} || ${loadoutType.Find[malaice]}) {
-          
-          /varset primaryWeapon ${iceWeapon}
-          /varset secondaryWeapon ${malaWeapon}
-          
-        } else /if (${loadoutType.Find[icedispel]} || ${loadoutType.Find[dispelice]}) {
-          
-          /varset primaryWeapon ${iceWeapon}
-          /varset secondaryWeapon ${dispelWeapon}
-          
-        } else {
-          
-          |/if (${char_class.Find[Shadow Knight]} || ${char_class.Find[Shaman]} || ${char_class.Find[Druid]} || ${char_class.Find[Enchanter]}) {
-            
-            |/echo Arm Pet: Doing ${char_class} loadout
-            
-            | /if (${loadoutType.Find[fire]}) {
-
-            |   /varset primaryWeapon ${fireWeapon}
-            |   /varset secondaryWeapon ${malaWeapon}
-
-            | } else /if (${loadoutType.Find[ice]}) {
-              
-            |   /varset primaryWeapon ${iceWeapon}
-            |   /varset secondaryWeapon ${malaWeapon}
-
-            | } else {
-              
-             | /varset primaryWeapon ${dispelWeapon}
-              |/varset secondaryWeapon ${malaWeapon}
-          
-            | }
-
-          |} else 
-          /if (${char_class.Find[Magician]} || ${char_class.Find[Necro]} || ${char_class.Find[Beastlord]}) {
-            |/echo Arm Pet: Doing ${char_class} loadout
-            |/if (${loadoutType.Find[fire]}) 
-
-            /if (${loadoutType.Find[ice]}) {
-              
-              /varset primaryWeapon ${iceWeapon}
-              /varset secondaryWeapon ${iceWeapon}
-              
-            } else {
-              
+            /if (${firstItem.Find[fire]}) {
               /varset primaryWeapon ${fireWeapon}
+
+            } else /if (${firstItem.Find[ice]}) {
+              /varset primaryWeapon ${iceWeapon}
+
+            } else /if (${firstItem.Find[slow]}) {
+              /varset primaryWeapon ${slowWeapon}
+
+            } else /if (${firstItem.Find[mala]}) {
+              /varset primaryWeapon ${malaWeapon}
+
+            } else /if (${firstItem.Find[dispel]}) {
+              /varset primaryWeapon ${dispelWeapon}
+
+            } else /if (${firstItem.Find[ward]}) {
+              /varset primaryWeapon ${wardWeapon}
+
+            } else {
+              /delay 3s
+              /tell ${chatSender}  Invalid primary weapon specified, skipping weapon step.
+              /return
+            }
+          }
+
+          /if (${loadoutType.Token[2,,].Length}>0) {
+            /varset secondItem ${loadoutType.Token[2,,]}
+
+            /if (${secondItem.Find[fire]}) {
               /varset secondaryWeapon ${fireWeapon}
 
+            } else /if (${secondItem.Find[ice]}) {
+              /varset secondaryWeapon ${iceWeapon} 
+
+            } else /if (${secondItem.Find[mala]}) {
+              /varset secondaryWeapon ${malaWeapon}
+
+            } else /if (${secondItem.Find[dispel]}) {
+              /varset secondaryWeapon ${dispelWeapon}
+
+            } else /if (${secondItem.Find[slow]}) {
+              /varset secondaryWeapon ${slowWeapon}
+
+            } else /if (${secondItem.Find[shield]}) {
+              /varset secondaryWeapon ${drainingBuckler}
+
+            } else {
+              /delay 3s
+              /tell ${chatSender}  Invalid secondary weapon specified, skipping weapon step.
+              /return
             }
-          
-          } else {
-            |/echo loadoutType: ${loadoutType}
-            /echo Arm Pet: Doing Default ${char_class} loadout
-            
-            /varset primaryWeapon ${dispelWeapon}
-            /varset secondaryWeapon ${malaWeapon}
           }
+
+        } else /if (${loadoutType.Find[default]} || ${loadoutType.Find[class]}) {
+
+            /if (${char_class.Find[Magician]} || ${char_class.Find[Necro]} || ${char_class.Find[Beastlord]}) {
+              |/echo Arm Pet: Doing ${char_class} loadout
+              /if (${loadoutType.Find[ice]}) {
+                /varset primaryWeapon ${iceWeapon}
+                /varset secondaryWeapon ${iceWeapon}
+                
+              } else {
+                /varset primaryWeapon ${fireWeapon}
+                /varset secondaryWeapon ${fireWeapon}
+              }
+            } else {
+              |When its any other class with pet
+              |/echo loadoutType: ${loadoutType}
+              /echo Arm Pet: Doing Default ${char_class} loadout
+              
+              /varset primaryWeapon ${dispelWeapon}
+              /varset secondaryWeapon ${malaWeapon}
+            }
+        } else {
+          /delay 3s 
+          /tell ${chatSender}  Invalid loadout specified, skipping weapon step.
+          /return
         }
-        
+
         /bc Arm Pets: Selected Weapons are ${primaryWeapon} and ${secondaryWeapon}
         /bc Arm Pets: Creating Weapons
 
         /call summonUnpackAndSelect ${Spawn[${playerName}].Pet.ID} "Grant Spectral Armaments" "Folded Pack of Spectral Armaments" ${primaryWeapon} ${secondaryWeapon}
       }
     }
+    
 
 /return
 
