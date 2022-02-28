@@ -1526,6 +1526,9 @@ Sub basics_Setup
 	/declare medOn_combatBreak bool outer FALSE
 	/declare autoMedChar bool outer FALSE
   /declare anchorChar string outer 
+  /declare anchorOn bool outer FALSE
+  /squelch /alias /anchoroff /bcga //varset anchorOn FALSE
+  /squelch /alias /anchoron /bcga //varset anchorOn TRUE
   /declare medbreak_Popup_Timer timer outer
 	/declare clickitRandomDelay int outer 7
 
@@ -1544,7 +1547,8 @@ Sub basics_Setup
   /if (${Ini[${Character_Ini},Misc,End MedBreak in Combat(On/Off)].Length}) /call iniToVarV "${Character_Ini},Misc,End MedBreak in Combat(On/Off)" medOn_combatBreakChar bool outer
 	/if (${Ini[${Character_Ini},Misc,AutoMedBreak (On/Off)].Length}) /call iniToVarV "${Character_Ini},Misc,AutoMedBreak (On/Off)" autoMedChar bool outer
   /if (${Ini[${Character_Ini},Misc,Anchor (Char to Anchor to)].Length}) /call iniToVarV "${Character_Ini},Misc,Anchor (Char to Anchor to)" anchorChar string outer
-	| -Add Groups_Ini file path
+
+  | -Add Groups_Ini file path
 	/if (!${Ini[${MacroData_Ini},File Paths,Saved Groups].Length}) /call WriteToIni "${MacroData_Ini},File Paths,Saved Groups" "e3 Macro Inis\Saved Groups.ini" 1
 	| -Import Groups_Ini.
 	/if (!${Ini[${MacroData_Ini},File Paths,Saved Groups].Length}) {
@@ -1702,6 +1706,7 @@ Sub basics_Aliases
 	/squelch /alias /ResetCorpses /bc Fix Corpses
 	/squelch /alias /gathercorpses /echo Gather Corpses
 	/squelch /alias /mana /bc Report Mana
+
 /if (${Debug}) /echo <== basics_Aliases -|
 /return
 
@@ -2645,14 +2650,16 @@ sub check_PreviousSpell
 
 /return
 sub check_Anchor
-  /if (${anchorChar.Length}>1 && !${Me.Moving} && ${Bool[${Spawn[${anchorChar}].ID}]} && ${Spawn[${anchorChar}].LineOfSight}) {
-
+  /if (${anchorOn} && ${anchorChar.Length}>1 && !${Me.Moving} && ${Bool[${Spawn[${anchorChar}].ID}]} && ${Spawn[${anchorChar}].LineOfSight}) {
     /if (!(${Me.Combat} || ${Me.CombatState.Equal[Combat]} ||  ${AssistTarget} >0 )) {
-
-      /if (${Spawn[${anchorChar}].Distance} > 15) {
-        
+      /if (${Spawn[${anchorChar}].Distance} > 10) {
         /echo [${Time}] Anchor: Moving to Anchor
         /moveto id ${Spawn[${anchorChar}].ID}
+      } else {
+        |test to see if this stops the 'spin'
+        /if (${MoveTo.Moving}) {
+           /moveto off
+        }
       }
     }
   }
