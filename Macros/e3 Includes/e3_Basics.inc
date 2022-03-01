@@ -2055,8 +2055,9 @@ SUB check_Supply
   /if (${Waiting4Rez}) /return
   /if (${Bool[${Me.Buff[Resurrection Sickness]}]}) /return
   | Extra checks here because sometimes Waiting4Rez doesn't seem to short out supply
-  /if (!${Bool[${InvSlot[pack8].Item.ID}]}) /return 
-  /if (${Me.MaxHPs} < 10000) /return
+  | Gloves (12) and belt (20)
+  /if (!${Bool[${InvSlot[12].Item.ID}]} && !${Bool[${InvSlot[20].Item.ID}]}) /return
+  /if (${Me.CountBuffs}==0 || (${Me.CountBuffs}==1 && (${Bool[${Me.Buff[Bottle of Shared Adventure]}]} || ${Bool[${Me.Buff[Bottle of Advanced Shared Adventure]}]}))) /return
 	/if (!${Defined[SupplyEnabled]}) /declare SupplyEnabled bool outer ${Bool[${Ini[${Character_Ini},Supply]}]}
   
   /if (!${SupplyEnabled}) /goto :endsupply
@@ -2092,10 +2093,10 @@ SUB check_Supply
 			/if (!${Defined[SupplyTimer${i}]}) /declare SupplyTimer${i} timer outer 0
       /if (${FindItemCount[${supplyItem}]} < ${supplyQuantity} && ${SupplyTimer${i}} == 0 && ) {
         /if (${FindItem[${supplyItem}].Lore} && ${supplyQuantity} > 1 && !${supplyItem.Equal[Summoned: Large Modulation Shard]}) {
-          /if (${Debug}) /echo Supply item ${supplyItem} is Lore but has a specified quantity of ${supplyQuantity}
+          /if (${Debug}) /echo [${Time}]: Supply item ${supplyItem} is Lore but has a specified quantity of ${supplyQuantity}
           /return
         }
-				/echo ==> Supply: Creating a ${supplyItem} using ${supplySpell} need ${supplyQuantity}
+				/echo [${Time}]: Supply: Creating a ${supplyItem} using ${supplySpell} need ${supplyQuantity}
 				/delay 1
 				/tar ${Me}
 				/delay 1
@@ -2154,7 +2155,7 @@ SUB check_Supply
 				| Memorize the previous spell if needed
 				/if (${Bool[${previousSpell}]}) {
 					/delay 1s
-					/echo ==> Supply: Memorizing ${previousSpell} to gem ${supplyGem}.
+					/echo [${Time}]: Supply: Memorizing ${previousSpell} to gem ${supplyGem}.
 					/call memorize_spell "${previousSpell}" "${supplyGem}"
 				}
 				/varset SupplyTimer${i} ${supplyTimeout}

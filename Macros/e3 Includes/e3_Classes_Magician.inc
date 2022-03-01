@@ -64,9 +64,9 @@ sub event_petWeapons(line, ChatSender)
 /return
 
 
-|#event armPets "<#1#> Pet Weapon#*#"
-|#event armPets "<#1#> Arm Pets"
-|#event armPets "<#1#> Arm Pets #2#"
+#event armPets "<#1#> Pet Weapon#*#"
+#event armPets "<#1#> Arm Pets"
+#event armPets "<#1#> Arm Pets #2#"
 #event armPets "#1# tells you, 'Arm Pet'"
 #event armPets "#1# tells you, 'Arm Pets'"
 #event armPets "#1# tells you, 'Pet Weapon#*#'"
@@ -74,20 +74,17 @@ sub event_petWeapons(line, ChatSender)
 #event armPets "#1# tells you, 'Arm Pet #2#'"
 #event armPets "#1# tells you, 'Arm Pets #2#'"
 sub event_armPets(line, ChatSender)
- /echo |- event_armPets ==>
-  
-  |/echo 1: ${line.Token[1, ]} 2: ${line.Token[2, ]} 3: ${line.Token[3, ]} 4: ${line.Token[4, ]} 5: ${line.Token[5, ]} 6: ${line.Token[6, ]} 7: ${line.Token[7, ]}
+/if (${Debug} || ${Debug_MAG})  |- event_armPets ==>
 
   | For some reason events dont like optional parameters, this is how to get the arguments after 'arm pets' in the tell
   /declare characterToWorkOn string local
   /declare loadType string local
-  /if (${line.Token[6, ].Length}>0) {
-    |/echo setting LoadType to ${line.Token[6, ]}
-    /varset loadType ${line.Token[6, ]}
-  }
-  /if (${line.Token[7, ].Length}>0) {
-    |/echo setting characterToWorkOn to ${line.Token[7, ].Token[1,']}
-    /varset characterToWorkOn ${line.Token[7, ].Token[1,']}
+  /if (${line.Find[tells you]}) {
+    /if (${line.Token[6, ].Length}>0) /varset loadType ${line.Token[6, ]}
+    /if (${line.Token[7, ].Length}>0) /varset characterToWorkOn ${line.Token[7, ].Token[1,']}
+  } else {
+    /if (${line.Token[4, ].Length}>0) /varset loadType ${line.Token[4, ]}
+    /if (${line.Token[5, ].Length}>0) /varset characterToWorkOn ${line.Token[5, ].Token[1,']}
   }
   |/echo LoadType: ${loadType} , CharacterToWorkOn: ${characterToWorkOn}
 
@@ -114,9 +111,14 @@ sub event_armPets(line, ChatSender)
 
     /call findAndDestroyOldSatchels
     /if (!${Bool[${InvSlot[pack${i}].Item.ID}]}) {
-      /echo Pack slot ${i}
+      |/echo Pack slot ${i}
       /varset BackSlotThatIsOpen ${i}
       /goto :bagslotcheckdone
+    } else {
+      /if (${Bool[${InvSlot[pack${itemInSlotID}].Item.ID}]}) {
+        /echo [${Time}]: "Arm Pets: Bag slot not cleared. Exiting"
+        /goto :armpetend
+      }
     }
   }
   /next i
@@ -141,7 +143,7 @@ sub event_armPets(line, ChatSender)
       /goto :armpetend
     }
     /if (${Bool[${InvSlot[pack${itemInSlotID}].Item.ID}]}) {
-      /echo "Arm Pets: Bag slot not cleared. Exiting"
+      /echo [${Time}]: "Arm Pets: Bag slot not cleared. Exiting"
       /goto :armpetend
     }
   }
@@ -155,7 +157,7 @@ sub event_armPets(line, ChatSender)
   /tell ${ChatSender} Starting to arm pets. Stand close.
 
   /if (${Cursor.ID}) {
-    /echo Arm Pets: Something is on your cursor, exiting.
+    /echo [${Time}]: Arm Pets: Something is on your cursor, exiting.
     | delays are needed as back to back tells fail to send
     /delay 3s 
     /tell ${ChatSender}  Arm Pets: Error, check mage for detail.
@@ -169,14 +171,13 @@ sub event_armPets(line, ChatSender)
     /for g 0 to ${Group.Members}
       /if (${ChatSender.Equal[${Spawn[${Group.Member[${g}].Name}]}]}) /varset memberOfMyGroup true
     /next g
-    |/echo memberOfMyGroup: ${memberOfMyGroup}
   }
 
   |/echo Character to work on is: ${characterToWorkOn}
   /declare groupCounter int local
   /if (${Bool[${line.Find[pet weapon]}]} || ${Bool[${line.Find[pet armor]}]} || !${loadType.Length}>0) { 
     | For compatibility, if player calls pet weapon it will only give armor/heirloom
-    /echo Pet Weapon was called, only handing armor/heirloom to pet
+    /echo [${Time}]: Pet Weapon was called, only handing armor/heirloom to pet
     /if (${Spawn[${ChatSender}].Pet.Level}<45) {
         /call armOnePet ${ChatSender} ${ChatSender} lowerpet
     } else {
@@ -195,7 +196,7 @@ sub event_armPets(line, ChatSender)
       /for groupCounter 1 to ${Math.Calc[${characterToWorkOn.Count[,]}+1]}
 
       /varset currentChar ${characterToWorkOn.Arg[${groupCounter},,]}
-      |/echo Working on ${Spawn[${characterToWorkOn.Arg[${groupCounter},,]}].Name}
+      |/echo [${Time}]: Working on ${Spawn[${characterToWorkOn.Arg[${groupCounter},,]}].Name}
       /if (${Spawn[${currentChar}].ID}>0) {
         /call armOnePet ${currentChar} ${ChatSender} ${loadType}
         /if (${Cursor.ID}) {
@@ -212,12 +213,12 @@ sub event_armPets(line, ChatSender)
       | Character name was provided, arm only their pet
       |/echo Have one character to work on. Char: ${characterToWorkOn} Spawn ID: ${Spawn[${characterToWorkOn}].ID}
       /if (${Spawn[${characterToWorkOn}].ID}>0) {
-        |/echo found Character to work on.
+        |/echo [${Time}]: found Character to work on.
 
         /call armOnePet ${characterToWorkOn} ${ChatSender} ${loadType} 
       } else {
         /delay 3s
-        |/echo Didnt find character ${characterToWorkOn}
+        |/echo [${Time}]: Didnt find character ${characterToWorkOn}
         /tell ${ChatSender}  Could not locate character ${characterToWorkOn}
       }
     }
@@ -234,17 +235,17 @@ sub event_armPets(line, ChatSender)
 
   } else { 
     | When the chat sender is not a member, arm only their pet
-    |/echo Arming ${ChatSender} 's Pet
+    |/echo [${Time}]: Arming ${ChatSender} 's Pet
     /call armOnePet ${ChatSender} ${ChatSender} ${loadType} 
   }
 
   /call findAndDestroyOldSatchels
   /if (${itemInSlotID} > 0) {
-    |/echo Item to put back ${itemInSlot}
+    |/echo [${Time}]: Item to put back ${itemInSlot}
     /if (${FindItemCount[${itemInSlot}]} > 0) {
       /itemnotify "${itemInSlot}" leftmouseup
     } else {
-      |/echo Could not find item to put back ${itemInSlot}
+      |/echo [${Time}]: Could not find item to put back ${itemInSlot}
       /if (${itemInSlot.Equal[Folded Pack of Spectral Armaments]}) {
         /call castSimpleSpell "Grant Spectral Armaments" ${Me.ID}
       } else /if (${itemInSlot.Equal[Folded Pack of Enibik's Heirlooms]}) {
@@ -289,16 +290,16 @@ sub armOnePet(playerName, chatSender, loadoutType)
     /declare primaryWeapon string local
     /declare secondaryWeapon string local 
 
-    /echo Checking ${playerName} 's pet
-    |/echo ${Spawn[${playerName}].Name} the ${Spawn[${playerName}].Class} has pet: ${Spawn[${playerName}].Pet.ID} which is ${bodytype}
+    |/echo [${Time}]: Checking ${playerName} 's pet
+    |/echo [${Time}]: ${Spawn[${playerName}].Name} the ${Spawn[${playerName}].Class} has pet: ${Spawn[${playerName}].Pet.ID} which is ${bodytype}
     /if (${Spawn[${playerName}].Pet.ID} && !${Spawn[${playerName}].Pet.Name.Find[familiar]} && ${Spawn[${playerName}].Pet.Level}>1) {
 
       /bc Arm Pets: Working on ${playerName} 's pet
 
       |/call TrueTarget ${Spawn[${playerName}].Pet.ID}
-      |/echo Pet distance is ${Spawn[${playerName}].Pet.Distance}
+      |/echo [${Time}]: Pet distance is ${Spawn[${playerName}].Pet.Distance}
       /if (${Spawn[${playerName}].Pet.Distance}>50) {
-        /echo Pet is too far away.
+        /echo [${Time}]: Pet is too far away.
         /delay 3s 
         /tell ${chatSender}  ${playerName}'s pet too far away.
         /return
@@ -320,16 +321,17 @@ sub armOnePet(playerName, chatSender, loadoutType)
         /bc Arm Pets: Something went wrong and something is on your cursor, exiting.
         /return
       }
+    
       
-      |/echo the line to parse is:${loadoutType}
+      |/echo [${Time}]: the line to parse is:${loadoutType}
       /if (${Me.Book[Grant Spectral Armaments]} && !${loadoutType.Find[none]} && !${loadoutType.Find[noweapon]}) {
         /varset char_class ${Spawn[${playerName}].Class} 
-        |/echo loadoutType: ${loadoutType}
+        |/echo [${Time}]: loadoutType: ${loadoutType}
 
-        |/echo Pet level is ${Spawn[${playerName}].Pet.Level}
+        |/echo [${Time}]: Pet level is ${Spawn[${playerName}].Pet.Level}
         /if (${Spawn[${playerName}].Pet.Level}<45) {
           | This will rely on gimme setup to get hammers from your cleric, otherwise we can just give the buckler
-          |/echo Pet is below 45, giving buckler and cleric hammer.
+          |/echo [${Time}]: Pet is below 45, giving buckler and cleric hammer.
 
           /varset secondaryWeapon ${drainingBuckler}
           /if (${FindItemCount[${clericHammer}]}>0) {
@@ -341,12 +343,12 @@ sub armOnePet(playerName, chatSender, loadoutType)
           }
 
         } else /if (${loadoutType.Find[,]} || ${loadoutType.Find[2]}) {
-          |/echo Token1 ${loadoutType.Token[1,,]} Token2 ${loadoutType.Token[2,,]} 
+          |/echo [${Time}]: Token1 ${loadoutType.Token[1,,]} Token2 ${loadoutType.Token[2,,]} 
           /declare firstItem string local
           /declare secondItem string local
 
           /if (${loadoutType.Find[2]}) {
-            |/echo Setting loadout type for same primary/secondary: ${loadoutType},${loadoutType}
+            |/echo [${Time}]: Setting loadout type for same primary/secondary: ${loadoutType},${loadoutType}
             /varset loadoutType ${loadoutType},${loadoutType}
           }
           
@@ -409,7 +411,7 @@ sub armOnePet(playerName, chatSender, loadoutType)
         } else /if (${loadoutType.Find[default]} || ${loadoutType.Find[class]}) {
 
             /if (${char_class.Find[Magician]} || ${char_class.Find[Necro]} || ${char_class.Find[Beastlord]}) {
-              |/echo Arm Pet: Doing ${char_class} loadout
+              |/echo [${Time}]: Arm Pet: Doing ${char_class} loadout
               /if (${loadoutType.Find[ice]}) {
                 /varset primaryWeapon ${iceWeapon}
                 /varset secondaryWeapon ${iceWeapon}
@@ -420,7 +422,7 @@ sub armOnePet(playerName, chatSender, loadoutType)
               }
             } else {
               |When its any other class with pet
-              |/echo loadoutType: ${loadoutType}
+              |/echo [${Time}]: loadoutType: ${loadoutType}
               /echo Arm Pet: Doing Default ${char_class} loadout
               
               /varset primaryWeapon ${dispelWeapon}
@@ -447,18 +449,18 @@ sub summonUnpackAndSelect(targetID, spellName, ItemName, primaryItem, secondaryI
         /declare clericHammer string local "Hammer of Damnation"
         /declare drainingBuckler string local "Summoned: Buckler of Draining Defense"
         /if (${FindItemCount[${ItemName}]} > 0) {
-          |/echo found ${ItemName}
+          |/echo [${Time}]: found ${ItemName}
           /itemnotify "${ItemName}" leftmouseup
         } else {
           /call castSimpleSpell "${spellName}" ${Me.ID}
           /delay 3s ${Bool[${Cursor.ID}]}
         }
 
-        |/echo done casting, put in inventory
+        |/echo [${Time}]: done casting, put in inventory
         /call ClearCursor
         /delay 3s !${Bool[${Cursor.ID}]}
         /delay 1s
-        |/echo unfolding the bag to cursor
+        |/echo [${Time}]: unfolding the bag to cursor
         /ItemNotify "${ItemName}" rightmouseup
         /delay 3s ${Bool[${Cursor.ID}]}
         /call ClearCursor
@@ -468,11 +470,11 @@ sub summonUnpackAndSelect(targetID, spellName, ItemName, primaryItem, secondaryI
         | If its a cleric hammer and mage does not have one already, just skip the primary section
         |/if (!${primaryItem.Find[${clericHammer}]} || (${primaryItem.Find[${clericHammer}]} && ${FindItemCount[${clericHammer}]}>0)) {
          /if (!${primaryItem.Equal[NOPRIMARY]}) {
-          /echo Giving Primary Weapon to pet: ${primaryItem}
+          /echo [${Time}]: Giving Primary Weapon to pet: ${primaryItem}
           /itemnotify "${primaryItem}" leftmouseup
           /delay 5s ${Bool[${Cursor.ID}]}
           /if (!${Cursor.ID}) {
-            /echo summonUnpackAndSelect: Could not load primary item to cursor, exiting
+            /echo [${Time}]: summonUnpackAndSelect: Could not load primary item to cursor, exiting
             /return
           }
           |/echo giving primary item to pet
@@ -481,13 +483,13 @@ sub summonUnpackAndSelect(targetID, spellName, ItemName, primaryItem, secondaryI
             /call MoveToLoc ${Target.Y} ${Target.X} 50 15
             /call giveItemOnCursorToTarget
           } else {
-            /echo Pet is too far away.
+            /echo [${Time}]: Pet is too far away.
             /return
           }
         }
 
         /if (${Cursor.ID}) {
-          /echo summonUnpackAndSelect: Something went wrong and something is on your cursor, exiting.
+          /echo [${Time}]: summonUnpackAndSelect: Something went wrong and something is on your cursor, exiting.
           /return
         }
 
@@ -502,7 +504,7 @@ sub summonUnpackAndSelect(targetID, spellName, ItemName, primaryItem, secondaryI
             /if (${Cursor.Name.Find[Pouch of Quellious]}) {
               /destroy
             } else {
-              /echo summonUnpackAndSelect: Could not destroy bag, exiting
+              /echo [${Time}]: summonUnpackAndSelect: Could not destroy bag, exiting
               /return
             }
             
@@ -528,7 +530,7 @@ sub summonUnpackAndSelect(targetID, spellName, ItemName, primaryItem, secondaryI
           |2ndary item
           /if (${secondaryItem.Find[${drainingBuckler}]}) {
             | for some reason itemnotify cant get the buckler by name or invslot, have to look for its pack slot
-            /echo Giving buckler to pet: ${secondaryItem}
+            /echo [${Time}]: Giving buckler to pet: ${secondaryItem}
             /declare i int local
             /for i 1 to 10
             /if (${Bool[${InvSlot[pack${i}].Item.Name.Equal[Pouch of Quellious]}]}) {
@@ -538,14 +540,14 @@ sub summonUnpackAndSelect(targetID, spellName, ItemName, primaryItem, secondaryI
             /next i
             :pouchFound
           } else {
-            /echo Giving Secondary weapon to pet: ${secondaryItem}
+            /echo [${Time}]: Giving Secondary weapon to pet: ${secondaryItem}
             /itemnotify "${secondaryItem}" leftmouseup
           }
           
           /delay 5s ${Bool[${Cursor.ID}]}
           
           /if (!${Cursor.ID}) {
-            /echo summonUnpackAndSelect: Could not load secondary item to cursor.
+            /echo [${Time}]: summonUnpackAndSelect: Could not load secondary item to cursor.
             /return
           }
           
@@ -555,12 +557,12 @@ sub summonUnpackAndSelect(targetID, spellName, ItemName, primaryItem, secondaryI
             /call MoveToLoc ${Target.Y} ${Target.X} 50 15
             /call giveItemOnCursorToTarget
           } else {
-            /echo Pet is too far away.
+            /echo [${Time}]: Pet is too far away.
             /return
           }
         }
         /if (${Cursor.ID}) {
-          /echo summonUnpackAndSelect: Something went wrong and something is on your cursor.
+          /echo [${Time}]: summonUnpackAndSelect: Something went wrong and something is on your cursor.
           /return
         }
       
@@ -570,14 +572,14 @@ sub summonUnpackAndSelect(targetID, spellName, ItemName, primaryItem, secondaryI
         /if (${Cursor.Name.Find[Pouch of Quellious]}) {
            /destroy
         } else {
-          /echo summonUnpackAndSelect: Could not destroy bag.
+          /echo [${Time}]: summonUnpackAndSelect: Could not destroy bag.
           /return
         }
 
 /return
 sub findAndDestroyOldSatchels()
 
-    /echo Finding and destroying opened summoned packs
+    /echo [${Time}]: Finding and destroying opened summoned packs
     | Just in case mage has been looting and items ended up in an old phantom pack
     /call ClearCursor
     /declare m int local
@@ -587,7 +589,7 @@ sub findAndDestroyOldSatchels()
       /for n 1 to 10
       |/echo Item ${InvSlot[pack${m}].Item.Item[${n}].Name}
       /if (!${InvSlot[pack${m}].Item.Item[${n}].NoRent} && ${InvSlot[pack${m}].Item.Item[${n}].ID} > 0) {
-        /echo Arm Pets: Non-Temporary Item ${InvSlot[pack${m}].Item.Item[${n}]} found in ${InvSlot[pack${m}].Item.Name}. Exiting.
+        /echo [${Time}]: findAndDestroyOldSatchels: Non-Temporary Item ${InvSlot[pack${m}].Item.Item[${n}]} found in ${InvSlot[pack${m}].Item.Name}.
         /return
       }
       /next n
@@ -595,7 +597,7 @@ sub findAndDestroyOldSatchels()
       /if (${Cursor.Name.Find[Phantom Satchel]} || ${Cursor.Name.Find[Pouch of Quellious]}) {
         /destroy
         /if (${Cursor.ID}) {
-          /echo findAndDestroyOldSatchels: Unable to clear bagslot.
+          /echo [${Time}]: findAndDestroyOldSatchels: Unable to clear bagslot.
           /return
         }
       }
@@ -627,11 +629,11 @@ sub summonUnpackAndGive(targetID, spellName, ItemName)
       /call MoveToLoc ${Target.Y} ${Target.X} 50 15
       /call giveItemOnCursorToTarget
     } else {
-      /echo Pet is too far away.
+      /echo [${Time}]: Pet is too far away.
       /return
     }
     /if (${Cursor.ID}) {
-      /echo summonUnpackAndGive: Something went wrong and something is on your cursor, exiting.
+      /echo [${Time}]: summonUnpackAndGive: Something went wrong and something is on your cursor, exiting.
       /return
     }
 
@@ -650,7 +652,7 @@ sub giveItemOnCursorToTarget()
         /if (${retryWeapTimer} && ${Cursor.ID}) {
           /goto :OpenTrade_Loop
         } else {
-          /echo Failed to open trade with ${Target.CleanName}.
+          /echo [${Time}]: Failed to open trade with ${Target.CleanName}.
         }
     } else {
         :WaitAccept_Loop
@@ -660,7 +662,7 @@ sub giveItemOnCursorToTarget()
           /if (${retryWeapTimer}) {
             /goto :WaitAccept_Loop
           } else {
-            /echo Failed to open trade with ${Target.CleanName}.
+            /echo [${Time}]: Failed to open trade with ${Target.CleanName}.
           }
         }
       }
