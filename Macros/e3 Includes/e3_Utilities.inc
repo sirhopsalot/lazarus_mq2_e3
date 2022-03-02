@@ -1511,3 +1511,89 @@ SUB Build_Class_Ini(Ini_File)
 SUB event_sendInstanceInvites(line, ChatSender)
 	/dzadd ${ChatSender}
 /return
+
+|----------------------------------------------------------------------------|
+|- Sanity check for when Waiting4Rez may fails								-|
+|----------------------------------------------------------------------------|
+|- 																			-|
+|----------------------------------------------------------------------------|
+sub check_AmIDead_Default
+    
+    /call check_AmIDead 1 1
+
+/return ${Macro.Return}
+
+
+sub check_AmIDead(int equipmentThreshold, int inventoryThreshold)
+/if (${Debug}) /echo [${Time}]: check_AmIDead
+
+    /if (!${Defined[missingEquipment]}) /declare missingEquipment bool local
+    /if (!${Defined[missingInventory]}) /declare missingInventory bool local
+
+    /call check_MissingEquipment ${equipmentThreshold}
+    /varset missingEquipment ${Macro.Return}
+    /call check_MissingInventory ${inventoryThreshold}
+    /varset missingInventory ${Macro.Return}
+    /if (${Debug}) /echo [${Time}]: check_AmIDead: Equipment ${missingEquipment}, Inventory: ${missingInventory}
+    /if (!(${missingEquipment} && ${missingInventory})) {
+        /return false
+    }
+
+/if (${Debug}) /echo [${Time}]: check_AmIDead: Check failed, character may be dead.
+/return true
+|----------------------------------------------------------------------------|
+|-    Equipment 															-|
+|- 1. A mage could summon mod rod in toons proximity, causing the toon to   -|
+|-	  autoinventory it to their mainhand - skip No Rent items 				-|
+|- 2. A player could intentionally have removed an item in any slot for 	-|
+|-	  reasons of their own choosing 										-|
+|- 3. Its common for players to not have offhand (14), powersource (21) or  -|
+|-	  ammo (22)																-|
+|----------------------------------------------------------------------------|
+sub check_MissingEquipment(int threshold)
+/if (${Debug}) /echo [${Time}]: check_MissingEquipment: Start
+
+    /declare i int local 
+    /declare equipmentFound int local
+
+    /for i 0 to 20
+    /if (${i} == 14) /continue
+    /if (${Bool[${InvSlot[${i}].Item.ID}]} && !${Bool[${InvSlot[${i}].Item.NoRent}]}) {
+        /varset equipmentFound ${Math.Calc[${equipmentFound}+1]}
+        /if (${Debug}) /echo [${Time}]: check_MissingEquipment: Item ${InvSlot[${i}].Item.Name} found found in slot: ${InvSlot[${i}]}
+    }
+    
+    /if (${equipmentFound} >= ${threshold}) {
+        /if (${Debug}) /echo [${Time}]: check_MissingEquipment: PASSED
+        /return false
+    } 
+    /next i
+
+/if (${Debug}) /echo [${Time}]: check_MissingEquipment: FAILED
+/return true
+|----------------------------------------------------------------------------|
+|- 	  Inventory 															-|
+|- 1. Going to assume if you have 1 bag or item PASS 						-|
+|- 2. Ignore No Rent items and Folded Packs. These can be summoned onto 	-|
+|- 	  your cursor by other players. 										-|
+|----------------------------------------------------------------------------|
+sub check_MissingInventory(int threshold)
+/if (${Debug}) /echo [${Time}]: check_MissingInventory Start
+
+    /declare i int local
+    /declare inventoryFound int local
+
+    /for i 1 to 10
+    /if (${Bool[${InvSlot[pack${i}].Item.ID}]} && !${Bool[${InvSlot[pack${i}].Item.NoRent}]} && !${Bool[${InvSlot[pack${i}].Item.Name.Find[Folded Pack]}]}) {
+        /varset inventoryFound ${Math.Calc[${inventoryFound}+1]}
+        /if (${Debug}) /echo [${Time}]: check_MissingInventory: Found bag or item ${InvSlot[pack${i}].Item.Name} in slot ${i}
+    }
+
+    /if (${inventoryFound} >= ${threshold}) {
+        /if (${Debug}) /echo [${Time}]: check_MissingInventory: PASSED
+        /return false
+    }
+    /next i
+
+/if (${Debug}) /echo [${Time}]: check_MissingInventory: FAILED
+/return true

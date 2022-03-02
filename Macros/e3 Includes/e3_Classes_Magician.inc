@@ -582,6 +582,10 @@ sub findAndDestroyOldSatchels()
     /echo [${Time}]: Finding and destroying opened summoned packs
     | Just in case mage has been looting and items ended up in an old phantom pack
     /call ClearCursor
+    /if (${Cursor.ID}) {
+      /echo [${Time}]: findAndDestroyOldSatchels: Unable to clear cursor.
+      /return
+    }
     /declare m int local
     /declare n int local
     /for m 1 to 10

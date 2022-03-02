@@ -31,7 +31,11 @@ SUB EVENT_dead
 		}
 		| Wait for a Rez.
 		/docommand ${ChatToggle} I'm dead. Waiting for rez.
-		/if (!${Defined[Waiting4Rez]}) /declare Waiting4Rez bool outer TRUE
+		/if (!${Defined[Waiting4Rez]}) {
+			/declare Waiting4Rez bool outer TRUE
+		} else {
+			/varset Waiting4Rez TRUE
+		}
 		/call Wait4Rez
 	}
 /if (${Debug} || ${Debug_Wait4Rez}) /echo <== Event_Dead -|
@@ -50,7 +54,11 @@ SUB EVENT_waitNow(line, ChatSender)
 		/consent ${ChatSender}
 		|If I'm not already waiting, wait for a rez.
 		/if (!${Waiting4Rez}) {
-			/if (!${Defined[Waiting4Rez]}) /declare Waiting4Rez bool outer TRUE
+			/if (!${Defined[Waiting4Rez]}) {
+				/declare Waiting4Rez bool outer TRUE
+			} else {
+				/varset Waiting4Rez TRUE
+			}
 			/call Wait4Rez
 		}
 	}

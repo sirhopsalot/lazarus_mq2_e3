@@ -2055,9 +2055,8 @@ SUB check_Supply
   /if (${Waiting4Rez}) /return
   /if (${Bool[${Me.Buff[Resurrection Sickness]}]}) /return
   | Extra checks here because sometimes Waiting4Rez doesn't seem to short out supply
-  | Gloves (12) and belt (20)
-  /if (!${Bool[${InvSlot[12].Item.ID}]} && !${Bool[${InvSlot[20].Item.ID}]}) /return
-  /if (${Me.CountBuffs}==0 || (${Me.CountBuffs}==1 && (${Bool[${Me.Buff[Bottle of Shared Adventure]}]} || ${Bool[${Me.Buff[Bottle of Advanced Shared Adventure]}]}))) /return
+  /call check_AmIDead 10 5
+  /if (${Macro.Return}) /return
 	/if (!${Defined[SupplyEnabled]}) /declare SupplyEnabled bool outer ${Bool[${Ini[${Character_Ini},Supply]}]}
   
   /if (!${SupplyEnabled}) /goto :endsupply
