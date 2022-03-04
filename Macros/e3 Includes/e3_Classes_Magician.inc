@@ -74,19 +74,19 @@ sub event_petWeapons(line, ChatSender)
 #event armPets "#1# tells you, 'Arm Pet #2#'"
 #event armPets "#1# tells you, 'Arm Pets #2#'"
 sub event_armPets(line, ChatSender)
-/if (${Debug} || ${Debug_MAG})  |- event_armPets ==>
+/if (${Debug} || ${Debug_MAG})  /echo event_armPets ==>
 
   | For some reason events dont like optional parameters, this is how to get the arguments after 'arm pets' in the tell
   /declare characterToWorkOn string local
   /declare loadType string local
   /if (${line.Find[tells you]}) {
     /if (${line.Token[6, ].Length}>0) /varset loadType ${line.Token[6, ]}
-    /if (${line.Token[7, ].Length}>0) /varset characterToWorkOn ${line.Token[7, ].Token[1,']}
+    /if (${line.Token[7, ].Length}>0) /varset characterToWorkOn ${line.Token[7, ].Left[-1]}
   } else {
     /if (${line.Token[4, ].Length}>0) /varset loadType ${line.Token[4, ]}
-    /if (${line.Token[5, ].Length}>0) /varset characterToWorkOn ${line.Token[5, ].Token[1,']}
+    /if (${line.Token[5, ].Length}>0) /varset characterToWorkOn ${line.Token[5, ].Left[-1]}
   }
-  |/echo LoadType: ${loadType} , CharacterToWorkOn: ${characterToWorkOn}
+  /if (${Debug} || ${Debug_MAG}) /echo [${Time}] LoadType: ${loadType}, CharacterToWorkOn: ${characterToWorkOn}
 
   |first check that we have an empty slot
   /declare BackSlotThatIsOpen int 0
@@ -182,7 +182,7 @@ sub event_armPets(line, ChatSender)
         /call armOnePet ${ChatSender} ${ChatSender} lowerpet
     } else {
       /delay 3s
-      /tell ${ChatSender}  Either Pet Weapon/Pet Armor was called or you did not specify a loadout, only givng Armor and Heirlooms to your pet.
+      /tell ${ChatSender}  Either Pet Weapon was called or you did not specify a loadout, only givng Armor and Heirlooms to your pet.
       /call armOnePet ${ChatSender} ${ChatSender} noweapon
     }
 

@@ -1513,9 +1513,9 @@ SUB event_sendInstanceInvites(line, ChatSender)
 /return
 
 |----------------------------------------------------------------------------|
-|- Sanity check for when Waiting4Rez may fails								-|
+|- Sanity check for when Waiting4Rez may fail								-|
 |----------------------------------------------------------------------------|
-|- 																			-|
+|- Checks inventory and equipment to determine if player might be dead   	-|
 |----------------------------------------------------------------------------|
 sub check_AmIDead_Default
     

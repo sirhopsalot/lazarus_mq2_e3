@@ -2116,6 +2116,10 @@ SUB check_Supply
 
         /declare j int local
         /for j 1 to ${supplyQuantity}
+        /call check_HealCasting_DuringDetrimental
+        /if (!${c_SubToRun}) {
+          /break
+        }
 				/if (${supplyGem} == 0 || ${supplyGem} == NULL) { 
            
            /call check_ReadySimple "${supplySpell}"
@@ -2133,7 +2137,6 @@ SUB check_Supply
               /call castSimpleSpellBase "${supplySpell}/Gem|${supplyGem}" ${Me.ID} False
            }
 				}
-				|/delay 20s ${Bool[${Cursor.ID}]}
         /call ClearCursor
         /delay 1s
         /if (${FindItemCount[${supplyItem}]} >= ${supplyQuantity}) {
