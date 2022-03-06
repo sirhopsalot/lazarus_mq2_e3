@@ -10,7 +10,14 @@
 #event lootRelay "[#1#(msg)] loot #2#"
 SUB Event_lootRelay(line, ChatSender, looting)
   /if (${Me.Name.Equal[${ChatSender}]}) /return
-  /if (!${Defined[Auto_Loot]}) /declare Auto_Loot bool outer TRUE
+  /docommand ${ChatToggle} Looting Turned ${looting}
+  /call check_Loot "${looting}""
+
+/return
+
+Sub check_Loot(looting)
+
+ /if (!${Defined[Auto_Loot]}) /declare Auto_Loot bool outer TRUE
   /if (!${Defined[LootOnly]}) /declare LootOnly bool outer FALSE
   /if (!${Defined[LootOnlyItem]}) /declare LootOnlyItem string outer
   
@@ -34,12 +41,10 @@ SUB Event_lootRelay(line, ChatSender, looting)
   /if (${Select[${looting},on]}) {
     /varset Auto_Loot TRUE
     /varset LootOnly FALSE
-    /docommand ${ChatToggle} Looting Enabled
-    /if (${Me.CombatState.NotEqual[Combat]} || ${combatLooting}) /call loot_Area
-
   } else /if (${Select[${looting},off]}) {
     /varset Auto_Loot FALSE
-    /docommand ${ChatToggle} Looting Disabled
+    |exit
+    /return
   } else {
     /varset Auto_Loot TRUE
     /varset LootOnly TRUE
@@ -47,11 +52,10 @@ SUB Event_lootRelay(line, ChatSender, looting)
       /varset looting Diamond Coin
     }
     /varset LootOnlyItem ${looting}
-    /docommand ${ChatToggle} ${looting}s Only Enabled
-    /if (${Me.CombatState.NotEqual[Combat]} || ${combatLooting}) /call loot_Area
   }
-/return
+  /if (!((${Me.Combat} || ${Me.CombatState.Equal[Combat]} ||  ${AssistTarget} >0 )) || ${combatLooting}) /call loot_Area
 
+/return
 |----------------------------------------------------------------|
 |- Adds corpses that are not yours to the looted corpse list.	  -|
 #EVENT NotYourKill "Someone is already looting that corpse."
@@ -64,13 +68,17 @@ SUB EVENT_NotYourKill
 |--------------------------------------------------------------------------|
 |- Moves to corpses and begins looting, reads Loot_Ini for loot handles.	-|
 SUB loot_Area
+  /declare NumCorpses int local ${SpawnCount[npc corpse zradius 50 radius ${seek_Radius} "_"]}
+  /if (${NumCorpses}<1) {
+    /return
+  }
   /if (${NetBots[Creamo].ID}) /varset Debug_Loot TRUE
   /if (${Debug} || ${Debug_Loot}) /echo |- loot_Area ==>
   /declare startX int ${Me.X}
   /declare startY int ${Me.Y}
-  /squelch /hidecor looted
-  /if (${Twist.Twisting}) /call pauseTwist
-  /delay 5s !${Me.Casting.ID}
+  
+  |/if (${Twist.Twisting}) /call pauseTwist
+  |/delay 5s !${Me.Casting.ID}
   /if (${NetAdvPath.Following}) /squelch /netfollow off
   /if (${Stick.Active}) /squelch /stick off
 
@@ -82,7 +90,7 @@ SUB loot_Area
   /declare CorpseList_Looted  string local
   /declare i int local
   /declare c int local
-  /declare NumCorpses int local ${SpawnCount[npc corpse zradius 50 radius ${seek_Radius} "_"]}
+ 
   /declare CorpsesLeft int local ${NumCorpses}
   /varset cantLootCorpseCount 0
   /if (${Debug} || ${Debug_Loot}) /echo NumCorpses: ${NumCorpses}
@@ -92,7 +100,9 @@ SUB loot_Area
     /varset CorpseList ${CorpseList}${ClosestCorpse}|
   /next i
   /if (${Debug} || ${Debug_Loot}) /echo CorpseList: ${CorpseList}
-
+  /if (${NumCorpses}>1) {
+    /squelch /hidecor looted
+  }
   /for i 1 to ${NumCorpses}
     /if (${Debug} || ${Debug_Loot}) /echo Corpse ${i} of ${NumCorpses}, ${CorpsesLeft} left
     |iterate list of corpses
@@ -137,6 +147,7 @@ SUB loot_Area
   } else {
     /call MoveToLoc ${startY} ${startX} 15 20
   }
+  /squelch /hidecor npc 
   /docommand ${ChatToggle} ${Group.Leader} Looting Complete
   /if (${Debug} || ${Debug_Loot}) /echo <== loot_Area -|
 /return
@@ -216,9 +227,6 @@ SUB lootCorpse
             /varset importantItem TRUE
         }
          /if (!${importantItem} && ${Corpse.Item[${i}].Name.Equal[The Lady Luck blessings]}) {
-            /varset importantItem TRUE
-        }
-         /if (!${importantItem} && ${Corpse.Item[${i}].Name.Equal[Grobb Frenzy Maxx]}) {
             /varset importantItem TRUE
         }
         /if (${importantItem}) {
