@@ -149,10 +149,10 @@ SUB e3_Setup(modeSelect)
 	/if (${Bool[${Ini[${Character_Ini},Heals]}]} && !${Bool[${Ini[${Character_Ini},Heals,Auto Cast Necro Heal Orbs (On/Off)]}]}) {
 		/call WriteToIni "${Character_Ini},Heals,Auto Cast Necro Heal Orbs (On/Off)" On
 	}
-
-	
-
-	/echo e3 loaded - Turbo ${classTurbo}
+	/if (${Bool[${Ini[${Character_Ini},Misc]}]} && !${Bool[${Ini[${Character_Ini},Misc,Anchor (Char to Anchor to)]}]}) {
+		/call WriteToIni "${Character_Ini},Misc,Anchor (Char to Anchor to)" ""
+	}
+ 	/echo e3 loaded - Turbo ${classTurbo}
 	
 	/if (${Debug}) {
 		/echo

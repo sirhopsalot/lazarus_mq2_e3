@@ -1041,6 +1041,14 @@ sub BardSongWaitLockPumpQueue
     /if (!${Window[CastingWindow].Open}) {
       /break
     }
+    /if (${Auto_Loot}) {
+      /call check_Loot "on"
+    
+    }
+    /call check_Anchor
+    /if (!${Window[CastingWindow].Open}) {
+      /break
+    }
     /delay 1
   }
 

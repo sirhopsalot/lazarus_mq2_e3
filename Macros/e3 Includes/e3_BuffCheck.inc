@@ -40,9 +40,18 @@ SUB buffBots(ArrayName)
 	/if (${Select[${ArrayName},InstantBuffs2D,SelfBuffs2D]}) {
 		/varset buffTargetID ${Me.ID}
 		/varset buffTarget ${Me.Name}
+
 	} else /if (${Select[${ArrayName},CombatBuffs2D,BotBuffs2D]}) {
-		/varset buffTargetID ${Spawn[=${${ArrayName}[${s},${iCastTarget}]}].ID}
-		/varset buffTarget ${${ArrayName}[${s},${iCastTarget}]}
+   	/varset buffTargetID ${Spawn[=${${ArrayName}[${s},${iCastTarget}]}].ID}
+    /varset buffTarget ${${ArrayName}[${s},${iCastTarget}]}
+    |no buff target set, use self
+    /if (!${Bool[${Spawn[=${${ArrayName}[${s},${iCastTarget}]}].ID}]}) {
+      /varset buffTargetID ${Me.ID}
+      /varset buffTarget ${Me.Name}
+    }
+
+
+
 	} else /if (${Select[${ArrayName},PetBuffs2D]}) {
 		/varset buffTargetID ${Spawn[=${${ArrayName}[${s},${iCastTarget}]}].Pet.ID}
 		/varset buffTarget ${${ArrayName}[${s},${iCastTarget}]}

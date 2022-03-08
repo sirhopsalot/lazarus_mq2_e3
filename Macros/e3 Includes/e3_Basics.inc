@@ -1525,7 +1525,11 @@ Sub basics_Setup
 	/declare medBreak_Hold bool outer FALSE
 	/declare medOn_combatBreak bool outer FALSE
 	/declare autoMedChar bool outer FALSE
-	/declare medbreak_Popup_Timer timer outer
+  /declare anchorChar string outer 
+  /declare anchorOn bool outer FALSE
+  /squelch /alias /anchoroff /bcga //varset anchorOn FALSE
+  /squelch /alias /anchoron /bcga //varset anchorOn TRUE
+  /declare medbreak_Popup_Timer timer outer
 	/declare clickitRandomDelay int outer 7
 
 	/if (${Ini[${genSettings_Ini},ExpGroup,NoKS_WeaponSet].Length}) 		/call iniToVarV "${genSettings_Ini},ExpGroup,NoKS_WeaponSet" NoKSWeaponSet string outer
@@ -1540,9 +1544,11 @@ Sub basics_Setup
 	/if (${Ini[${genSettings_Ini},General,Leash Length].Length} && ${Int[${Ini[${genSettings_Ini},General,Leash Length]}]}) /call iniToVarV "${genSettings_Ini},General,Leash Length" LeashLength int outer
 	/if (${Ini[${genSettings_Ini},General,End MedBreak in Combat(On/Off)].Length}) /call iniToVarV "${genSettings_Ini},General,End MedBreak in Combat(On/Off)" medOn_combatBreak bool outer
 	/if (${Ini[${genSettings_Ini},General,AutoMedBreak PctMana].Length}) /call iniToVarV "${genSettings_Ini},General,AutoMedBreak PctMana" autoMedPctMana int outer
-  	/if (${Ini[${Character_Ini},Misc,End MedBreak in Combat(On/Off)].Length}) /call iniToVarV "${Character_Ini},Misc,End MedBreak in Combat(On/Off)" medOn_combatBreakChar bool outer
+  /if (${Ini[${Character_Ini},Misc,End MedBreak in Combat(On/Off)].Length}) /call iniToVarV "${Character_Ini},Misc,End MedBreak in Combat(On/Off)" medOn_combatBreakChar bool outer
 	/if (${Ini[${Character_Ini},Misc,AutoMedBreak (On/Off)].Length}) /call iniToVarV "${Character_Ini},Misc,AutoMedBreak (On/Off)" autoMedChar bool outer
-	| -Add Groups_Ini file path
+  /if (${Ini[${Character_Ini},Misc,Anchor (Char to Anchor to)].Length}) /call iniToVarV "${Character_Ini},Misc,Anchor (Char to Anchor to)" anchorChar string outer
+
+  | -Add Groups_Ini file path
 	/if (!${Ini[${MacroData_Ini},File Paths,Saved Groups].Length}) /call WriteToIni "${MacroData_Ini},File Paths,Saved Groups" "e3 Macro Inis\Saved Groups.ini" 1
 	| -Import Groups_Ini.
 	/if (!${Ini[${MacroData_Ini},File Paths,Saved Groups].Length}) {
@@ -1605,6 +1611,7 @@ Sub basics_Background_Events
   /doevents outOfSomething
   /doevents ItemDeleteSummoned
   /call check_StoneOn
+  /call check_Anchor
 |		/varset event_counter 1
 |	} else {
 |		/varcalc event_counter ${event_counter}+1
@@ -1631,6 +1638,7 @@ SUB basics_CharacterSettings
 /call WriteToIni "${Character_Ini},Misc,AutoFood" Off
 /call WriteToIni "${Character_Ini},Misc,Food"
 /call WriteToIni "${Character_Ini},Misc,Drink"
+/call WriteToIni "${Character_Ini},Misc,Anchor (Char to Anchor to)" ""
 /if (${Select[${Me.Class.ShortName},CLR,DRU,ENC,MAG,NEC,SHM,WIZ]}) {
 	/call WriteToIni "${Character_Ini},Misc,End MedBreak in Combat(On/Off)" Off
 } else /if (${Me.Class.ShortName.NotEqual[BRD]}) {
@@ -1698,6 +1706,7 @@ Sub basics_Aliases
 	/squelch /alias /ResetCorpses /bc Fix Corpses
 	/squelch /alias /gathercorpses /echo Gather Corpses
 	/squelch /alias /mana /bc Report Mana
+
 /if (${Debug}) /echo <== basics_Aliases -|
 /return
 
@@ -2640,7 +2649,21 @@ sub check_PreviousSpell
   }
 
 /return
-
+sub check_Anchor
+  /if (${anchorOn} && ${anchorChar.Length}>1 && !${Me.Moving} && ${Bool[${Spawn[${anchorChar}].ID}]} && ${Spawn[${anchorChar}].LineOfSight}) {
+    /if (!(${Me.Combat} || ${Me.CombatState.Equal[Combat]} ||  ${AssistTarget} >0 )) {
+      /if (${Spawn[${anchorChar}].Distance} > 10) {
+        /echo [${Time}] Anchor: Moving to Anchor
+        /moveto id ${Spawn[${anchorChar}].ID}
+      } else {
+        |test to see if this stops the 'spin'
+        /if (${MoveTo.Moving}) {
+           /moveto off
+        }
+      }
+    }
+  }
+/return
 |---------------------------------------------------------------------------------|
 | Centralized area to call methods that will be called every event loop
 | Warning only put things that check very quickly if they should be called or not.

@@ -332,9 +332,10 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 			
 			|bards songs don't work with /casting, have to do it ourselves
 			/if (${Bool[${Me.Book[${pendingCast}]}]} && ${Me.Class.ShortName.Equal[BRD]}) {
+				/call TrueTarget ${targetID}
 				/cast "${pendingCast}"
-               
-                /delay 5 ${Window[CastingWindow].Open}
+
+                /delay 10 ${Window[CastingWindow].Open}
                 
                 /if (!${Window[CastingWindow].Open}) {
                     /stopcast
@@ -468,7 +469,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 					}
 				}
 						|-Moved since casting began
-				/if (${castEndTime}>5) {
+				/if (${castEndTime}>5 && !${Me.Class.ShortName.Equal[BRD]}) {
 					
 					/if (${Math.Distance[${startingLoc}]}>=8) {
 						/if (${Debug} || ${Debug_Casting}) /echo moved 8+ units after casting: called interrupt
