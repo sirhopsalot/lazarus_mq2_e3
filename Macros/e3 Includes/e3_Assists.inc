@@ -437,7 +437,7 @@ SUB check_Nukes
     
 
     |allows use of druid/mage DS, etc, in nukes based on spellset. casts on assistTargets target
-    /if (${Nukes2D[${castIndex},${iSpellType}].Find[Beneficial]}) {
+    /if (${Nukes2D[${castIndex},${iSpellType}].Find[Beneficial]} && !${Nukes2D[${castIndex},${iCastName}].Find[ Magic]}) {
       /if (${Target.ID} != ${AssistTarget}) /call TrueTarget ${AssistTarget}
       /if (${Select[${Me.TargetOfTarget.Class.ShortName},WAR,PAL,SHD]}) {
         /if (${Spawn[pc ${Me.TargetOfTarget}].ID}) {

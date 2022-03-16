@@ -158,15 +158,21 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 		/goto :skipCast
 	}
 
+  |if its not a beneficlal spell
   /if (!${${ArrayName}[${ArrayIndex},${iSpellType}].Find[Beneficial]}) {
-    /if (!${Select[${${ArrayName}[${ArrayIndex},${iTargetType}]},PB AE,Self]}) {
-      /if (!${Spawn[id ${targetID}].LineOfSight}) {
-        /if (${Debug} || ${Debug_Casting}) /echo I cannot see [${Spawn[id ${targetID}].CleanName}]
-        /varset castReturn CAST_CANNOTSEE
-        /echo SkipCast-LoS ${pendingCast} ${pendingCastID} ${Spawn[id ${targetID}].Name} ${targetID}
-        /goto :skipCast
-      }
-    }
+     |if its not a self discipline
+    /if (!(${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Disc]} && ${Spell[${${ArrayName}[${ArrayIndex},${iCastName}]}].TargetType.Equal[Self]})) {
+		|if its not a PBAOE or Self buff
+		/if (!${Select[${${ArrayName}[${ArrayIndex},${iTargetType}]},PB AE,Self]}) {
+			|Do a Line of Sight Check!
+			/if (!${Spawn[id ${targetID}].LineOfSight}) {
+				/if (${Debug} || ${Debug_Casting}) /echo I cannot see [${Spawn[id ${targetID}].CleanName}]
+				/varset castReturn CAST_CANNOTSEE
+				/echo SkipCast-LoS ${pendingCast} ${pendingCastID} ${Spawn[id ${targetID}].Name} ${targetID}
+				/goto :skipCast
+			}
+    	}
+	}
   }
 
 	
