@@ -156,6 +156,10 @@ sub event_armPets(line, ChatSender)
  
   /tell ${ChatSender} Starting to arm pets. Stand close.
 
+  | When finished, will try to move mage back to their original location
+  /declare meY float local ${Me.Y}
+  /declare meX float local ${Me.X}
+
   /if (${Cursor.ID}) {
     /echo [${Time}]: Arm Pets: Something is on your cursor, exiting.
     | delays are needed as back to back tells fail to send
@@ -265,11 +269,7 @@ sub event_armPets(line, ChatSender)
   /delay 3s
   /tell ${ChatSender} Finished arming pets.
   :armpetend
-  /if (${Group.Leader.ID}>0) {
-    | Move mage back to group 
-    /call TrueTarget ${Group.Leader.ID}
-    /call MoveToLoc ${Target.Y} ${Target.X} 50 15
-  }
+  /moveto loc ${meY} ${meX}
 
 /if (${Debug} || ${Debug_MAG}) /echo <== event_armPets -|
 /return

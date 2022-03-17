@@ -714,7 +714,7 @@ Sub memorize_spell(spellName,gemNum)
 	/if (${waitForReady}) {
 		/call check_HealCasting_DuringDetrimental
 		/if (!${c_SubToRun}) {
-			/break
+			/return
 		}
 		/doevents Follow
 		/doevents Stop

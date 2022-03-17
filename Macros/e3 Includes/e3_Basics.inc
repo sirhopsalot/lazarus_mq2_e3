@@ -2118,7 +2118,7 @@ SUB check_Supply
         /for j 1 to ${supplyQuantity}
         /call check_HealCasting_DuringDetrimental
         /if (!${c_SubToRun}) {
-          /break
+          /return
         }
 				/if (${supplyGem} == 0 || ${supplyGem} == NULL) { 
            
