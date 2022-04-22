@@ -647,12 +647,25 @@ SUB BuildSpellArrayBase(ArrayName, NewArrayName, SkipParams)
 				/call argueString AfterSpell| "${${ArrayName}[${i}]}"
 				/varset ${NewArrayName}[${i},${iAfterSpell}] ${c_argueString}
 			}
+			| get AfterCast, Alias for AfterSpell
+			/if (${${ArrayName}[${i}].Find[/AfterCast|]}) {
+				/varset printMin true
+				/call argueString AfterCast| "${${ArrayName}[${i}]}"
+				/varset ${NewArrayName}[${i},${iAfterSpell}] ${c_argueString}
+			}
 			| get BeforeSpell
 			/if (${${ArrayName}[${i}].Find[/BeforeSpell|]}) {
 				/varset printMin true
 				/call argueString BeforeSpell| "${${ArrayName}[${i}]}"
 				/varset ${NewArrayName}[${i},${iBeforeSpell}] ${c_argueString}
 			}
+			| get BeforeCast, Alias for BeforeSpell
+			/if (${${ArrayName}[${i}].Find[/BeforeCast|]}) {
+				/varset printMin true
+				/call argueString BeforeCast| "${${ArrayName}[${i}]}"
+				/varset ${NewArrayName}[${i},${iBeforeSpell}] ${c_argueString}
+			}
+			
 			| get SubToRun
 			/if (${${ArrayName}[${i}].Find[/SubToRun|]}) {
 				/call argueString SubToRun| "${${ArrayName}[${i}]}"
@@ -901,7 +914,7 @@ SUB BuildSpellArrayBase(ArrayName, NewArrayName, SkipParams)
 			/varset	${NewArrayName}[${i},${iSpellName}] ${Spell[${${NewArrayName}[${i},${iCastName}]}]}
 			/varset	${NewArrayName}[${i},${iSpellID}] ${Spell[${${NewArrayName}[${i},${iCastName}]}].ID}
 			/varset	${NewArrayName}[${i},${iCastID}] ${Spell[${${NewArrayName}[${i},${iCastName}]}].ID}
-		
+			/varset	${NewArrayName}[${i},${iSpellType}] ${Spell[${${NewArrayName}[${i},${iCastName}]}].SpellType}
 		
 		}
 

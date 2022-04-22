@@ -36,31 +36,72 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 	|this allows other check_ Methods to run to do their computation while the spell is running
 	|if they have to do an e3_Cast for their stuff, they will block here until the song is complete
 	|if they don't do anything, it ends up blocking back in check_BardSongs for the next song on the list. 
+
+
+	/declare e3_CastTime int local ${${ArrayName}[${ArrayIndex},${iMyCastTime}]}
+	/declare afterSpell string local ${${ArrayName}[${ArrayIndex},${iAfterSpell}]}
+	/varset pendingCast	${${ArrayName}[${ArrayIndex},${iCastName}]}
+	/varset pendingCastID ${${ArrayName}[${ArrayIndex},${iCastID}]}
+	/declare castTargetName string local ${Spawn[id ${targetID}].CleanName}
+	/declare e3_CastNoInterrupt bool local ${${ArrayName}[${ArrayIndex},${iNoInterrupt}]}
+	/declare itemRecastToUseInSeconds int 60
+
+	|START SPECIAL BARD CAST LOGIC
+	|**
+	A lot of casting logic is contained in this if statement
+	The reason for this is to bypass all the logic for bards when casting an insta cast item while casting a song
+	No other class can do two things at once, thus the special code. This is only done while not doing MQ2Twist
+	**|
 	/if (!${Twist.Twisting} && ${Me.Class.ShortName.Equal[BRD]}) {
+	
+		/if (${e3_CastTime}<500 && ${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Item]}) {
+			/if (${Defined[SpellRecast_${pendingCastID}]}) {
+				
+				/if (${SpellRecast_${pendingCastID}}) {
+					|our timer is still active, skip this and say we are not recovered yet.
+					|No action taken, so they can cast the next thing in the list.
+					/echo ${pendingCast} was tried again before cooldown complete, skipping this action with a CAST_RECOVER return value
+					/varset ActionTaken False
+					/varset castReturn CAST_RECOVER
+					/goto :skipCast
+				}
+			}
+			/if (!${StopEchos}) /echo [${Time}]: ${pendingCast} ${pendingCastID} ${Spawn[id ${targetID}].Name} ${targetID}  (${Math.Calc[${e3_CastTime}/1000]}sec)
+			/useitem ${pendingCast}
+			/call casting_ItemCooldown "${pendingCast}"
+			/varset itemRecastToUseInSeconds ${Macro.Return}
+
+			/if (${itemRecastToUseInSeconds}<60) {
+			
+				/varcalc itemRecastToUseInSeconds ${Math.Calc[${itemRecastToUseInSeconds}+1]}
+			}
+			/call CreateTimer "SpellRecast_${pendingCastID}" "${itemRecastToUseInSeconds}s"
+			/varset castReturn CAST_SUCCESS
+			/varset ActionTaken True
+			/return
+		}
 
 		/call BardSongWaitLockPumpQueue
 	}
 	|if we are not using MQ2Twist, but we currently have a cast going yet no cast window, issue a stopcast
-	/if (!${Twist.Twisting} && ${Me.Class.ShortName.Equal[BRD]} && ${Bool[${Me.Casting.ID}]} && !${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Ability]} && !${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Disc]} ) {
+	/if (!${Twist.Twisting} && ${Me.Class.ShortName.Equal[BRD]} && ${Bool[${Me.Casting.ID}]} && !${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Ability]} && !${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Disc]}) {
 		|sometimes when the window is gone but the buff hasn't quite landed yet, stopcast can cancel it. delay 1 to make sure that situation is avoided
 		/delay 1
 		/stopcast
 	}
+
+	|END SPECIAL BARD CAST LOGIC
 
 	|CatchAll Function for potentially locked up spell gems.
   	/call check_SpellGemLockup
 
 	/declare beforeSpell string local ${${ArrayName}[${ArrayIndex},${iBeforeSpell}]}
 	/if (${beforeSpell.Length}>1) {
+		/echo BeforeCast configured, calling "${beforeSpell}"
 		/call CastAfterBeforeSpell "${beforeSpell}"
 	}
 
-	/declare afterSpell string local ${${ArrayName}[${ArrayIndex},${iAfterSpell}]}
-	/varset pendingCast	${${ArrayName}[${ArrayIndex},${iCastName}]}
-	/varset pendingCastID ${${ArrayName}[${ArrayIndex},${iCastID}]}
-	/declare castTargetName string local ${Spawn[id ${targetID}].CleanName}
-	/declare e3_CastTime int local ${${ArrayName}[${ArrayIndex},${iMyCastTime}]}
-	/declare e3_CastNoInterrupt bool local ${${ArrayName}[${ArrayIndex},${iNoInterrupt}]}
+	
 	/varset castEndTime	0
 	/varset castReturn 0
 	/varset interruptFlag FALSE
@@ -553,7 +594,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 			|add small cooldown of default 2 seconds, unless we know the cooldown of the item 
 			|and we just set it ourselves.
 			/call casting_ItemCooldown "${pendingCast}"
-			/declare itemRecastToUseInSeconds int ${Macro.Return}
+			/varset itemRecastToUseInSeconds ${Macro.Return}
 
 			/if (${itemRecastToUseInSeconds}<60) {
 				|/varset itemRecastToUseInSeconds ${Math.Calc[${itemRecastToUseInSeconds}]}
@@ -605,7 +646,7 @@ Sub check_Ready(ArrayName, int ArrayIndex)
   /if (${Debug} || ${Debug_Casting}) /echo |- check_Ready =>
   /varset c_Ready FALSE
   | Memorize the spell if it is not memorized
-  
+    
   /if (${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Spell]}) {
  
     /if (!${Bool[${Me.Gem[${${ArrayName}[${ArrayIndex},${iCastName}]}]}]}) {
@@ -876,7 +917,7 @@ Sub casting_Setup
 	/varset vetArray[${iJester}]    "Chaotic Jester"
 	/call BuildSpellArray "vetArray" "vetArray2D"
 
-	/declare itemCooldownList[57,2] string local
+	/declare itemCooldownList[58,2] string local
 	/varset itemCooldownList[1,1] Summoned: Large Modulation Shard
 	/varset itemCooldownList[1,2] 300
 	/varset itemCooldownList[2,1] Shroud of the Subjugated Kuaan
@@ -991,7 +1032,8 @@ Sub casting_Setup
 	/varset itemCooldownList[56,2] 180
 	/varset itemCooldownList[57,1] Fiercehand Shroud of the Focused
 	/varset itemCooldownList[57,2] 180
-
+	/varset itemCooldownList[58,1] Invocation Rune: Vulka's Chant of Lightning
+	/varset itemCooldownList[58,2] 18
   	|scan through each of the items in itemCooldownList to see if we actually have that item, if so put it in the lookup list.
 
 	/declare tempItemLookupList[57,2] string local

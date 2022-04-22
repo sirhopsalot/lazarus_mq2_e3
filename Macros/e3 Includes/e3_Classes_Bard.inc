@@ -113,11 +113,22 @@ Sub BardClass_CircularQueue_ToString
 
 
 sub check_BardSongs
-  
+
   /if (!${songPlayer.Equal["Twist"]} || ${Me.Invis} || ${Me.Stunned}) {
       /return
   }
-  /declare didKick bool local false
+
+   |**
+  Note, if the song has more than 1 second still on the time, kick out to allow other things to possibly get ready.
+  this is to remove the 2 song call  before an event can take place sometimes. IE: the first 2 seconds of the 3 second song
+  **|
+
+  /call ActivateSelosKick
+  
+  /if (${Window[CastingWindow].Open} && ${Cast.Timing}>1000) { 
+    /return
+  }
+ 
   
 
   |don't do songs when looting
@@ -140,9 +151,7 @@ sub check_BardSongs
   /if (${bardSongArrayQueueCount}==0) {
     /return
   }
-  
-  /call ActivateSelosKick
-
+ 
   |######################################################
   |Figure out the next song on the list to play
   /call BardClass_CircularQueue_Pop
@@ -183,7 +192,7 @@ sub check_BardSongs
       /varset isAltAbility true
   }
   
-  /call ActivateSelosKick
+ 
   /call BardSongWaitLockPumpQueue
 
   |tap the current gem if we are casting 
