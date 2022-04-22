@@ -54,32 +54,42 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 	**|
 	/if (!${Twist.Twisting} && ${Me.Class.ShortName.Equal[BRD]}) {
 	
-		/if (${e3_CastTime}<500 && ${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Item]}) {
-			/if (${Defined[SpellRecast_${pendingCastID}]}) {
-				
-				/if (${SpellRecast_${pendingCastID}}) {
-					|our timer is still active, skip this and say we are not recovered yet.
-					|No action taken, so they can cast the next thing in the list.
-					/echo ${pendingCast} was tried again before cooldown complete, skipping this action with a CAST_RECOVER return value
-					/varset ActionTaken False
-					/varset castReturn CAST_RECOVER
-					/goto :skipCast
+		/if (${e3_CastTime}<500) {
+			/if (${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Item]}) {
+				/if (${Defined[SpellRecast_${pendingCastID}]}) {
+					
+					/if (${SpellRecast_${pendingCastID}}) {
+						|our timer is still active, skip this and say we are not recovered yet.
+						|No action taken, so they can cast the next thing in the list.
+						/echo ${pendingCast} was tried again before cooldown complete, skipping this action with a CAST_RECOVER return value
+						/varset ActionTaken False
+						/varset castReturn CAST_RECOVER
+						/goto :skipCast
+					}
 				}
-			}
-			/if (!${StopEchos}) /echo [${Time}]: ${pendingCast} ${pendingCastID} ${Spawn[id ${targetID}].Name} ${targetID}  (${Math.Calc[${e3_CastTime}/1000]}sec)
-			/useitem ${pendingCast}
-			/call casting_ItemCooldown "${pendingCast}"
-			/varset itemRecastToUseInSeconds ${Macro.Return}
+				/if (!${StopEchos}) /echo [${Time}]: ${pendingCast} ${pendingCastID} ${Spawn[id ${targetID}].Name} ${targetID}  (${Math.Calc[${e3_CastTime}/1000]}sec)
+				/useitem ${pendingCast}
+				/call casting_ItemCooldown "${pendingCast}"
+				/varset itemRecastToUseInSeconds ${Macro.Return}
 
-			/if (${itemRecastToUseInSeconds}<60) {
-			
-				/varcalc itemRecastToUseInSeconds ${Math.Calc[${itemRecastToUseInSeconds}+1]}
+				/if (${itemRecastToUseInSeconds}<60) {
+				
+					/varcalc itemRecastToUseInSeconds ${Math.Calc[${itemRecastToUseInSeconds}+1]}
+				}
+				/call CreateTimer "SpellRecast_${pendingCastID}" "${itemRecastToUseInSeconds}s"
+				/varset castReturn CAST_SUCCESS
+				/varset ActionTaken True
+				/return
+			} else /if (${${ArrayName}[${ArrayIndex},${iCastType}].Equal[AA]}) {
+				/if (!${StopEchos}) /echo [${Time}]: ${pendingCast} ${pendingCastID} ${Spawn[id ${targetID}].Name} ${targetID}  (${Math.Calc[${e3_CastTime}/1000]}sec)
+				/alt act ${Me.AltAbility[${pendingCast}].ID}
+				/delay 10 !${Me.AbilityReady[${pendingCast}]}
+				/varset castReturn CAST_SUCCESS
+				/varset ActionTaken True
+				/return
 			}
-			/call CreateTimer "SpellRecast_${pendingCastID}" "${itemRecastToUseInSeconds}s"
-			/varset castReturn CAST_SUCCESS
-			/varset ActionTaken True
-			/return
 		}
+	
 
 		/call BardSongWaitLockPumpQueue
 	}
@@ -278,7 +288,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 	} else {
 
 		|if bard and the spell/item you are casting is > 0.3 sec stop what we are doing
-		/if (${Select[${Me.Class.ShortName},BRD]} && ${e3_CastTime} >0) {
+		/if (${Select[${Me.Class.ShortName},BRD]} && ${e3_CastTime} >500) {
 			/if (${Twist.Twisting}) {
 				|this sets returnTwist to true
 				/varset	reEnableTwist TRUE

@@ -125,7 +125,7 @@ sub check_BardSongs
 
   /call ActivateSelosKick
   
-  /if (${Window[CastingWindow].Open} && ${Cast.Timing}>1000) { 
+  /if (${Window[CastingWindow].Open} && ${Cast.Timing}>1500) { 
     /return
   }
  
