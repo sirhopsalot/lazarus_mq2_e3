@@ -69,6 +69,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 				}
 				/if (!${StopEchos}) /echo [${Time}]: ${pendingCast} ${pendingCastID} ${Spawn[id ${targetID}].Name} ${targetID}  (${Math.Calc[${e3_CastTime}/1000]}sec)
 				/useitem ${pendingCast}
+				/delay 3
 				/call casting_ItemCooldown "${pendingCast}"
 				/varset itemRecastToUseInSeconds ${Macro.Return}
 
@@ -86,6 +87,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 				/delay 10 !${Me.AbilityReady[${pendingCast}]}
 				/varset castReturn CAST_SUCCESS
 				/varset ActionTaken True
+				
 				/return
 			}
 		}
