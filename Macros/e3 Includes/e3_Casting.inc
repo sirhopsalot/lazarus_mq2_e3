@@ -112,7 +112,11 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 		/echo BeforeCast configured, calling "${beforeSpell}"
 		/call CastAfterBeforeSpell "${beforeSpell}"
 	}
-
+	/declare beforeEvent string local ${${ArrayName}[${ArrayIndex},${iBeforeEvent}]}
+	/if (${beforeEvent.Length}>1) {
+		/echo BeforeEvent configured, calling "${beforeEvent}"
+		/docommand ${beforeEvent}
+	}
 	
 	/varset castEndTime	0
 	/varset castReturn 0
@@ -619,7 +623,13 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 	/if (${afterSpell.Length}>1) {
 		/call CastAfterBeforeSpell "${afterSpell}"
 	}
+	/declare afterEvent string local ${${ArrayName}[${ArrayIndex},${iAfterEvent}]}
+	/if (${afterEvent.Length}>1) {
+		/echo AfterEvent configured, calling "${afterEvent}"
+		/docommand ${afterEvent}
+	}
 
+	
 	|/varset Debug_Casting FALSE
 	|sometimes cast status gets locked up
 	|lets kill the current cast.

@@ -150,7 +150,8 @@ SUB castNowSpells
                 }
         }   
         /if (${Me.SpellReady[${spellName}]} || ${Me.AltAbilityReady[${spellName}]} || ${Me.ItemReady[${spellName}]}) {
-            /varset castReturn  
+            /varset castReturn
+             /bc <NowCast>: Casting ${spellName}  on ${spellTargetID}  
             /call castNowSpell "${spellName}" ${spellTargetID}
             /if (!(${ActionTaken} && ${castReturn.Equal[CAST_SUCCESS]})) {
                 /bc <NowCast>: Failed to cast ${spellName} due to ${castReturn}

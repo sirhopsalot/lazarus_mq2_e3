@@ -191,7 +191,7 @@ SUB ListToArray(ArrayName, Data, delimiter)
 Sub BuildSpellArrayDefinedValues()
 
 	/if (!${Defined[SpellProp]}) {
-		/declare SpellProp[46] string outer 0
+		/declare SpellProp[48] string outer 0
 		/varset SpellProp[1] CastName
 		/varset SpellProp[2] CastType
 		/varset SpellProp[3] TargetType
@@ -238,6 +238,8 @@ Sub BuildSpellArrayDefinedValues()
 		/varset SpellProp[43] BeforeSpell
 		/varset SpellProp[44] AfterSpell
 		/varset SpellProp[45] NoInterrupt
+		/varset SpellProp[46] AfterEvent
+		/varset SpellProp[47] BeforeEvent
 
 		
 	}
@@ -286,6 +288,9 @@ Sub BuildSpellArrayDefinedValues()
 	/if (!${Defined[iBeforeSpell]})		/declare iBeforeSpell int outer 43
 	/if (!${Defined[iAfterSpell]})		/declare iAfterSpell int outer 44
 	/if (!${Defined[iNoInterrupt]})		/declare iNoInterrupt int outer 45
+	/if (!${Defined[iAfterEvent]})		/declare iAfterEvent int outer 46
+	/if (!${Defined[iBeforeEvent]})		/declare iBeforeEvent int outer 47
+	
 
 /return
 
@@ -802,10 +807,25 @@ SUB BuildSpellArrayBase(ArrayName, NewArrayName, SkipParams)
 			/if (${${ArrayName}[${i}].Find[/Ifs|]}) {
 				/call argueString Ifs| "${${ArrayName}[${i}]}"
 				/varset ${NewArrayName}[${i},${iIfs}] ${Ini[${Character_Ini},Ifs,${c_argueString},NULL,noparse]}
-			| we kind of need to print here instead of like everything else :P
+			| we kind of need to print here instead of like everything else
 				/if (${printAll}) /echo Ifs ${c_argueString}
 			}
 
+			| get AfterEvent - used in various places	
+			/if (${${ArrayName}[${i}].Find[/AfterEvent|]}) {
+				/call argueString AfterEvent| "${${ArrayName}[${i}]}"
+				/varset ${NewArrayName}[${i},${iAfterEvent}] ${Ini[${Character_Ini},Events,${c_argueString},NULL,noparse]}
+				| we kind of need to print here instead of like everything else
+				/if (${printAll}) /echo AfterEvent ${c_argueString}
+			}
+
+			| get AfterEvent - used in various places	
+			/if (${${ArrayName}[${i}].Find[/BeforeEvent|]}) {
+				/call argueString BeforeEvent| "${${ArrayName}[${i}]}"
+				/varset ${NewArrayName}[${i},${iBeforeEvent}] ${Ini[${Character_Ini},Events,${c_argueString},NULL,noparse]}
+				| we kind of need to print here instead of like everything else
+				/if (${printAll}) /echo BeforeEvent ${c_argueString}
+			}
 			| get MinEnd
 			/if (${${ArrayName}[${i}].Find[/MinEnd|]}) {
 				/call argueString MinEnd| "${${ArrayName}[${i}]}"
