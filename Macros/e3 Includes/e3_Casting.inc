@@ -102,6 +102,23 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 		/stopcast
 	}
 
+
+	|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	| Checks to abort casting due to previous failures
+	|if im invis and iCastInvis=0 (default except for heals)
+	|if im a rog, not in combat, done no action for 10+ seconds, and near 2+ other players then drop invis to buff (allows autohide)
+
+	/if (${Me.Invis}) {
+		/if (${Me.Class.ShortName.Equal[Rog]}) {
+		/if (!${Me.Combat} && ${SpawnCount[pc radius 40]} > 2 && !${SpawnCount[npc radius 100 zradius 100]} && ${idleTimer}<${Math.Calc[${idleInterval}*600 - 100]}) /makemevisible
+		} else /if (!${${ArrayName}[${ArrayIndex},${iCastInvis}]}) {
+				/varset castReturn CAST_INVISIBLE
+				/echo SkipCast-Invis ${pendingCast} ${Spawn[id ${targetID}].Name} ${targetID}
+				/varset ActionTaken TRUE
+		/goto :skipCast
+		}
+	}
+	
 	|END SPECIAL BARD CAST LOGIC
 
 	|CatchAll Function for potentially locked up spell gems.
@@ -1115,8 +1132,8 @@ Sub casting_Background_Events
 /return
 
 SUB casting_CharacterSettings
-/return
-
+/return4dwasdwa4ddddddddwasas
+aaaaawasaaa4444aswwaaaaaa
 Sub casting_Aliases
 /return
 

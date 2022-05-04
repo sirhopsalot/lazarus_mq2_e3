@@ -42,27 +42,25 @@ SUB buffBots(ArrayName)
 		/varset buffTarget ${Me.Name}
 
 	} else /if (${Select[${ArrayName},CombatBuffs2D,BotBuffs2D]}) {
-   	/varset buffTargetID ${Spawn[=${${ArrayName}[${s},${iCastTarget}]}].ID}
-    /varset buffTarget ${${ArrayName}[${s},${iCastTarget}]}
-    |no buff target set, use self
-    /if (!${Bool[${Spawn[=${${ArrayName}[${s},${iCastTarget}]}].ID}]}) {
-      /varset buffTargetID ${Me.ID}
-      /varset buffTarget ${Me.Name}
-    }
-
-
+  
+   |try and used defined target
+    /varset buffTargetID ${Spawn[=${${ArrayName}[${s},${iCastTarget}]}].ID}
+     /varset buffTarget ${${ArrayName}[${s},${iCastTarget}]}
+  
 
 	} else /if (${Select[${ArrayName},PetBuffs2D]}) {
 		/varset buffTargetID ${Spawn[=${${ArrayName}[${s},${iCastTarget}]}].Pet.ID}
 		/varset buffTarget ${${ArrayName}[${s},${iCastTarget}]}
 	}
-		
+  
 	/varset buffSpellName		${${ArrayName}[${s},${iSpellName}]}
 	/varset buffSpellID			${${ArrayName}[${s},${iSpellID}]}]
 	/varset buffCheckForName	${${ArrayName}[${s},${iCheckFor}]}
 	/varset buffCheckForID		${${ArrayName}[${s},${iCheckForID}]}
 		
-  /if (!${Bool[${NetBots[${buffTarget}].ID}]}) /goto :skipBuff
+  /if (!${Bool[${NetBots[${buffTarget}].ID}]}) {
+     /goto :skipBuff
+  } 
 
   /if (${Select[${buffSpellID},8001,8002,8000,8003]}) {
     /call meleeCombatBuffs "${ArrayName}" ${s}
