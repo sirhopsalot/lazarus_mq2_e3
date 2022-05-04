@@ -2604,7 +2604,6 @@ SUB event_ItemDeleteSummoned(line, ChatSender, MyName, ItemString)
 
 /return
 SUB ItemDeleteSummoned(ItemString)
-
   |didn't want to make ClearCusors its own event so shoved it in here for now.
   /if (${ItemString.Find[ClearCursor]}) {
         /call ClearCursor
@@ -2654,7 +2653,12 @@ sub check_Anchor
     /if (!(${Me.Combat} || ${Me.CombatState.Equal[Combat]} ||  ${AssistTarget} >0 )) {
       /if ((${Spawn[${anchorChar}].DistanceX} > 10|| ${Spawn[${anchorChar}].DistanceY} > 10)) {
         /echo [${Time}] Anchor: Moving to Anchor
-        /moveto id ${Spawn[${anchorChar}].ID}
+        /if (${Bool[${Navigation.MeshLoaded}]}) {
+          /nav id ${Spawn[${anchorChar}].ID}
+        } else {
+          /moveto id ${Spawn[${anchorChar}].ID}
+        }
+        
       } else {
         |test to see if this stops the 'spin'
         /if (${MoveTo.Moving}) {
