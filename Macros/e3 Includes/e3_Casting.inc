@@ -31,20 +31,46 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 /if (${Debug} || ${Debug_Casting}) /echo |- e3_Cast ==>
 
 	/varset castReturn  
+	/varset pendingCast	${${ArrayName}[${ArrayIndex},${iCastName}]}
+	/varset pendingCastID ${${ArrayName}[${ArrayIndex},${iCastID}]}
+	/varset castEndTime	0
+	/varset castReturn 0
+	/varset interruptFlag FALSE
+	/declare pendingType string local
+	/declare oldItem string local
+	/declare i	int local
+	/declare reEnableTwist bool local FALSE
+	/declare e3_CastTime int local ${${ArrayName}[${ArrayIndex},${iMyCastTime}]}
+	/declare afterSpell string local ${${ArrayName}[${ArrayIndex},${iAfterSpell}]}
+	/declare castTargetName string local ${Spawn[id ${targetID}].CleanName}
+	/declare e3_CastNoInterrupt bool local ${${ArrayName}[${ArrayIndex},${iNoInterrupt}]}
+	/declare itemRecastToUseInSeconds int 60
+
+
+	|this needs to be set to true every run, as its checked for interrupt method calls. Technically they set it to true every time they run, but best to 
+	|be sure this is reset.
+	/varset c_SubToRun TRUE
+	|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	| Checks to abort casting due to previous failures
+	|if im invis and iCastInvis=0 (default except for heals)
+	|if im a rog, not in combat, done no action for 10+ seconds, and near 2+ other players then drop invis to buff (allows autohide)
+
+	/if (${Me.Invis}) {
+		|**/if (${Me.Class.ShortName.Equal[Rog]}) {
+		/if (!${Me.Combat} && ${SpawnCount[pc radius 40]} > 2 && !${SpawnCount[npc radius 100 zradius 100]} && ${idleTimer}<${Math.Calc[${idleInterval}*600 - 100]}) /makemevisible
+		} else**| 
+		/if (!${${ArrayName}[${ArrayIndex},${iCastInvis}]}) {
+				/varset castReturn CAST_INVISIBLE
+				/echo [${Time}] SkipCast-Invis ${pendingCast} ${Spawn[id ${targetID}].Name} ${targetID}
+				/varset ActionTaken TRUE
+			/goto :skipCast
+		}
+	}
 	|if we are a bard, and not doing async twisting this section of code
 	|will 'block' as the check_BardSongs does not block on its call.
 	|this allows other check_ Methods to run to do their computation while the spell is running
 	|if they have to do an e3_Cast for their stuff, they will block here until the song is complete
 	|if they don't do anything, it ends up blocking back in check_BardSongs for the next song on the list. 
-
-
-	/declare e3_CastTime int local ${${ArrayName}[${ArrayIndex},${iMyCastTime}]}
-	/declare afterSpell string local ${${ArrayName}[${ArrayIndex},${iAfterSpell}]}
-	/varset pendingCast	${${ArrayName}[${ArrayIndex},${iCastName}]}
-	/varset pendingCastID ${${ArrayName}[${ArrayIndex},${iCastID}]}
-	/declare castTargetName string local ${Spawn[id ${targetID}].CleanName}
-	/declare e3_CastNoInterrupt bool local ${${ArrayName}[${ArrayIndex},${iNoInterrupt}]}
-	/declare itemRecastToUseInSeconds int 60
 
 	|START SPECIAL BARD CAST LOGIC
 	|**
@@ -54,14 +80,14 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 	**|
 	/if (!${Twist.Twisting} && ${Me.Class.ShortName.Equal[BRD]}) {
 	
-		/if (${e3_CastTime}<500) {
+		/if (${e3_CastTime}<500 ) {
 			/if (${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Item]}) {
 				/if (${Defined[SpellRecast_${pendingCastID}]}) {
 					
 					/if (${SpellRecast_${pendingCastID}}) {
 						|our timer is still active, skip this and say we are not recovered yet.
 						|No action taken, so they can cast the next thing in the list.
-						/echo ${pendingCast} was tried again before cooldown complete, skipping this action with a CAST_RECOVER return value
+						/echo [${Time}] ${pendingCast} was tried again before cooldown complete, skipping this action with a CAST_RECOVER return value
 						/varset ActionTaken False
 						/varset castReturn CAST_RECOVER
 						/goto :skipCast
@@ -102,23 +128,6 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 		/stopcast
 	}
 
-
-	|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	| Checks to abort casting due to previous failures
-	|if im invis and iCastInvis=0 (default except for heals)
-	|if im a rog, not in combat, done no action for 10+ seconds, and near 2+ other players then drop invis to buff (allows autohide)
-
-	/if (${Me.Invis}) {
-		/if (${Me.Class.ShortName.Equal[Rog]}) {
-		/if (!${Me.Combat} && ${SpawnCount[pc radius 40]} > 2 && !${SpawnCount[npc radius 100 zradius 100]} && ${idleTimer}<${Math.Calc[${idleInterval}*600 - 100]}) /makemevisible
-		} else /if (!${${ArrayName}[${ArrayIndex},${iCastInvis}]}) {
-				/varset castReturn CAST_INVISIBLE
-				/echo SkipCast-Invis ${pendingCast} ${Spawn[id ${targetID}].Name} ${targetID}
-				/varset ActionTaken TRUE
-		/goto :skipCast
-		}
-	}
-	
 	|END SPECIAL BARD CAST LOGIC
 
 	|CatchAll Function for potentially locked up spell gems.
@@ -135,57 +144,34 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 		/docommand ${beforeEvent}
 	}
 	
-	/varset castEndTime	0
-	/varset castReturn 0
-	/varset interruptFlag FALSE
-	/declare pendingType string local
-	/declare oldItem string local
-	/declare i	int local
-	/declare reEnableTwist bool local FALSE
-	|this needs to be set to true every run, as its checked for interrupt method calls. Technically they set it to true every time they run, but best to 
-	|be sure this is reset.
-	/varset c_SubToRun TRUE
+	
 	
 
   |/varset Debug_Casting TRUE
  
  
-	|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	| Checks to abort casting due to previous failures
-	|if im invis and iCastInvis=0 (default except for heals)
-	|if im a rog, not in combat, done no action for 10+ seconds, and near 2+ other players then drop invis to buff (allows autohide)
 
-  /if (${Me.Invis}) {
-    /if (${Me.Class.ShortName.Equal[Rog]}) {
-      /if (!${Me.Combat} && ${SpawnCount[pc radius 40]} > 2 && !${SpawnCount[npc radius 100 zradius 100]} && ${idleTimer}<${Math.Calc[${idleInterval}*600 - 100]}) /makemevisible
-    } else /if (!${${ArrayName}[${ArrayIndex},${iCastInvis}]}) {
-      		/varset castReturn CAST_INVISIBLE
-			/echo SkipCast-Invis ${pendingCast} ${Spawn[id ${targetID}].Name} ${targetID}
-			/varset ActionTaken TRUE
-      /goto :skipCast
-    }
-  }
   |- Check if spell has a NOHOLD timer
   /if (${Defined[nht${targetID}-${pendingCastID}]}) {
     /if (${Bool[${nht${targetID}-${pendingCastID}}]}) {
       /varset castReturn CAST_TAKEHOLD
-      /if (${Debug} || ${Debug_Casting}) /echo SkipCast-NoHold ${pendingCast} on ${Spawn[id ${targetID}].Name} Waiting [${nht${targetID}-${pendingCastID}}]
+      /if (${Debug} || ${Debug_Casting}) /echo [${Time}] SkipCast-NoHold ${pendingCast} on ${Spawn[id ${targetID}].Name} Waiting [${nht${targetID}-${pendingCastID}}]
       /goto :skipCast
     } else {
-      /echo Deleting nht${targetID}-${pendingCastID} ${nht${targetID}-${pendingCastID}}
+      /echo [${Time}] Deleting nht${targetID}-${pendingCastID} ${nht${targetID}-${pendingCastID}}
       /deletevar nht${targetID}-${pendingCastID}
     }
   }
 	|- Check the Immune List
 	/if (${Select[${pendingCastID}_${castTargetName},${immuneList}]} && !${pendingCast.Equal[${spammableSpell}]}) {
 		/varset castReturn CAST_IMMUNE
-    /if (${Debug} || ${Debug_Casting}) /echo SkipCast-Immune ${pendingCast} ${pendingCastID} ${Spawn[id ${targetID}].Name} ${targetID}
+    /if (${Debug} || ${Debug_Casting}) /echo [${Time}] SkipCast-Immune ${pendingCast} ${pendingCastID} ${Spawn[id ${targetID}].Name} ${targetID}
 		/goto :skipCast 		
 	}
 	|- Check for spells listed in the failureList: reset on zone
 	/if (${Select[${${ArrayName}[${ArrayIndex},${iCastName}]},${failureList}]}) {
 		/varset castReturn FAILURELIST
-    /if (${Debug} || ${Debug_Casting}) /echo SkipCast-Failure ${pendingCast} ${pendingCastID} ${Spawn[id ${targetID}].Name} ${targetID}
+    /if (${Debug} || ${Debug_Casting}) /echo [${Time}] SkipCast-Failure ${pendingCast} ${pendingCastID} ${Spawn[id ${targetID}].Name} ${targetID}
 		/goto :skipCast 
 	}
 	|- Reagent Check *|
@@ -195,7 +181,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
       /bc Cannot cast [${pendingCast}], I do not have any [${${ArrayName}[${ArrayIndex},${iReagent}]}], removing this spell from array. Restock and Reload Macro
       /call RemoveSpellArrayElement "${ArrayName}" "${ArrayIndex}"
       /varset castReturn REAGENT
-      /echo SkipCast-NoReagent ${pendingCast} ${pendingCastID} ${Spawn[id ${targetID}].Name} ${targetID}
+      /echo [${Time}] SkipCast-NoReagent ${pendingCast} ${pendingCastID} ${Spawn[id ${targetID}].Name} ${targetID}
       /beep
       /goto :skipCast
     } else /if (${itemCount} <= ${reagentWarningCount}) {
@@ -215,7 +201,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
   /if (${${ArrayName}[${ArrayIndex},${iTargetType}].Find[pet]}) {
     /if (!${Bool[${Me.Pet.ID}]} || ${Me.Pet.Distance} > ${${ArrayName}[${ArrayIndex},${iMyRange}]}) {
       /call CreateTimer "nht${targetID}-${pendingCastID}" "${noHoldPetDelay}"
-      /echo SkipCast-PetRange ${pendingCast} ${pendingCastID} ${Spawn[id ${targetID}].Name} ${targetID}
+      /echo [${Time}] SkipCast-PetRange ${pendingCast} ${pendingCastID} ${Spawn[id ${targetID}].Name} ${targetID}
       /goto :skipCast
     }
   }
@@ -242,7 +228,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 			/if (!${Spawn[id ${targetID}].LineOfSight}) {
 				/if (${Debug} || ${Debug_Casting}) /echo I cannot see [${Spawn[id ${targetID}].CleanName}]
 				/varset castReturn CAST_CANNOTSEE
-				/echo SkipCast-LoS ${pendingCast} ${pendingCastID} ${Spawn[id ${targetID}].Name} ${targetID}
+				/echo [${Time}] SkipCast-LoS ${pendingCast} ${pendingCastID} ${Spawn[id ${targetID}].Name} ${targetID}
 				/goto :skipCast
 			}
     	}
@@ -605,19 +591,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 			}
 		}
   }
-
-:skipCast
-	/if (${Defined[${ArrayName}]} && ${oldItem.Length}) {
-		/call SwapItem "${oldItem}" "${${ArrayName}[${ArrayIndex},${iItemMustEquip}]}"
-	}
-	/if (${Following} && !${Assisting}) /call AcquireFollow
-  	/if (${Me.Class.ShortName.Equal[BRD]}) /varset resumeTwistDelay 5
- 	|if the twist was stopped for this.
-	/if (${returnTwist}) {
-		/call unpauseTwist
-		
-	}	
-  	/if (${Debug} || ${Debug_Casting})  /echo |- e3_Cast -| castReturn= ${Cast.Result} ${castReturn}
+	/if (${Debug} || ${Debug_Casting})  /echo |- e3_Cast -| castReturn= ${Cast.Result} ${castReturn}
 
 
 	|to help with item clicks locking up, to give the server time to issue the cooldown.	
@@ -646,7 +620,18 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 		/docommand ${afterEvent}
 	}
 
-	
+	:skipCast
+	/if (${Defined[${ArrayName}]} && ${oldItem.Length}) {
+		/call SwapItem "${oldItem}" "${${ArrayName}[${ArrayIndex},${iItemMustEquip}]}"
+	}
+	/if (${Following} && !${Assisting}) /call AcquireFollow
+  	/if (${Me.Class.ShortName.Equal[BRD]}) /varset resumeTwistDelay 5
+ 	|if the twist was stopped for this.
+	/if (${returnTwist}) {
+		/call unpauseTwist
+		
+	}	
+  
 	|/varset Debug_Casting FALSE
 	|sometimes cast status gets locked up
 	|lets kill the current cast.
@@ -1132,8 +1117,8 @@ Sub casting_Background_Events
 /return
 
 SUB casting_CharacterSettings
-/return4dwasdwa4ddddddddwasas
-aaaaawasaaa4444aswwaaaaaa
+/return
+
 Sub casting_Aliases
 /return
 
