@@ -172,7 +172,7 @@ sub check_BardSongs
 
 
    /if (${Bool[${bardImportantSong}]} && ${bardImportantSong.Length}>0 && !${Bool[${Me.Song[${bardImportantSong}]}]}) {
-    /bc <BardPlayer> : Rewinding to StormBlade
+    /bc <BardPlayer> : Rewinding to ${bardImportantSong}
     /call BardClass_CircularQueue_Pop
     /varset songGemValue ${Macro.Return}
     /call BardClass_CircularQueue_Insert "${songGemValue}"

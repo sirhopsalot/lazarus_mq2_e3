@@ -1796,6 +1796,7 @@ Sub assist_Setup
   /if (${FindItemCount[=Redemption]})                            /varset EpicName Redemption
   /if (${FindItemCount[=Nightbane, Sword of the Valiant]})       /varset EpicName Nightbane, Sword of the Valiant
   /if (${FindItemCount[=Heartwood Blade]})                       /varset EpicName Heartwood Blade
+  /if (${FindItemCount[=Heartwood Infused Bow]})                 /varset EpicName Heartwood Infused Bow
   /if (${FindItemCount[=Aurora, the Heartwood Blade]})           /varset EpicName Aurora, the Heartwood Blade
   /if (${FindItemCount[=Fatestealer]})                           /varset EpicName Fatestealer
   /if (${FindItemCount[=Nightshade, Blade of Entropy]})          /varset EpicName Nightshade, Blade of Entropy

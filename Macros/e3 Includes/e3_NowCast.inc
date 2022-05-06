@@ -185,8 +185,10 @@ SUB castNowSpell(spellName, targetID)
 /RETURN
 | Add a spell to the queue with no targetid
 #event nowCast "<#1#> #2# nowCast #3#"
+#event nowCast "<#1#> nowCast #3#"
 #event nowCast "[#1#(msg)]#2# nowCast #3#"
 SUB event_nowCast(line, ChatSender, Caster, spellName)
+    /echo <NowCast> called with Caster: ${Caster}
     /if (${Bool[${Caster}]} &&!${Me.Name.Equal[${Caster}]}) /return
 
     /declare nowTargetID int local ${Me.ID}
