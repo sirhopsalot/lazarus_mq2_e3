@@ -81,7 +81,8 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 	/if (!${Twist.Twisting} && ${Me.Class.ShortName.Equal[BRD]}) {
 	
 		/if (${e3_CastTime}<500 ) {
-			/if (${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Item]}) {
+			|can't play two items at once
+			/if (!${bardPlayerCurrentSongType.Equal[item]} && ${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Item]}) {
 				/if (${Defined[SpellRecast_${pendingCastID}]}) {
 					
 					/if (${SpellRecast_${pendingCastID}}) {

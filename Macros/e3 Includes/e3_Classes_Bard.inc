@@ -6,6 +6,7 @@ Sub BardClassDefinedValues
     /declare bardSongArrayQueueMax int outer 10
     /declare bardSongArrayQueueCount int outer 0
     /declare bardImportantSong string outer
+    /declare bardPlayerCurrentSongType string outer
     
 /RETURN
 Sub BardClass_CircularQueue_Insert(InsertValue)
@@ -126,7 +127,7 @@ sub check_BardSongs
 
   /call ActivateSelosKick
   
-  /if (${Window[CastingWindow].Open} && ${Cast.Timing}>1500) { 
+  /if (${Window[CastingWindow].Open} && ${Cast.Timing}>500) { 
     /return
   }
  
@@ -223,10 +224,13 @@ sub check_BardSongs
 
  /if (${Bool[${Me.Book[${songGemValue}]}]}) {
       /varset isSpell True
+      /varset bardPlayerCurrentSongType spell
   } else /if (${Bool[${FindItem[${songGemValue}]}]}) {
       /varset isItem True
+      /varset bardPlayerCurrentSongType item
   } else /if (${Me.AltAbility[${songGemValue}]}) {
       /varset isAltAbility true
+      /varset bardPlayerCurrentSongType aa
   }
 
 
