@@ -44,10 +44,13 @@ SUB buffBots(ArrayName)
 	} else /if (${Select[${ArrayName},CombatBuffs2D,BotBuffs2D]}) {
   
    |try and used defined target
+    /varset buffTarget ${${ArrayName}[${s},${iCastTarget}]}
+    |check if defined as self
+    /if (${buffTarget.Equal[Self]}) {
+        /varset buffTarget ${Me.Name}
+    }
     /varset buffTargetID ${Spawn[=${${ArrayName}[${s},${iCastTarget}]}].ID}
-     /varset buffTarget ${${ArrayName}[${s},${iCastTarget}]}
-  
-
+    
 	} else /if (${Select[${ArrayName},PetBuffs2D]}) {
 		/varset buffTargetID ${Spawn[=${${ArrayName}[${s},${iCastTarget}]}].Pet.ID}
 		/varset buffTarget ${${ArrayName}[${s},${iCastTarget}]}
@@ -68,8 +71,8 @@ SUB buffBots(ArrayName)
   }
 
   |------- Self ------|
-  /if (${Select[${ArrayName},SelfBuffs2D,InstantBuffs2D]}) {
-    /if (!${Bool[${Me.Buff[${buffSpellName}]}]} || (${Bool[${Me.Buff[${buffSpellName}]}]} && ${Me.Buff[${buffSpellName}].Duration.TotalSeconds} <= ${buffRecastTime})) {
+  /if (${Select[${ArrayName},SelfBuffs2D,InstantBuffs2D]} || ${${ArrayName}[${s},${iCastTarget}].Equal[Self]}) {
+      /if (!${Bool[${Me.Buff[${buffSpellName}]}]} || (${Bool[${Me.Buff[${buffSpellName}]}]} && ${Me.Buff[${buffSpellName}].Duration.TotalSeconds} <= ${buffRecastTime})) {
       /if (!${Bool[${Me.Song[${buffSpellName}]}]} && !${Bool[${Me.Song[${buffCheckForName}]}]}) {
         /if (${Spell[${buffSpellID}].NewStacks} && !${Bool[${Me.Buff[${buffCheckForName}]}]}) {
           /call check_Ready "${ArrayName}" ${s}
