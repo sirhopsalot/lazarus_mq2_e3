@@ -48,8 +48,9 @@ SUB buffBots(ArrayName)
     |check if defined as self
     /if (${buffTarget.Equal[Self]}) {
         /varset buffTarget ${Me.Name}
+       
     }
-    /varset buffTargetID ${Spawn[=${${ArrayName}[${s},${iCastTarget}]}].ID}
+    /varset buffTargetID ${Spawn[=${buffTarget}].ID}
     
 	} else /if (${Select[${ArrayName},PetBuffs2D]}) {
 		/varset buffTargetID ${Spawn[=${${ArrayName}[${s},${iCastTarget}]}].Pet.ID}
