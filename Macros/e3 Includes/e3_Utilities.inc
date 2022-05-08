@@ -652,25 +652,25 @@ SUB BuildSpellArrayBase(ArrayName, NewArrayName, SkipParams)
 
 			| get AfterSpell
 			/if (${${ArrayName}[${i}].Find[/AfterSpell|]}) {
-				/varset printMin true
+				|/varset printMin true
 				/call argueString AfterSpell| "${${ArrayName}[${i}]}"
 				/varset ${NewArrayName}[${i},${iAfterSpell}] ${c_argueString}
 			}
 			| get AfterCast, Alias for AfterSpell
 			/if (${${ArrayName}[${i}].Find[/AfterCast|]}) {
-				/varset printMin true
+				|/varset printMin true
 				/call argueString AfterCast| "${${ArrayName}[${i}]}"
 				/varset ${NewArrayName}[${i},${iAfterSpell}] ${c_argueString}
 			}
 			| get BeforeSpell
 			/if (${${ArrayName}[${i}].Find[/BeforeSpell|]}) {
-				/varset printMin true
+				|/varset printMin true
 				/call argueString BeforeSpell| "${${ArrayName}[${i}]}"
 				/varset ${NewArrayName}[${i},${iBeforeSpell}] ${c_argueString}
 			}
 			| get BeforeCast, Alias for BeforeSpell
 			/if (${${ArrayName}[${i}].Find[/BeforeCast|]}) {
-				/varset printMin true
+				|/varset printMin true
 				/call argueString BeforeCast| "${${ArrayName}[${i}]}"
 				/varset ${NewArrayName}[${i},${iBeforeSpell}] ${c_argueString}
 			}
