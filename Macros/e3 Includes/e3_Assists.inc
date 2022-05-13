@@ -126,6 +126,7 @@ SUB AssistOff
   /if (${Me.Combat})    /attack off
   /if (${Me.AutoFire})  /autofire off
   /if (${Me.Pet.ID}) /squelch /pet back off
+
   /delay 5 !${Me.Combat} && !${Me.AutoFire}
 
 	/varset Assisting FALSE
@@ -1103,7 +1104,15 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
 /for i 1 to ${${ArrayName}.Size[1]}
     /doevents DoTsOff
     |make sure we have the right target    
-   
+    |make sure we don't need to do any healing
+    /if (${mainLoop_IsHealer}) {
+       /call check_HealCasting_DuringDetrimental
+        /if (!${c_SubToRun}) {
+            /varset ActionTaken TRUE
+            /return
+        }
+    }
+
     |make sure our target is not a corpse
     /if (!${Bool[${Spawn[id ${TargetID}].Type.NotEqual[Corpse]}]}) {
       /return

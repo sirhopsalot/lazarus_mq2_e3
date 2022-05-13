@@ -774,6 +774,8 @@ Sub check_ReadySimple(spellName, gemToUse)
 Sub memorize_spell(spellName,gemNum)
   /if (${Debug} || ${Debug_Casting}) /echo |- memorize_spell =>
   	/memorize "${spellName}" ${gemNum}
+
+	 /echo [${Time}] Delaying up to 5 seconds in memorize_spell
 	/delay 5s ${Bool[${Me.Gem[${spellName}]}]}
 	
 	|only wait for beneficial,self spells
@@ -787,7 +789,7 @@ Sub memorize_spell(spellName,gemNum)
 	|/echo wfr ${waitForReady} rc ${Spell[${spellName}].RecastTime} math ${Math.Calc[25+(${Spell[${spellName}].RecastTime}/100)]}
 	:checkTimer
 		
-		|/echo chectimer ${waitForReady} ${Me.SpellReady[${spellName}]}
+	/echo [${Time}] Delaying waiting for spell to memorize and to be ready in memorize_spell
 	/if (${waitForReady}) {
 		/doevents Follow
 		/doevents Stop

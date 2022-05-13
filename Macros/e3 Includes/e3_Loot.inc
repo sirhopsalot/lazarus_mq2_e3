@@ -157,11 +157,13 @@ SUB lootCorpse
   /declare i int local
   /declare j int local
   /declare stackCounter int local 
-
+  /declare freeInventory int Local ${Me.FreeInventory}
   /declare itemName string local
   /declare itemSlot int local
   /varset canLootCorpse TRUE
   /declare importantItem bool local
+  /varcalc freeInventory ${freeInventory}-${LootNumOfFreeSlotsOpen}
+  
   /loot
   /delay 5 ${Window[LootWnd].Open}
   /doevents NotYourKill
@@ -184,7 +186,7 @@ SUB lootCorpse
   |must use numItems, ${Corpse.Items} recalcs every iteration
   /for i 1 to ${numItems}
     |/if (${Debug} || ${Debug_Loot}) /echo starting loot i: ${i} of ${numItems}
-    /if (!${Me.FreeInventory}) {
+    /if (!${freeInventory}) {
       /if (!${fullInventory_Alert}) {
         /beep
         /varset fullInventory_Alert TRUE
@@ -336,8 +338,16 @@ SUB lootCorpse
       | 2) The item on the corpse is stackable
       | 3) I have one of the stackable items in my inventory already
       | Then check to see if there is room within the stack to loot it.
-      /if (${Me.FreeInventory}) {
-      } else /if (!${Me.LargestFreeInventory} && ${Corpse.Item[${i}].Stackable} && ${Bool[${FindItem[=${itemName}]}]}) {
+      /if (${freeInventory}) {
+
+        |we have some free inventory slots, lets see if any of them can contain the item we wish
+        /if (${Me.LargestFreeInventory} < ${Corpse.Item[${i}].Size}) { 
+            /echo [${Time}]: Loot: I don't have a free inventory space large enough to hold [${itemName}].
+            /goto :skipItem
+        }
+
+      } else /if (!${freeInventory} && ${Corpse.Item[${i}].Stackable} && ${Bool[${FindItem[=${itemName}]}]}) {
+
         /if (${Debug} || ${Debug_Loot}) /bc [Auto-Loot]: Check stackables
 
         /if (!${Bool[${FindItem[=${itemName}].ItemSlot}]}) /goto :skipItem
@@ -358,10 +368,7 @@ SUB lootCorpse
         } else {
           /goto :skipItem
         }
-      } else /if (${Me.LargestFreeInventory} < ${Corpse.Item[${i}].Size}) {
-        /echo [${Time}]: Loot: I don't have a free inventory space large enough to hold [${itemName}].
-        /goto :skipItem
-      }  else /if (!${Me.FreeInventory}) {
+      } else /if (!${freeInventory}) {
         /if (${Debug} || ${Debug_Loot}) /bc [+g+] [Auto-Loot]: No Free Space
         /goto :skipItem
       }
@@ -581,6 +588,7 @@ SUB loot_Setup
   /declare canLootCorpse bool outer FALSE
   /declare cantLootCorpseCount int outer FALSE
   /declare lootSetting string outer
+  /declare LootNumOfFreeSlotsOpen int outer 0
 
 	/if (!${Ini[${Loot_Ini}].Length}) /call Build_Alphabetized_Ini "${Loot_Ini}"
 	/call iniToVarV "${genSettings_Ini},Loot,Loot Link Channel" linkChannel string outer
@@ -590,6 +598,7 @@ SUB loot_Setup
 
 	| Import character settings
 	/if (${Bool[${Ini[${Character_Ini},Misc,Auto-Loot (On/Off)]}]}) /call iniToVarV "${Character_Ini},Misc,Auto-Loot (On/Off)" Auto_Loot bool outer
+  /if (${Ini[${genSettings_Ini},Loot,LootNumOfFreeSlotsOpen(1+)].Length}) /call iniToVarV "${genSettings_Ini},Loot,LootNumOfFreeSlotsOpen(1+)" LootNumOfFreeSlotsOpen int outer
   /if (${Ini[${genSettings_Ini},Loot,Loot Only Stackable: Enable (On/Off)].Length}) /call iniToVarV "${genSettings_Ini},Loot,Loot Only Stackable: Enable (On/Off)" LootOnlyStackableEnabled bool outer
   /if (${Ini[${genSettings_Ini},Loot,Loot Only Stackable: With Value Greater Than Or Equal in Copper].Length}) /call iniToVarV "${genSettings_Ini},Loot,Loot Only Stackable: With Value Greater Than Or Equal in Copper" LootOnlyStackableValueGreater int outer
   /if (${Ini[${genSettings_Ini},Loot,Loot Only Stackable: Loot common tradeskill items ie:pelts ores silks etc (On/Off)].Length}) /call iniToVarV "${genSettings_Ini},Loot,Loot Only Stackable: Loot common tradeskill items ie:pelts ores silks etc (On/Off)" LootOnlyStackableTradeSkillsCommon bool outer

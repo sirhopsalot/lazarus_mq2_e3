@@ -10,6 +10,8 @@
 #include e3 Includes\e3_Setup.inc
 
 SUB Main(modeSelect)
+  
+ 
   /declare macroVersion string outer 8.0
   /declare Debug bool outer false
   /declare IniMode string outer Ini
@@ -20,13 +22,14 @@ SUB Main(modeSelect)
   /call e3_Setup "${modeSelect}"
 	/if (${Debug}) {
 		/echo Post Setup
-		/delay 5
+	  /delay 5
 	}
   /declare i int local
-  /declare mainLoop_IsHealer bool local False
+  /declare mainLoop_IsHealer bool outer False
   /if (${Select[${Me.Class.ShortName},CLR,DRU,SHM]}) {
     /varset mainLoop_IsHealer True
   } 
+
 
 :MainLoop
 /if (${Debug}) /echo |- MainLoop ==>

@@ -114,28 +114,69 @@ SUB event_nextTarget(line, ChatSender)
   /declare mobId int local
   /declare mobClass string local Warrior
   /declare mobHealth int local
+  
+  
+
+
+  /declare XtargetClosestDistance int local 99999
+
   /for i 1 to 13
-    /if (${Me.XTarget[${i}].TargetType.Equal[Auto Hater]} && (${Me.XTarget[${i}].PctAggro} < ${worstAggro} || (${Me.XTarget[${i}].PctAggro} == ${worstAggro} && ${mobClass.Equal[Warrior]} && ${Me.XTarget[${i}].PctHPs} >= ${mobHealth})) && !${Bool[${Me.XTarget[${i}].Name.Find[Corpse]}]} && !${Bool[${Me.XTarget[${i}].Name.Find[wooden box]}]} && !${Bool[${Me.XTarget[${i}].Name.Find[Chest]}]} && !${Bool[${Me.XTarget[${i}].Name.Find[a barrel]}]} && !${Bool[${Me.XTarget[${i}].Name.Find[a box]}]} && !${Bool[${Me.XTarget[${i}].Name.Find[crate]}]} && !${Bool[${Me.XTarget[${i}].Name.Find[hollow_tree]}]} && ${Me.XTarget[${i}].LineOfSight} && ${Me.XTarget[${i}].Distance} < 75) {
-      /varset worstAggro ${Me.XTarget[${i}].PctAggro}
-      /varset mobId ${Me.XTarget[${i}].ID}
-      /varset mobClass ${Me.XTarget[${i}].Class}
-      /varset mobHealth ${Me.XTarget[${i}].PctHPs}
+
+    /if (${Me.XTarget[${i}].LineOfSight} && ${Me.XTarget[${i}].Distance} > 75) {
+      /continue
+    }
+    /if (${Bool[${Me.XTarget[${i}].Name.Find[Corpse]}]} || ${Bool[${Me.XTarget[${i}].Name.Find[wooden box]}]}) {
+      /continue
+    }
+    /if (${Bool[${Me.XTarget[${i}].Name.Find[Chest]}]} || ${Bool[${Me.XTarget[${i}].Name.Find[a barrel]}]}  ) {
+       /continue
+    }
+    /if (${Bool[${Me.XTarget[${i}].Name.Find[a box]}]} || ${Bool[${Me.XTarget[${i}].Name.Find[crate]}]} || ${Bool[${Me.XTarget[${i}].Name.Find[hollow_tree]}]}) {
+       /continue
+    }
+   
+
+    /if (${Me.XTarget[${i}].TargetType.Equal[Auto Hater]}  ) {
+      |go for the closest of the valid targets first
+
+      /if (${KeepAggroOn} &&  (${Me.XTarget[${i}].PctAggro} < ${worstAggro} || (${Me.XTarget[${i}].PctAggro} == ${worstAggro} && ${mobClass.Equal[Warrior]} && ${Me.XTarget[${i}].PctHPs} >= ${mobHealth}))) {
+          /echo Finding target based off agro
+          /varset worstAggro ${Me.XTarget[${i}].PctAggro}
+          /varset mobId ${Me.XTarget[${i}].ID}
+          /varset mobClass ${Me.XTarget[${i}].Class}
+          /varset mobHealth ${Me.XTarget[${i}].PctHPs}
+
+      } else /if (${XtargetClosestDistance}> ${Me.XTarget[${i}].Distance} && ${Bool[${Spawn[${Me.XTarget[${i}].ID}]}]}  ) {
+          /echo Finding target based off distance
+          /varset worstAggro ${Me.XTarget[${i}].PctAggro}
+          /varset mobId ${Me.XTarget[${i}].ID}
+          /varset mobClass ${Me.XTarget[${i}].Class}
+          /varset mobHealth ${Me.XTarget[${i}].PctHPs}
+          /varset XtargetClosestDistance  ${Me.XTarget[${i}].Distance} 
+      }
     }
   /next i
-
+  /echo mob selected : ${mobId} is it a valid spawn?:${Bool[${Spawn[${mobId}]}]} 
+  /varset ClearXTargetsDebug true
   /if (${Bool[${mobId}]} && ${Bool[${Spawn[${mobId}]}]}) {
     /if (${ClearXTargetsDebug}) /echo Assisting on Next Target ${Spawn[${mobId}].CleanName} TargetID=${mobId}
     /call TrueTarget ${mobId}
+    /if (${Target.Distance}>${Math.Calc[${Spawn[${Target.ID}].MaxRangeTo}*.75].Int}) {
+       /stick
+    } else {
+      /face fast id ${mobId}
+    }
+ 
     |/stick id ${mobId} ${ClearXTargetStickDistance} uw
-    /face fast id ${mobId}
-    /delay 1
+   
+    /delay 5
     /attack on
-    /delay 1
-    /bcga //pet attack
-    /delay 1
+    /delay 5
+    |/bcga //pet attack
+    |/delay 1
     /assistme
     /varset AllowControl TRUE
-    /varset AssistStickDistance ${ClearXTargetStickDistance}
+    /varset AssistStickDistance ${Target.Distance}>${Math.Calc[${Spawn[${Target.ID}].MaxRangeTo}*.75].Int}
   } else {
     /if (${ClearXTargetsDebug}) /echo No mobs on XTarget to assist on
   }
@@ -159,7 +200,8 @@ SUB event_getCloserClearXTargets
 	/if (${Bool[${AssistTarget}]}) {
 		/doevent flush event_getCloserClearXTargets
 		/if (${ClearXTargetsDebug}) /echo ClearXTargets: Re-sticking to target ${Spawn[id ${AssistTarget}].CleanName}
-		/stick id ${AssistTarget} 5 uw
+    /call TrueTarget ${AssistTarget}
+		/stick
 	}
 /RETURN
 
@@ -248,7 +290,13 @@ SUB event_rotateTarget(line, ChatSender)
   /if (${Bool[${mobId}]} && ${Bool[${Spawn[${mobId}]}]}) {
     /if (${ClearXTargetsDebug}) /echo Assisting on Next Rotate Target ${Spawn[${mobId}].CleanName} TargetID=${mobId}
     /call TrueTarget ${mobId}
-    /stick id ${mobId} ${ClearXTargetStickDistance} uw
+
+    /if (${Target.Distance}>${Math.Calc[${Spawn[${Target.ID}].MaxRangeTo}*.75].Int}) {
+      /stick
+    } else {
+      /face fast id ${mobId}
+    }
+ 
     /delay 1
     /attack on
     /delay 1
@@ -256,7 +304,7 @@ SUB event_rotateTarget(line, ChatSender)
     /delay 1
     /assistme
     /varset AllowControl TRUE
-    /varset AssistStickDistance ${ClearXTargetStickDistance}
+    /varset AssistStickDistance ${Target.Distance}>${Math.Calc[${Spawn[${Target.ID}].MaxRangeTo}*.75].Int}
   } else {
     /if (${ClearXTargetsDebug}) /echo No mobs on XTarget to assist on
   }
