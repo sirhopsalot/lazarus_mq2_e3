@@ -3,6 +3,7 @@
 |
 | Author: Sirhopsalot
 | Contributor: Forsy
+| Updated: Rekka
 |
 | Starts assist on each of the targets in your XTarget list until they're all Cleared using the criteria below
 | This will cause the toon to stick to the current target, face the mob if looking the wrong way, and re-stick if the mob is too far away
@@ -115,48 +116,55 @@ SUB event_nextTarget(line, ChatSender)
   /declare mobClass string local Warrior
   /declare mobHealth int local
   
-  
-
-
   /declare XtargetClosestDistance int local 99999
+  /declare XtargetClosestDistanceAggro int local 99999
+  /declare foundAgroMob bool local false
 
   /for i 1 to 13
-
-    /if (${Me.XTarget[${i}].LineOfSight} && ${Me.XTarget[${i}].Distance} > 75) {
-      /continue
-    }
-    /if (${Bool[${Me.XTarget[${i}].Name.Find[Corpse]}]} || ${Bool[${Me.XTarget[${i}].Name.Find[wooden box]}]}) {
-      /continue
-    }
-    /if (${Bool[${Me.XTarget[${i}].Name.Find[Chest]}]} || ${Bool[${Me.XTarget[${i}].Name.Find[a barrel]}]}  ) {
-       /continue
-    }
-    /if (${Bool[${Me.XTarget[${i}].Name.Find[a box]}]} || ${Bool[${Me.XTarget[${i}].Name.Find[crate]}]} || ${Bool[${Me.XTarget[${i}].Name.Find[hollow_tree]}]}) {
-       /continue
-    }
-   
-
+  
     /if (${Me.XTarget[${i}].TargetType.Equal[Auto Hater]}  ) {
-      |go for the closest of the valid targets first
-
-      /if (${KeepAggroOn} &&  (${Me.XTarget[${i}].PctAggro} < ${worstAggro} || (${Me.XTarget[${i}].PctAggro} == ${worstAggro} && ${mobClass.Equal[Warrior]} && ${Me.XTarget[${i}].PctHPs} >= ${mobHealth}))) {
-          /echo Finding target based off agro
-          /varset worstAggro ${Me.XTarget[${i}].PctAggro}
-          /varset mobId ${Me.XTarget[${i}].ID}
-          /varset mobClass ${Me.XTarget[${i}].Class}
-          /varset mobHealth ${Me.XTarget[${i}].PctHPs}
-
-      } else /if (${XtargetClosestDistance}> ${Me.XTarget[${i}].Distance} && ${Bool[${Spawn[${Me.XTarget[${i}].ID}]}]}  ) {
-          /echo Finding target based off distance
-          /varset worstAggro ${Me.XTarget[${i}].PctAggro}
-          /varset mobId ${Me.XTarget[${i}].ID}
-          /varset mobClass ${Me.XTarget[${i}].Class}
-          /varset mobHealth ${Me.XTarget[${i}].PctHPs}
-          /varset XtargetClosestDistance  ${Me.XTarget[${i}].Distance} 
+ 
+      |if not a valid spawn, skip
+      /if (${Me.XTarget[${i}].ID}<1 || !${Bool[${Spawn[${Me.XTarget[${i}].ID}]}]} ) { 
+        /continue
       }
+      /if (!${Me.XTarget[${i}].LineOfSight} || ${Me.XTarget[${i}].Distance} > 30) {
+        /continue
+      }
+      /if (${Bool[${Me.XTarget[${i}].Name.Find[Corpse]}]} || ${Bool[${Me.XTarget[${i}].Name.Find[wooden box]}]}) {
+        /continue
+      }
+      /if (${Bool[${Me.XTarget[${i}].Name.Find[Chest]}]} || ${Bool[${Me.XTarget[${i}].Name.Find[a barrel]}]}  ) {
+        /continue
+      }
+      /if (${Bool[${Me.XTarget[${i}].Name.Find[a box]}]} || ${Bool[${Me.XTarget[${i}].Name.Find[crate]}]} || ${Bool[${Me.XTarget[${i}].Name.Find[hollow_tree]}]}) {
+        /continue
+      }
+    
+        |go for the closest of the valid targets first
+
+        /if (${KeepAggroOn} &&  ${XtargetClosestDistanceAggro}> ${Me.XTarget[${i}].Distance} && (${Me.XTarget[${i}].PctAggro} < ${worstAggro} || (${Me.XTarget[${i}].PctAggro} == ${worstAggro} && ${mobClass.Equal[Warrior]} && ${Me.XTarget[${i}].PctHPs} >= ${mobHealth}))) {
+            /echo Finding target based off agro: ${Me.XTarget[${i}].ID}
+            /varset worstAggro ${Me.XTarget[${i}].PctAggro}
+            /varset mobId ${Me.XTarget[${i}].ID}
+            /varset mobClass ${Me.XTarget[${i}].Class}
+            /varset mobHealth ${Me.XTarget[${i}].PctHPs}
+            /varset foundAgroMob true
+            /varset XtargetClosestDistanceAggro  ${Me.XTarget[${i}].Distance} 
+
+        }
+        |if we didn't find a mob via agro, try and select one via distance 
+        /if (!${foundAgroMob} && ${XtargetClosestDistance}> ${Me.XTarget[${i}].Distance} && ${Bool[${Spawn[${Me.XTarget[${i}].ID}]}]}  ) {
+            /echo Finding target based off distance: ${Me.XTarget[${i}].ID}
+            /varset worstAggro ${Me.XTarget[${i}].PctAggro}
+            /varset mobId ${Me.XTarget[${i}].ID}
+            /varset mobClass ${Me.XTarget[${i}].Class}
+            /varset mobHealth ${Me.XTarget[${i}].PctHPs}
+            /varset XtargetClosestDistance  ${Me.XTarget[${i}].Distance} 
+        }
     }
   /next i
-  /echo mob selected : ${mobId} is it a valid spawn?:${Bool[${Spawn[${mobId}]}]} 
+  /echo mob selected : ${mobId}
   /varset ClearXTargetsDebug true
   /if (${Bool[${mobId}]} && ${Bool[${Spawn[${mobId}]}]}) {
     /if (${ClearXTargetsDebug}) /echo Assisting on Next Target ${Spawn[${mobId}].CleanName} TargetID=${mobId}
@@ -169,9 +177,7 @@ SUB event_nextTarget(line, ChatSender)
  
     |/stick id ${mobId} ${ClearXTargetStickDistance} uw
    
-    /delay 5
     /attack on
-    /delay 5
     |/bcga //pet attack
     |/delay 1
     /assistme
