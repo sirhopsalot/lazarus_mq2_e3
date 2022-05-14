@@ -36,6 +36,7 @@ SUB Main(modeSelect)
 		/varset ActionTaken FALSE
     
     /call check_Basics
+    
  		/call check_Active
 		/call check_Idle
     /call check_autoTribute
@@ -47,12 +48,13 @@ SUB Main(modeSelect)
     /if (${reloadOnLoot}) /call reloadSpellArrays
 
 		/call Background_Events
-		| If I'm not active, call mainFunctions
-		/if (!${activeTimer}) {
-      |These are functions in the e3_setup/Advanced.ini class sections... ex CLR Function#1=check_DivineArb
-			
 
-      :restartMainLoopSubLoop
+    |insta buffs are normaly done for junk buffs, be sure to call them often and even when active
+    /if (${Defined[InstantBuffs2D]})	/call buffBotsInstant "InstantBuffs2D"
+    | If I'm not active, call mainFunctions
+   	/if (!${activeTimer}) {
+      |These are functions in the e3_setup/Advanced.ini class sections... ex CLR Function#1=check_DivineArb
+		  :restartMainLoopSubLoop
       |if you are a healer, hard coding a check_heals. This is to deal with sub methods being able to call
       |interrupts for heals and then then ActionTaken is set to true, which may never get to your check_heals
       |all healers should have check_Heals as their #1, this is just making sure it is. 
@@ -93,6 +95,8 @@ SUB Main(modeSelect)
       }
       /if (${medBreak}) /call check_MedBreak
 		}
+    |insta buffs are normaly done for junk buffs, be sure to call them often
+    /if (${Defined[InstantBuffs2D]})	/call buffBotsInstant "InstantBuffs2D"
 
   |**/if (${MoveUtils.GM}) {
     /squelch /stick imsafe

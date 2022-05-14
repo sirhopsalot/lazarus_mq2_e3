@@ -3,11 +3,13 @@
 |--------------------------------------------------------------------------------|
 SUB check_Buffs
 	/if (${Debug} || ${Debug_BuffCheck}) /echo |- buffCheck ==>
-  	/if (${BuffCheck} && !${ActionTaken} && !${activeTimer} && !${rebuffTimer}) {
+  	
+    /if (${Defined[InstantBuffs2D]})		/call buffBotsInstant "InstantBuffs2D"
+    /if (${BuffCheck} && !${ActionTaken} && !${activeTimer} && !${rebuffTimer}) {
 		/if (!${idle} && ${BuffCombatCheck} && !${Me.Moving} && ${Assisting})	/call buffBots "CombatBuffs2D"
 		/if (${procBuff} && !${idle} && !${Me.Moving} && ${Assisting}) /call buffProcs
 		/if (${Defined[auraSpells2D]} && (${auraCombat} || ${Me.CombatState.NotEqual[COMBAT]}) && !${Me.Moving}) /call checkAuras
-		/if (${Defined[InstantBuffs2D]})		/call buffBots "InstantBuffs2D"
+		
 		/if (!${combatTimer} && ${Me.CombatState.NotEqual[COMBAT]} && !${Assisting} && !${Me.Moving} && ${BuffCheck}) {
 			/if (${Defined[SelfBuffs2D]}) /call buffBots "SelfBuffs2D"
 			/if (${Defined[BotBuffs2D]})	/call buffBots "BotBuffs2D"
@@ -22,6 +24,61 @@ SUB check_Buffs
 |- Cast and maintain buffs on a NetBot or NetBot's Pet.	-|
 |- the space after ${buffSpellID} is important "Find[${buffSpellID} ]"
 |----------------------------------------|
+
+sub buffBotsInstant(ArrayName)
+/if (${Debug} || ${Debug_BuffCheck}) /echo |- buffBotsInstant [${ArrayName}] ==>
+	/declare s					int local
+	/declare buffTargetID		int local
+	/declare buffTarget			string local
+	/declare buffSpellID		int local
+	/declare buffCheckForID		int local	
+	/declare buffSpellName		string local
+	/declare buffCheckForName	string local
+	/declare currentBuffs		string local
+	/declare currentSongs		string local
+
+ /for s 1 to ${${ArrayName}.Size[1]}
+	/if (${Debug} || ${Debug_BuffCheck}) /echo buffing ${${ArrayName}[${s},${iCastName}]} on ${${ArrayName}[${s},${iCastTarget}]} checkFor ${${ArrayName}[${s},${iCheckFor}]}
+
+  /varset buffTargetID ${Me.ID}
+  /varset buffTarget ${Me.Name}
+
+	/varset buffSpellName		${${ArrayName}[${s},${iSpellName}]}
+	/varset buffSpellID			${${ArrayName}[${s},${iSpellID}]}]
+	/varset buffCheckForName	${${ArrayName}[${s},${iCheckFor}]}
+	/varset buffCheckForID		${${ArrayName}[${s},${iCheckForID}]}
+		
+  /if (!${Bool[${NetBots[${buffTarget}].ID}]}) {
+     /goto :skipBuff
+  } 
+
+  /if (${Select[${buffSpellID},8001,8002,8000,8003]}) {
+    /call meleeCombatBuffs "${ArrayName}" ${s}
+    /goto :skipBuff
+  }
+
+  |------- Self ------|
+    /if (!${Bool[${Me.Buff[${buffSpellName}]}]} || (${Bool[${Me.Buff[${buffSpellName}]}]} && ${Me.Buff[${buffSpellName}].Duration.TotalSeconds} <= ${buffRecastTime})) {
+    /if (!${Bool[${Me.Song[${buffSpellName}]}]} && !${Bool[${Me.Song[${buffCheckForName}]}]}) {
+      /if (${Spell[${buffSpellID}].NewStacks} && !${Bool[${Me.Buff[${buffCheckForName}]}]}) {
+        /call check_Ready "${ArrayName}" ${s}
+        /if (${c_Ready} && ${${ArrayName}[${s},${iIfs}]}) {
+          /if (${check_Mana["${ArrayName}",${s}]}) {
+            /call e3_Cast ${buffTargetID} "${ArrayName}" ${s}
+          }
+        } 
+      }
+    }
+  }
+ 
+  :skipBuff
+ /next s
+
+ /if (${Debug} || ${Debug_BuffCheck}) /echo <== buffBotsInstant -|
+
+/return
+
+
 SUB buffBots(ArrayName)
 /if (${Debug} || ${Debug_BuffCheck}) /echo |- buffBots [${ArrayName}] ==>
 	/declare s					int local
