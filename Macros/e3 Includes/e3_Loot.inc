@@ -598,13 +598,13 @@ SUB loot_Setup
 
 	| Import character settings
 	/if (${Bool[${Ini[${Character_Ini},Misc,Auto-Loot (On/Off)]}]}) /call iniToVarV "${Character_Ini},Misc,Auto-Loot (On/Off)" Auto_Loot bool outer
-  /if (${Ini[${genSettings_Ini},Loot,LootNumOfFreeSlotsOpen(1+)].Length}) /call iniToVarV "${genSettings_Ini},Loot,LootNumOfFreeSlotsOpen(1+)" LootNumOfFreeSlotsOpen int outer
+  /if (${Ini[${genSettings_Ini},Loot,NumOfFreeSlotsOpen(1+)].Length}) /call iniToVarV "${genSettings_Ini},Loot,NumOfFreeSlotsOpen(1+)" LootNumOfFreeSlotsOpen int outer
   /if (${Ini[${genSettings_Ini},Loot,Loot Only Stackable: Enable (On/Off)].Length}) /call iniToVarV "${genSettings_Ini},Loot,Loot Only Stackable: Enable (On/Off)" LootOnlyStackableEnabled bool outer
   /if (${Ini[${genSettings_Ini},Loot,Loot Only Stackable: With Value Greater Than Or Equal in Copper].Length}) /call iniToVarV "${genSettings_Ini},Loot,Loot Only Stackable: With Value Greater Than Or Equal in Copper" LootOnlyStackableValueGreater int outer
   /if (${Ini[${genSettings_Ini},Loot,Loot Only Stackable: Loot common tradeskill items ie:pelts ores silks etc (On/Off)].Length}) /call iniToVarV "${genSettings_Ini},Loot,Loot Only Stackable: Loot common tradeskill items ie:pelts ores silks etc (On/Off)" LootOnlyStackableTradeSkillsCommon bool outer
   /if (${Ini[${genSettings_Ini},Loot,Loot Only Stackable: Loot all Tradeskill items (On/Off)].Length})  /call iniToVarV "${genSettings_Ini},Loot,Loot Only Stackable: Loot all Tradeskill items (On/Off)" LootOnlyStackableTradeSkillsALL bool outer
   /call IniToArrayV "${genSettings_Ini},Loot,Loot Only Stackable: Always Loot Item#"	stackableItemArray
-  
+  /echo Loot Free SLots: ${LootNumOfFreeSlotsOpen}
   |**/if (${Defined[stackableItemArray]}) {
      /declare i int local 
     /for i 1 to ${stackableItemArray.Size}
@@ -623,6 +623,8 @@ SUB loot_MacroSettings
 	/call WriteToIni "${genSettings_Ini},Loot,Loot Link Channel" say
 	/call WriteToIni "${genSettings_Ini},Loot,Corpse Seek Radius" 125
   /call WriteToIni "${genSettings_Ini},Loot,Loot in Combat" TRUE
+  /call WriteToIni "${genSettings_Ini},Loot,NumOfFreeSlotsOpen(1+)" 0
+  
 /if (${Debug}) /echo <== _MacroSettings -|
 /RETURN
 

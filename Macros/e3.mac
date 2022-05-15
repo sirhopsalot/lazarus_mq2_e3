@@ -98,10 +98,11 @@ SUB Main(modeSelect)
     |insta buffs are normaly done for junk buffs, be sure to call them often
     /if (${Defined[InstantBuffs2D]})	/call buffBotsInstant "InstantBuffs2D"
 
-  |**/if (${MoveUtils.GM}) {
+  /if (${MoveUtils.GM}) {
     /squelch /stick imsafe
     /echo GM Safe kicked in, issued /stick imsafe.  you may need to reissue /followme or /assiston
-  }**|
+  }
+  
 /if (${Debug}) {
 	/echo <== MainLoop -|
 	/delay 5
