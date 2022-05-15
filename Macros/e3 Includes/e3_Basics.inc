@@ -300,7 +300,7 @@ SUB EVENT_clickIt(line, ChatSender, eventParams)
     /declare clickDelay int local ${Math.Calc[${Math.Rand[${Me.ID}]}%${clickitRandomDelay}|1]}
     /declare startingLoc ${Me.Loc}
     :retryClickDoor
-    /delay ${clickDelay}
+    
     /squelch /doortarget id ${closestDoorID}
     
     |casting while zoning has been reported to cause a problem
@@ -310,6 +310,8 @@ SUB EVENT_clickIt(line, ChatSender, eventParams)
       /stopcast
     }
     /squelch /click left door
+    |give time for the click and zoning to take place.
+    /delay ${clickDelay}
     /if (${MyZone}==${Zone.ID} && ${Math.Distance[${startingLoc}]} < 10) {
       /if (${clickTimer}) {
         /goto :retryClickDoor
