@@ -164,7 +164,7 @@ SUB lootCorpse
   /declare importantItem bool local
   /varcalc freeInventory ${freeInventory}-${LootNumOfFreeSlotsOpen}
   /if (${freeInventory}<1) {
-    /varset ${freeInventory} 0
+    /varset freeInventory 0
   }
 
   /loot
