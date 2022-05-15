@@ -604,7 +604,6 @@ SUB loot_Setup
   /if (${Ini[${genSettings_Ini},Loot,Loot Only Stackable: Loot common tradeskill items ie:pelts ores silks etc (On/Off)].Length}) /call iniToVarV "${genSettings_Ini},Loot,Loot Only Stackable: Loot common tradeskill items ie:pelts ores silks etc (On/Off)" LootOnlyStackableTradeSkillsCommon bool outer
   /if (${Ini[${genSettings_Ini},Loot,Loot Only Stackable: Loot all Tradeskill items (On/Off)].Length})  /call iniToVarV "${genSettings_Ini},Loot,Loot Only Stackable: Loot all Tradeskill items (On/Off)" LootOnlyStackableTradeSkillsALL bool outer
   /call IniToArrayV "${genSettings_Ini},Loot,Loot Only Stackable: Always Loot Item#"	stackableItemArray
-  /echo Loot Free SLots: ${LootNumOfFreeSlotsOpen}
   |**/if (${Defined[stackableItemArray]}) {
      /declare i int local 
     /for i 1 to ${stackableItemArray.Size}
