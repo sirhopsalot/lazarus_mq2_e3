@@ -163,7 +163,10 @@ SUB lootCorpse
   /varset canLootCorpse TRUE
   /declare importantItem bool local
   /varcalc freeInventory ${freeInventory}-${LootNumOfFreeSlotsOpen}
-  
+  /if (${freeInventory}<1) {
+    /varset ${freeInventory} 0
+  }
+
   /loot
   /delay 5 ${Window[LootWnd].Open}
   /doevents NotYourKill
