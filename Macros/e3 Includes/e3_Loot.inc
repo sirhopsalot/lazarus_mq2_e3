@@ -162,10 +162,7 @@ SUB lootCorpse
   /declare itemSlot int local
   /varset canLootCorpse TRUE
   /declare importantItem bool local
-  /varcalc freeInventory ${freeInventory}-${LootNumOfFreeSlotsOpen}
-  /if (${freeInventory}<1) {
-    /varset freeInventory 0
-  }
+ 
 
   /loot
   /delay 5 ${Window[LootWnd].Open}
@@ -188,8 +185,13 @@ SUB lootCorpse
 
   |must use numItems, ${Corpse.Items} recalcs every iteration
   /for i 1 to ${numItems}
+    |recalculate the free inventory
+    /varcalc freeInventory ${Me.FreeInventory}-${LootNumOfFreeSlotsOpen}
+    /if (${freeInventory}<1) {
+      /varset freeInventory 0
+    }
     |/if (${Debug} || ${Debug_Loot}) /echo starting loot i: ${i} of ${numItems}
-    /if (!${freeInventory}) {
+    /if (${freeInventory}<1) {
       /if (!${fullInventory_Alert}) {
         /beep
         /varset fullInventory_Alert TRUE
@@ -341,7 +343,7 @@ SUB lootCorpse
       | 2) The item on the corpse is stackable
       | 3) I have one of the stackable items in my inventory already
       | Then check to see if there is room within the stack to loot it.
-      /if (${freeInventory}) {
+      /if (${freeInventory}>1) {
 
         |we have some free inventory slots, lets see if any of them can contain the item we wish
         /if (${Me.LargestFreeInventory} < ${Corpse.Item[${i}].Size}) { 
@@ -349,7 +351,7 @@ SUB lootCorpse
             /goto :skipItem
         }
 
-      } else /if (!${freeInventory} && ${Corpse.Item[${i}].Stackable} && ${Bool[${FindItem[=${itemName}]}]}) {
+      } else /if (${freeInventory}<1 && ${Corpse.Item[${i}].Stackable} && ${Bool[${FindItem[=${itemName}]}]}) {
 
         /if (${Debug} || ${Debug_Loot}) /bc [Auto-Loot]: Check stackables
 
@@ -371,7 +373,7 @@ SUB lootCorpse
         } else {
           /goto :skipItem
         }
-      } else /if (!${freeInventory}) {
+      } else /if (${freeInventory}<1) {
         /if (${Debug} || ${Debug_Loot}) /bc [+g+] [Auto-Loot]: No Free Space
         /goto :skipItem
       }
