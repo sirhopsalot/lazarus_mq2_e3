@@ -395,7 +395,7 @@ SUB lootCorpse
   |/delay 1
   |looting done, if items leftover link them
   |if numitems was 0, no reason to query the corpse again.
-  /if (${numItems}>0) {
+  /if (${linkChannel.Length}>0 && ${numItems}>0) {
     /if (${Corpse.Items}) {
       /keypress /
       /delay 1
