@@ -142,7 +142,7 @@ SUB heal_importantBots
   /declare GroupMemberIndex int local -1	
   /for t 1 to ${importantBots.Size}
     /for s 1 to ${importantHeals2D.Size[1]}
-
+	/varset GroupMemberIndex -1
 
 	|Netbots seems to sometimes.. lag? freeze? etc. Have a local group heal check as backup
 	|if we can't find a local group heal to heal, then check netbots. at worst case we overheal.
