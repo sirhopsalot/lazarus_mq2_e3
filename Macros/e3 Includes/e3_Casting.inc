@@ -134,16 +134,17 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 	|CatchAll Function for potentially locked up spell gems.
   	/call check_SpellGemLockup
 
-	/declare beforeSpell string local ${${ArrayName}[${ArrayIndex},${iBeforeSpell}]}
-	/if (${beforeSpell.Length}>1) {
-		/echo BeforeCast configured, calling "${beforeSpell}"
-		/call CastAfterBeforeSpell "${beforeSpell}"
-	}
 	/declare beforeEvent string local ${${ArrayName}[${ArrayIndex},${iBeforeEvent}]}
 	/if (${beforeEvent.Length}>1) {
 		/echo BeforeEvent configured, calling "${beforeEvent}"
 		/docommand ${beforeEvent}
 	}
+	/declare beforeSpell string local ${${ArrayName}[${ArrayIndex},${iBeforeSpell}]}
+	/if (${beforeSpell.Length}>1) {
+		/echo BeforeCast configured, calling "${beforeSpell}"
+		/call CastAfterBeforeSpell "${beforeSpell}"
+	}
+
 	
 	
 	
@@ -693,7 +694,7 @@ Sub check_Ready(ArrayName, int ArrayIndex)
 
 		}
 	} 
-	/if (${Me.ItemReady[=${${ArrayName}[${ArrayIndex},${iCastName}]}]}) {
+	/if (${Me.ItemReady[${${ArrayName}[${ArrayIndex},${iCastName}]}]}) {
 		/varset c_Ready TRUE
 	} 
   
