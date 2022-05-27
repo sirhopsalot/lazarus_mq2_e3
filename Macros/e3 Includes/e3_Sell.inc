@@ -302,18 +302,16 @@ SUB sellItems
 								:retrySelect_Pack
 								/if (${Debug} || ${Debug_Sell}) /echo |- sellItems -| :retrySelect_Pack
 								/itemnotify in pack${i} ${e} leftmouseup
-								
-								/delay ${retryTimer} ${Window[MerchantWnd].Child[MW_SelectedItemLabel].Text.Equal[${Me.Inventory[pack${i}].Item[${e}]}]}
-					
+								/delay 3
 								| If the item was not selected
 								/if (!${Window[MerchantWnd].Child[MW_SelectedItemLabel].Text.Equal[${Me.Inventory[pack${i}].Item[${e}]}]}) {
 									
-									| If I have time, retry to select the item
-									/if (${retryTimer}) {
-										/goto :retrySelect_Pack
-									} else {
+									| Try again
+									/delay 3
+									/if (!${Window[MerchantWnd].Child[MW_SelectedItemLabel].Text.Equal[${Me.Inventory[pack${i}].Item[${e}]}]}) {
 										/echo ERROR: Failed to select [${Me.Inventory[pack${i}].Item[${e}]}], skipping.
 									}
+									
 								} else {
 						
 									| Check that the buy button is enabled
@@ -326,24 +324,25 @@ SUB sellItems
 						
 										| Sell the item
 										/varset retryTimer 30
-										/echo Selling [${Me.Inventory[pack${i}].Item[${e}]}].
+										/echo [${Time}] Selling from pack [${Me.Inventory[pack${i}].Item[${e}]}].
 										
 										:SellItem_Pack
 										/if (${Debug} || ${Debug_Sell}) /echo |- sellItems -| :SellItem_Pack
 										/notify MerchantWnd MW_Sell_Button leftmouseup
-										/delay ${retryTimer} ${Window[QuantityWnd].Open} || !${Bool[${Me.Inventory[pack${i}].Item[${e}]}]}
-						
+										/delay 1
 										| Close the quantity window
 										/if (${Window[QuantityWnd].Open}) {
 											/notify QuantityWnd QTYW_Accept_Button leftmouseup
-											/delay ${retryTimer} !${Window[QuantityWnd].Open}
-											/delay ${retryTimer} !${Bool[${Me.Inventory[pack${i}]}]}
+											/delay 3
+										} else {
+											|leave a total delay of 3 for client-server communication
+											/delay 2
 										}
-						
+
 										| If the item is still in my inventory
 										/if (${Bool[${Me.Inventory[pack${i}].Item[${e}]}]} && ${retryTimer}) {
 											/goto :SellItem
-										} else {
+										} else /if (${Bool[${Me.Inventory[pack${i}].Item[${e}]}]}) {
 											/echo ERROR: Failed to sell [${Me.Inventory[pack${i}].Item[${e}]}], skipping.
 										}
 									}
@@ -383,17 +382,15 @@ SUB sellItems
 						/if (${Debug} || ${Debug_Sell}) /echo |- sellItems -| :retrySelect
 						/itemnotify in pack${i} leftmouseup
 						
-						/delay ${retryTimer} ${Window[MerchantWnd].Child[MW_SelectedItemLabel].Text.Equal[${Me.Inventory[pack${i}]}]}
-					
+						/delay 3
 						| If the item was not selected
 						/if (!${Window[MerchantWnd].Child[MW_SelectedItemLabel].Text.Equal[${Me.Inventory[pack${i}]}]}) {
 							
-							| If I have time, retry to select the item
-							/if (${retryTimer}) {
-								/goto :retrySelect
-							} else {
+							/delay 3
+							/if (!${Window[MerchantWnd].Child[MW_SelectedItemLabel].Text.Equal[${Me.Inventory[pack${i}]}]}) {
 								/echo ERROR: Failed to select [${Me.Inventory[pack${i}]}], skipping.
 							}
+							
 						} else {
 				
 							| Check that the buy button is enabled
@@ -406,24 +403,29 @@ SUB sellItems
 				
 								| Sell the item
 								/varset retryTimer 30
-								/echo Selling [${Me.Inventory[pack${i}]}].
+								/echo [${Time}] Selling from root [${Me.Inventory[pack${i}]}].
 								
 								:SellItem
 								/if (${Debug} || ${Debug_Sell}) /echo |- sellItems -| :SellItem
 								/notify MerchantWnd MW_Sell_Button leftmouseup
-								/delay ${retryTimer} ${Window[QuantityWnd].Open} || !${Bool[${Me.Inventory[pack${i}]}]}
-				
-								| Close the quantity window
+								|give it a moment to show the qty window
+								/delay 1
+								| Close the quantity window if it opened
+								:CheckQtyWindow
 								/if (${Window[QuantityWnd].Open}) {
 									/notify QuantityWnd QTYW_Accept_Button leftmouseup
-									/delay ${retryTimer} !${Window[QuantityWnd].Open}
-									/delay ${retryTimer} !${Bool[${Me.Inventory[pack${i}]}]}
+									/delay 3
+									/if (${Window[QuantityWnd].Open}) { 
+										/goto :CheckQtyWindow
+									}
+								} else {
+									|leave a total delay of 3 for client-server communication
+									/delay 2
 								}
-								
 								| If the item is still in my inventory
 								/if (${Bool[${Me.Inventory[pack${i}]}]} && ${retryTimer}) {
 									/goto :SellItem
-								} else {
+								} else /if (${Bool[${Me.Inventory[pack${i}]}]}) {
 									/echo ERROR: Failed to sell [${Me.Inventory[pack${i}]}], skipping.
 								}
 							}

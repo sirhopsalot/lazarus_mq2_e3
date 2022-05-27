@@ -147,7 +147,7 @@ SUB loot_Area
   } else {
     /call MoveToLoc ${startY} ${startX} 15 20
   }
-  /squelch /hidecor npc 
+  |/squelch /hidecor npc 
   /docommand ${ChatToggle} ${Group.Leader} Looting Complete
   /if (${Debug} || ${Debug_Loot}) /echo <== loot_Area -|
 /return
@@ -383,7 +383,13 @@ SUB lootCorpse
       |delay 4 is needed per item so we don't accidently skip. Unsure how much delay will be impacted. 
       |if it is, uncomment out loot_handle and commonent out the itemnotify and /delay 4
       /itemnotify loot${i} rightmouseup
-      /delay 4
+      /delay 2
+      /while (${Bool[${Corpse.Item[${i}]}]}) {
+          |if item still on corpse, try again.
+          |/echo trying to loot again ${i}
+          /itemnotify loot${i} rightmouseup
+          /delay 1
+      }
       |/call loot_Handle ${i} keep
       |/if (${Debug} || ${Debug_Loot}) /echo Done Looting i: ${i}
      
@@ -467,9 +473,12 @@ SUB get_lootSetting(invSlot, itemSlot)
 		/varset iniEntryVariables ${If[${Me.Inventory[${invSlot}].Item[${itemSlot}].Stackable},(${Me.Inventory[${invSlot}].Item[${itemSlot}].StackSize}),]}${If[${Me.Inventory[${invSlot}].Item[${itemSlot}].NoDrop},(ND),]}${If[${Me.Inventory[${invSlot}].Item[${itemSlot}].Lore},(L),]}${If[${Me.Inventory[${invSlot}].Item[${itemSlot}].Container},(C),]}
 		| Check for a Loot_Ini entry
 		/if (!${Ini[${Loot_Ini},${itemName.Left[1]},${itemName} ${itemValue}${iniEntryVariables}].Length}) {
-			/call WriteToIni "${Loot_Ini},${itemName.Left[1]},${itemName} ${itemValue}${iniEntryVariables}" ${If[${Me.Inventory[${invSlot}].Item[${itemSlot}].Container},Container,${If[${Me.Inventory[${invSlot}].Item[${itemSlot}].NoDrop},Skip,Keep${If[${Me.Inventory[${invSlot}].Item[${itemSlot}].Stackable},|${Me.Inventory[${invSlot}].Item[${itemSlot}].StackSize},]}]}]}
-			/docommand ${ChatToggle} Added: [${Me.Inventory[${invSlot}].Item[${itemSlot}].Name}(${Ini[${Loot_Ini},${itemName.Left[1]},${itemName} ${itemValue}${iniEntryVariables}]})] to [${Loot_Ini}].
-			| Add scripts to import old loot settings from ninjaloot.ini, and old e3 loot inis
+			
+      /if (!(${LootOnlyStackableEnabled} &&  !${Me.Inventory[${invSlot}].Item[${itemSlot}].Stackable})) {
+        /call WriteToIni "${Loot_Ini},${itemName.Left[1]},${itemName} ${itemValue}${iniEntryVariables}" ${If[${Me.Inventory[${invSlot}].Item[${itemSlot}].Container},Container,${If[${Me.Inventory[${invSlot}].Item[${itemSlot}].NoDrop},Skip,Keep${If[${Me.Inventory[${invSlot}].Item[${itemSlot}].Stackable},|${Me.Inventory[${invSlot}].Item[${itemSlot}].StackSize},]}]}]}
+        /docommand ${ChatToggle} Added: [${Me.Inventory[${invSlot}].Item[${itemSlot}].Name}(${Ini[${Loot_Ini},${itemName.Left[1]},${itemName} ${itemValue}${iniEntryVariables}]})] to [${Loot_Ini}].
+      }
+ 			| Add scripts to import old loot settings from ninjaloot.ini, and old e3 loot inis
 		}
 	}
 	/varset lootSetting ${Ini[${Loot_Ini},${itemName.Left[1]},${itemName} ${itemValue}${iniEntryVariables}]}

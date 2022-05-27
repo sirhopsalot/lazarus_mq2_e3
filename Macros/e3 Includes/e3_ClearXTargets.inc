@@ -3,7 +3,7 @@
 |
 | Author: Sirhopsalot
 | Contributor: Forsy
-| Updated: Rekka
+| Updated/Enchanced: Rekka
 |
 | Starts assist on each of the targets in your XTarget list until they're all Cleared using the criteria below
 | This will cause the toon to stick to the current target, face the mob if looking the wrong way, and re-stick if the mob is too far away
@@ -12,9 +12,13 @@
 | WARNING: This macro is not for AFK grinding. AFK grinding using this or any other macro is against the rules for Lazarus. Please don't do it.
 |
 | Selects the next target from the XTarget list using the following criteria:
-| 1) Lowest aggro on the list
-| 2) Highest health on the list
-| 2a) Prefers non-Warrior targets with the same aggro over Warrior targets (kill healers/casters/rogues/etc first)
+| 
+| Update was done on the below rules to always chose the closest of all targets first while keeping with rules.
+| Note rules are only followed if KeepAggro is used. Otherwise its purely closest mob at 75% melee max range.
+|
+| **1) Lowest aggro on the list
+| **2) Highest health on the list
+| **2a) Prefers non-Warrior targets with the same aggro over Warrior targets (kill healers/casters/rogues/etc first)
 
 | Usage to clear everything:
 |    /bc Clear XTargets

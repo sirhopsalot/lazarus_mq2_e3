@@ -295,6 +295,7 @@ SUB CombatAbilities
         /if (${Select[${Spawn[id ${Target.ID}].Type},${AcceptableTargetTypes}]}) {
           /if (${Me.AbilityReady[Taunt]}) {
             /bc Taunting ${Target.CleanName}: ${Me.TargetOfTarget.Class.ShortName}-${Me.TargetOfTarget} has aggro
+            /echo [${Time}] Taunting ${Target.CleanName}: ${Me.TargetOfTarget.Class.ShortName}-${Me.TargetOfTarget} has aggro
             /doability Taunt
           |} else /if (${Me.CombatAbilityReady[Mock]}) {
           |  /bc Mock on ${Target.CleanName}: ${Me.TargetOfTarget.Class.ShortName}-${Me.TargetOfTarget} has aggro

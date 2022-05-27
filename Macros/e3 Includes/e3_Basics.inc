@@ -181,7 +181,7 @@ SUB EVENT_bark(line, ChatSender, msgTarget, barkMsg)
   /varset barkTarget ${Spawn[id ${msgTarget}].CleanName}
   /varset barkReturned FALSE
 
-  /declare retryTimer timer local 15s
+  /declare retryTimer timer local 3s
   /declare startingLoc string local
 
   /if (${Spawn[id ${msgTarget}].Distance}>${MaxResponseDist}) {
@@ -195,7 +195,8 @@ SUB EVENT_bark(line, ChatSender, msgTarget, barkMsg)
 
   /doevents barkReturn flush
 
-  :retry_Bark
+  /declare barkStartZone int ${Zone.ID}
+
   /if (${Me.Invis}) /makemevisible
   /call TrueTarget ${msgTarget}
   /if (${Target.Distance} > 5) /call MoveToLoc ${Target.Y} ${Target.X} 50 5
@@ -208,11 +209,11 @@ SUB EVENT_bark(line, ChatSender, msgTarget, barkMsg)
     /varset barkMsg ${c_eventArgData.Arg[1,-]}
     /varset barkMsg ${c_eventArgData.Left[${Math.Calc[${c_eventArgData.Length} - 1].Int}]}
   }
-
+  :retry_Bark
   /say ${barkMsg}
   | -Wait up to 2 seconds for something to happen.
-  /delay 2s ${Zone.ID} != ${currentZone} || ${Me.Loc.Replace[ ,].NotEqual[${startingLoc}]} || ${Window[ConfirmationDialogBox].Open} || ${Window[LargeDialogWindow].Open}
-
+  |/delay 1s ${Zone.ID} != ${currentZone} || ${Me.Loc.Replace[ ,].NotEqual[${startingLoc}]} || ${Window[ConfirmationDialogBox].Open} || ${Window[LargeDialogWindow].Open}
+  /delay 1s
   | -Click Yes to a confirmation box.
   /if (${Window[ConfirmationDialogBox].Open}) {
     /notify ConfirmationDialogBox Yes_Button leftmouseup
@@ -222,15 +223,21 @@ SUB EVENT_bark(line, ChatSender, msgTarget, barkMsg)
     /delay 1s
   }
 
-  /doevents barkReturn
+  |/doevents barkReturn
+  |/if (!${barkReturned}) {
+  |  /delay 5s    
+  |}
   | -Check to see if the bark was successful.
-  /if (${Zone.ID} == ${currentZone} && ${Math.Distance[${startingLoc}]} < 8 && !${barkReturned}) {
+  /if (${Zone.ID} == ${barkStartZone} && ${Math.Distance[${startingLoc}]} < 8 && !${barkReturned}) {
+    /echo Retrying. ${Zone.ID} == ${barkStartZone} && ${Math.Distance[${startingLoc}]} < 8 && !${barkReturned}
     /if (${retryTimer}) {
       /goto :retry_Bark
     } else {
       /docommand ${ChatToggle} Nothing seems to have happened...
     }
   }
+  /varset barkReturned False
+
 /if (${Debug} || ${Debug_Basics}) /echo <== EVENT_Bark -|
 /RETURN
 
