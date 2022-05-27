@@ -678,7 +678,14 @@ Sub check_Ready(ArrayName, int ArrayIndex)
     /if (!${Bool[${Me.Gem[${${ArrayName}[${ArrayIndex},${iCastName}]}]}]}) {
  		/call memorize_spell "${${ArrayName}[${ArrayIndex},${iCastName}]}" ${${ArrayName}[${ArrayIndex},${iSpellGem}]}
 	}
-	/if (${Me.SpellReady[${${ArrayName}[${ArrayIndex},${iCastName}]}]}) /varset c_Ready TRUE
+
+	/if ((${Bool[${Me.Gem[Focused Hail of Arrows]}]}  &&  ${Bool[${Me.Gem[Hail of Arrows]}]}) && (${${ArrayName}[${ArrayIndex},${iCastName}].Equal[Focused Hail of Arrows]} || ${${ArrayName}[${ArrayIndex},${iCastName}].Equal[Hail of Arrows]})) {
+		|spell hard coded as me.spelready returns true when one is on cooldown because of a timer of another.
+		/varset c_Ready TRUE
+		/if (!${Me.SpellReady[Focused Hail of Arrows]}) /varset c_Ready FALSE
+		/if (!${Me.SpellReady[Hail of Arrows]}) /varset c_Ready FALSE
+
+	} else /if (${Me.SpellReady[${${ArrayName}[${ArrayIndex},${iCastName}]}]}) /varset c_Ready TRUE
  
   } else /if (${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Item]}) {
 	|Need to check if we already have this item on cooldown
