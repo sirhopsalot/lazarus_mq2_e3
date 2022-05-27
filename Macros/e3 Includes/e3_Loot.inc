@@ -497,7 +497,7 @@ SUB loot_Handle(int slotNum, handle)
 	/declare lootTimer timer local 3s
 	:retry_Loot
 	| Try to loot the specified item from the corpse.
-	/itemnotify loot${slotNum} rightmouseup
+	/itemnotify loot${slotNum} leftmouseup
 
 	/delay 1s ${Cursor.ID} || ${Window[ConfirmationDialogBox].Open} || ${Window[QuantityWnd].Open}
 	| If the item has been looted, decide what to do with it.
