@@ -100,7 +100,7 @@ SUB loot_Area
     /varset CorpseList ${CorpseList}${ClosestCorpse}|
   /next i
   /if (${Debug} || ${Debug_Loot}) /echo CorpseList: ${CorpseList}
-  /if (${NumCorpses}>1) {
+  /if (${NumCorpses}>0) {
     /squelch /hidecor looted
   }
   /for i 1 to ${NumCorpses}
