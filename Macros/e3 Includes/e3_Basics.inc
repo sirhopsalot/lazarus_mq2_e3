@@ -223,8 +223,9 @@ SUB EVENT_bark(line, ChatSender, msgTarget, barkMsg)
     /delay 1s
   }
 
-  |/doevents barkReturn
-  |/if (!${barkReturned}) {
+  /doevents barkReturn
+  /delay 1s
+  | /if (!${barkReturned}) {
   |  /delay 5s    
   |}
   | -Check to see if the bark was successful.
