@@ -42,27 +42,29 @@ SUB buffBots(ArrayName)
 		/varset buffTarget ${Me.Name}
 
 	} else /if (${Select[${ArrayName},CombatBuffs2D,BotBuffs2D]}) {
-   	/varset buffTargetID ${Spawn[=${${ArrayName}[${s},${iCastTarget}]}].ID}
+  
+   |try and used defined target
     /varset buffTarget ${${ArrayName}[${s},${iCastTarget}]}
-    |no buff target set, use self
-    /if (!${Bool[${Spawn[=${${ArrayName}[${s},${iCastTarget}]}].ID}]}) {
-      /varset buffTargetID ${Me.ID}
-      /varset buffTarget ${Me.Name}
+    |check if defined as self
+    /if (${buffTarget.Equal[Self]}) {
+        /varset buffTarget ${Me.Name}
+       
     }
-
-
-
+    /varset buffTargetID ${Spawn[=${buffTarget}].ID}
+    
 	} else /if (${Select[${ArrayName},PetBuffs2D]}) {
 		/varset buffTargetID ${Spawn[=${${ArrayName}[${s},${iCastTarget}]}].Pet.ID}
 		/varset buffTarget ${${ArrayName}[${s},${iCastTarget}]}
 	}
-		
+  
 	/varset buffSpellName		${${ArrayName}[${s},${iSpellName}]}
 	/varset buffSpellID			${${ArrayName}[${s},${iSpellID}]}]
 	/varset buffCheckForName	${${ArrayName}[${s},${iCheckFor}]}
 	/varset buffCheckForID		${${ArrayName}[${s},${iCheckForID}]}
 		
-  /if (!${Bool[${NetBots[${buffTarget}].ID}]}) /goto :skipBuff
+  /if (!${Bool[${NetBots[${buffTarget}].ID}]}) {
+     /goto :skipBuff
+  } 
 
   /if (${Select[${buffSpellID},8001,8002,8000,8003]}) {
     /call meleeCombatBuffs "${ArrayName}" ${s}
@@ -70,8 +72,8 @@ SUB buffBots(ArrayName)
   }
 
   |------- Self ------|
-  /if (${Select[${ArrayName},SelfBuffs2D,InstantBuffs2D]}) {
-    /if (!${Bool[${Me.Buff[${buffSpellName}]}]} || (${Bool[${Me.Buff[${buffSpellName}]}]} && ${Me.Buff[${buffSpellName}].Duration.TotalSeconds} <= ${buffRecastTime})) {
+  /if (${Select[${ArrayName},SelfBuffs2D,InstantBuffs2D]} || ${${ArrayName}[${s},${iCastTarget}].Equal[Self]}) {
+      /if (!${Bool[${Me.Buff[${buffSpellName}]}]} || (${Bool[${Me.Buff[${buffSpellName}]}]} && ${Me.Buff[${buffSpellName}].Duration.TotalSeconds} <= ${buffRecastTime})) {
       /if (!${Bool[${Me.Song[${buffSpellName}]}]} && !${Bool[${Me.Song[${buffCheckForName}]}]}) {
         /if (${Spell[${buffSpellID}].NewStacks} && !${Bool[${Me.Buff[${buffCheckForName}]}]}) {
           /call check_Ready "${ArrayName}" ${s}

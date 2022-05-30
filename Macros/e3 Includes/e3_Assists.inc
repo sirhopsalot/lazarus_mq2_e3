@@ -316,8 +316,30 @@ SUB CombatAbilities
   /if (${Defined[AutoEvade]}) {
     /if (${AutoEvade}) /call AutoEvade
   }
+ 
+  /declare castIfNotName string local
+  /declare castIfName string local
 
   /for i 1 to ${Abilities2D.Size[1]}
+
+      |skips if contains or not contains
+      /varset castIfName	${Abilities2D[${i},${iCastIf}]}
+      /if (!${castIfName.Equal[-1]} ) {
+            /if (!${Bool[${Target.Buff[${castIfName}]}]}) {
+              |/echo \ag [${Time}] ${Target.CleanName} is not debuffed with ${checkForDebuff} , skipping
+              /goto :skipAbility
+            }   
+      }
+
+      /varset castIfNotName	${Abilities2D[${i},${iCheckFor}]}
+      /if (!${castIfNotName.Equal[-1]} ) {
+            /if (${Bool[${Target.Buff[${castIfNotName}]}]}) {
+              |/echo \ag [${Time}] ${Target.CleanName} is not debuffed with ${checkForDebuff} , skipping
+              /goto :skipAbility
+            }   
+      }
+      |end contains not contains 
+
     |skip the ability if current aggro is less than defined PctAggro
     /if (${Abilities2D[${i},${iPctAggro}]} > 0 && (${Me.PctAggro} < ${Abilities2D[${i},${iPctAggro}]})) {
       /if (${Debug} || ${Debug_Assists}) /echo skipping ${Abilities2D[${i},${iCastName}]}, current aggro ${Me.PctAggro} defined ${Abilities2D[${i},${iPctAggro}]} named ${Target.Named}
@@ -417,6 +439,9 @@ SUB check_Nukes
 
 /if (${Debug} || ${Debug_Assists}) /echo |- check_Nukes ==>
 	/if (${Defined[Nukes2D]} && ${Assisting} && ${use_Nukes}) {
+
+   
+    /declare castIfName string local  
 	  /declare castIndex int local
 	  /declare s int local
     /declare m int local
@@ -429,6 +454,8 @@ SUB check_Nukes
 
    /for s 1 to ${Nukes2D.Size[1]}
     
+   
+    
     /varset typeOfCast  
     
     /varset castIndex ${s}
@@ -437,7 +464,7 @@ SUB check_Nukes
     
 
     |allows use of druid/mage DS, etc, in nukes based on spellset. casts on assistTargets target
-    /if (${Nukes2D[${castIndex},${iSpellType}].Find[Beneficial]}) {
+    /if (${Nukes2D[${castIndex},${iSpellType}].Find[Beneficial]} && !${Nukes2D[${castIndex},${iCastName}].Find[ Magic]}) {
       /if (${Target.ID} != ${AssistTarget}) /call TrueTarget ${AssistTarget}
       /if (${Select[${Me.TargetOfTarget.Class.ShortName},WAR,PAL,SHD]}) {
         /if (${Spawn[pc ${Me.TargetOfTarget}].ID}) {
@@ -565,7 +592,13 @@ SUB check_Nukes
 
       | fix for using Ifs in Nukes, retarget to the AssistTarget before checking Ifs
   	  /if (${Target.ID} != ${AssistTarget}) /call TrueTarget ${AssistTarget}
-	  
+      /varset castIfName	${Nukes2D[${s},${iCastIf}]}
+      /if (!${castIfName.Equal[-1]} ) {
+            /if (!${Bool[${Target.Buff[${castIfName}]}]}) {
+              |/echo \ag [${Time}] ${Target.CleanName} is not debuffed with ${castIfName} , skipping
+              /goto :skipCast
+            }   
+      }
       /call check_Ready "Nukes2D" ${castIndex}
 	  
       /if (${Debug} || ${Debug_Assists}) {
@@ -1763,6 +1796,7 @@ Sub assist_Setup
   /if (${FindItemCount[=Redemption]})                            /varset EpicName Redemption
   /if (${FindItemCount[=Nightbane, Sword of the Valiant]})       /varset EpicName Nightbane, Sword of the Valiant
   /if (${FindItemCount[=Heartwood Blade]})                       /varset EpicName Heartwood Blade
+  /if (${FindItemCount[=Heartwood Infused Bow]})                 /varset EpicName Heartwood Infused Bow
   /if (${FindItemCount[=Aurora, the Heartwood Blade]})           /varset EpicName Aurora, the Heartwood Blade
   /if (${FindItemCount[=Fatestealer]})                           /varset EpicName Fatestealer
   /if (${FindItemCount[=Nightshade, Blade of Entropy]})          /varset EpicName Nightshade, Blade of Entropy

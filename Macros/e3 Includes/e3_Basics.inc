@@ -2626,7 +2626,6 @@ SUB event_ItemDeleteSummoned(line, ChatSender, MyName, ItemString)
 
 /return
 SUB ItemDeleteSummoned(ItemString)
-
   |didn't want to make ClearCusors its own event so shoved it in here for now.
   /if (${ItemString.Find[ClearCursor]}) {
         /call ClearCursor
@@ -2674,9 +2673,14 @@ sub check_PreviousSpell
 sub check_Anchor
   /if (${anchorOn} && ${anchorChar.Length}>1 && !${Me.Moving} && ${Bool[${Spawn[${anchorChar}].ID}]} && ${Spawn[${anchorChar}].LineOfSight}) {
     /if (!(${Me.Combat} || ${Me.CombatState.Equal[Combat]} ||  ${AssistTarget} >0 )) {
-      /if (${Spawn[${anchorChar}].Distance} > 10) {
+      /if ((${Spawn[${anchorChar}].DistanceX} > 10|| ${Spawn[${anchorChar}].DistanceY} > 10)) {
         /echo [${Time}] Anchor: Moving to Anchor
-        /moveto id ${Spawn[${anchorChar}].ID}
+        /if (${Bool[${Navigation.MeshLoaded}]}) {
+          /nav id ${Spawn[${anchorChar}].ID}
+        } else {
+          /moveto id ${Spawn[${anchorChar}].ID}
+        }
+        
       } else {
         |test to see if this stops the 'spin'
         /if (${MoveTo.Moving}) {
@@ -2695,7 +2699,22 @@ Sub check_Basics
   /call check_ResistCounters
   /call check_PreviousSpell
   
+  |**
+  /declare i int local 0
+ 
+  /for i 1 to 13
+    /echo  checking ${i} xtarget : ${Me.XTarget[${i}].ID}
 
+    /if (${Me.XTarget[${i}].ID} ) {
+               /echo fixing ${i} xtarget
+                /xtarget set ${i} autohater
+                /gsay fixing xtargets
+                /return
+     }
+  /next i
+  
+  **|
+  
 /return
 
 

@@ -407,7 +407,13 @@ SUB check_Plugins
   |Check MQ2ItemDisplay.
 	/if (!${Plugin[mq2itemdisplay].Name.Length}) /plugin MQ2ItemDisplay
 	|Check MQ2LinkDB
-	/if (!${Plugin[MQ2LinkDB].Name.Length}) /plugin MQ2LinkDB
+	/if (!${Plugin[MQ2LinkDB].Name.Length}) {
+			 /plugin MQ2LinkDB
+			 
+	}
+	|new mq2 version has performance issues with version 2.3 of the plugin
+	|when scanning new links. Diabled by default for now.
+	/link /scan off
   |Check MQ2ITurbo
   /if (!${Plugin[mq2turbo].Name.Length}) {
     /plugin MQ2Turbo

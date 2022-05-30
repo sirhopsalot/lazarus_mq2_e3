@@ -55,6 +55,7 @@ SUB Main(modeSelect)
       |all healers should have check_Heals as their #1, this is just making sure it is. 
       /if (${mainLoop_IsHealer}) {
         /call check_Heals
+        /varset ActionTaken False
       }
       /for i 1 to ${mainLoop_Array.Size}
 				/if (${Bool[${mainLoop_Array[${i}]}]}) {

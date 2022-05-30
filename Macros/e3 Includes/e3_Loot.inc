@@ -156,6 +156,8 @@ SUB loot_Area
 SUB lootCorpse
   /declare i int local
   /declare j int local
+  /declare stackCounter int local 
+
   /declare itemName string local
   /declare itemSlot int local
   /varset canLootCorpse TRUE
@@ -210,7 +212,21 @@ SUB lootCorpse
         /varset lootSetting Skip
         /varset importantItem FALSE
 
+        /if (${Defined[stackableItemArray]}) {
+          /varset stackCounter 1
+          /for stackCounter 1 to ${stackableItemArray.Size}
+              /if (!${importantItem} && ${Corpse.Item[${i}].Name.Equal[${stackableItemArray[${stackCounter}]}]}) {
+                /varset importantItem TRUE
+                /echo Found Important stackable item: ${stackableItemArray[${stackCounter}]}
+                /goto :stackItemCheckComplete
+              }
+          /next stackCounter
+          :stackItemCheckComplete
+        }
+       
+
         |items that are important, stackable but may have no vendor value
+        |**
         /if (${Corpse.Item[${i}].Name.Equal[Lucky Coin]}) {
             /varset importantItem TRUE
         }
@@ -229,6 +245,10 @@ SUB lootCorpse
          /if (!${importantItem} && ${Corpse.Item[${i}].Name.Equal[The Lady Luck blessings]}) {
             /varset importantItem TRUE
         }
+        /if (!${importantItem} && ${Corpse.Item[${i}].Name.Equal[Silicorrosive Grease]}) {
+            /varset importantItem TRUE
+        }
+        **|
         /if (${importantItem}) {
 
           /echo [${Time}]: Loot Only Stackable:hard coded important item ${Corpse.Item[${i}].Name}
@@ -293,7 +313,7 @@ SUB lootCorpse
     |/if (${Debug} || ${Debug_Loot}) /echo loot setting: ${Corpse.Item[${i}].Name}-${lootSetting}
     /if (${lootSetting.Find[Destroy]}) {
       /echo [Loot]: Destroying [${Corpse.Item[${i}].Name}]
-      /if (${Corpse.Item[${i}].Lore} && ${FindItemCount[=${Corpse.Item[${i}].Name}]}) /goto :skip_Loot
+      /if (${Corpse.Item[${i}].Lore} && ${FindItemCount[=${Corpse.Item[${i}].Name}]}) /goto :skipLoot
       /call loot_Handle ${i} destroy
       | Keep the item
     } else /if (${lootSetting.Find[Keep]}) {
@@ -566,12 +586,23 @@ SUB loot_Setup
 	/call iniToVarV "${genSettings_Ini},Loot,Loot Link Channel" linkChannel string outer
 	/call iniToVarV "${genSettings_Ini},Loot,Corpse Seek Radius" seek_Radius int outer
   /call iniToVarV "${genSettings_Ini},Loot,Loot in Combat" combatLooting bool outer
+  
+
 	| Import character settings
 	/if (${Bool[${Ini[${Character_Ini},Misc,Auto-Loot (On/Off)]}]}) /call iniToVarV "${Character_Ini},Misc,Auto-Loot (On/Off)" Auto_Loot bool outer
   /if (${Ini[${genSettings_Ini},Loot,Loot Only Stackable: Enable (On/Off)].Length}) /call iniToVarV "${genSettings_Ini},Loot,Loot Only Stackable: Enable (On/Off)" LootOnlyStackableEnabled bool outer
   /if (${Ini[${genSettings_Ini},Loot,Loot Only Stackable: With Value Greater Than Or Equal in Copper].Length}) /call iniToVarV "${genSettings_Ini},Loot,Loot Only Stackable: With Value Greater Than Or Equal in Copper" LootOnlyStackableValueGreater int outer
   /if (${Ini[${genSettings_Ini},Loot,Loot Only Stackable: Loot common tradeskill items ie:pelts ores silks etc (On/Off)].Length}) /call iniToVarV "${genSettings_Ini},Loot,Loot Only Stackable: Loot common tradeskill items ie:pelts ores silks etc (On/Off)" LootOnlyStackableTradeSkillsCommon bool outer
   /if (${Ini[${genSettings_Ini},Loot,Loot Only Stackable: Loot all Tradeskill items (On/Off)].Length})  /call iniToVarV "${genSettings_Ini},Loot,Loot Only Stackable: Loot all Tradeskill items (On/Off)" LootOnlyStackableTradeSkillsALL bool outer
+  /call IniToArrayV "${genSettings_Ini},Loot,Loot Only Stackable: Always Loot Item#"	stackableItemArray
+  
+  |**/if (${Defined[stackableItemArray]}) {
+     /declare i int local 
+    /for i 1 to ${stackableItemArray.Size}
+      /echo stackable item: ${stackableItemArray[${i}]}
+    /next i
+  }**|
+
 
 /if (${Debug} || ${Debug_Loot}) /echo <== _Setup -|
 /RETURN
