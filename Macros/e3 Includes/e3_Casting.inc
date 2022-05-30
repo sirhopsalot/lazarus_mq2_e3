@@ -706,24 +706,24 @@ Sub memorize_spell(spellName,gemNum)
 	
 	|only wait for beneficial,self spells
 	|(${Me.Combat} || ${Me.CombatState.Equal[Combat]} ||  ${AssistTarget} >0)
-	/declare isHealer bool Local ${Select[${Me.Class.ShortName},CLR,DRU,SHM]}
 	/declare timeTowait int local ${Math.Calc[35+(${Spell[${spellName}].RecastTime}/100)]}
-	 /if (${isHealer} && ${timeTowait}>30) {
-        /varset timeTowait 30
-    } 
 	/declare waitForReady timer local ${timeTowait}
 	|/echo wfr ${waitForReady} rc ${Spell[${spellName}].RecastTime} math ${Math.Calc[25+(${Spell[${spellName}].RecastTime}/100)]}
 	:checkTimer
 		
 		|/echo chectimer ${waitForReady} ${Me.SpellReady[${spellName}]}
 	/if (${waitForReady}) {
+		/call check_HealCasting_DuringDetrimental
+		/if (!${c_SubToRun}) {
+			/return
+		}
 		/doevents Follow
 		/doevents Stop
 		/doevents MoveHere
 		/doevents BackOff
 		/doevents Assist
 		/call alerts_Background_Events
-		
+
 		/if ((${Me.Combat} || ${Me.CombatState.Equal[Combat]} ||  ${AssistTarget} >0)) {
 			|kick out as we are now in combat
 			/return

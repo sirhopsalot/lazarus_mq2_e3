@@ -2063,6 +2063,9 @@ SUB check_Supply
 	/if (${Debug}) /echo |- check_Supply ==>
   /if (${Waiting4Rez}) /return
   /if (${Bool[${Me.Buff[Resurrection Sickness]}]}) /return
+  | Extra checks here because sometimes Waiting4Rez doesn't seem to short out supply
+  /call check_AmIDead 10 5
+  /if (${Macro.Return}) /return
 	/if (!${Defined[SupplyEnabled]}) /declare SupplyEnabled bool outer ${Bool[${Ini[${Character_Ini},Supply]}]}
   
   /if (!${SupplyEnabled}) /goto :endsupply
@@ -2083,16 +2086,25 @@ SUB check_Supply
 		/if (!${Defined[supplySpell]}) /declare supplySpell string local NULL
 		/if (!${Defined[supplyTimeout]}) /declare supplyTimeout timer local NULL
 		/if (!${Defined[supplyGem]}) /declare supplyGem int local NULL
-	
+    /if (!${Defined[supplyQuantity]}) /declare supplyQuantity int local NULL	
     | Loop through the string, then loop through each of the items on that key	
 		/for i 1 to ${Supply.Size}
 			/varset supplyItem ${Supply[${i}].Arg[1,|]}
 			/varset supplySpell ${Supply[${i}].Arg[2,|]}
 			/varset supplyTimeout ${Supply[${i}].Arg[3,|]}
 			/varset supplyGem ${Supply[${i}].Arg[4,|]}
+      /if (${Supply[${i}].Arg[5,|]}) {
+        /varset supplyQuantity ${Supply[${i}].Arg[5,|]}
+      } else {
+        /varset supplyQuantity 1
+      }
 			/if (!${Defined[SupplyTimer${i}]}) /declare SupplyTimer${i} timer outer 0
-			/if (!${Bool[${FindItem[=${supplyItem}]}]} && ${SupplyTimer${i}} == 0) {
-				/echo [${Time}]: Supply: Creating a ${supplyItem} using ${supplySpell}
+      /if (${FindItemCount[${supplyItem}]} < ${supplyQuantity} && ${SupplyTimer${i}} == 0 && ) {
+        /if (${FindItem[${supplyItem}].Lore} && ${supplyQuantity} > 1 && !${supplyItem.Equal[Summoned: Large Modulation Shard]}) {
+          /if (${Debug}) /echo [${Time}]: Supply item ${supplyItem} is Lore but has a specified quantity of ${supplyQuantity}
+          /return
+        }
+				/echo [${Time}]: Supply: Creating a ${supplyItem} using ${supplySpell} need ${supplyQuantity}
 				/delay 1
 				/tar ${Me}
 				/delay 1
@@ -2111,6 +2123,12 @@ SUB check_Supply
             /delay 2s
 				}
 
+        /declare j int local
+        /for j 1 to ${supplyQuantity}
+        /call check_HealCasting_DuringDetrimental
+        /if (!${c_SubToRun}) {
+          /return
+        }
 				/if (${supplyGem} == 0 || ${supplyGem} == NULL) { 
            
            /call check_ReadySimple "${supplySpell}"
@@ -2128,9 +2146,13 @@ SUB check_Supply
               /call castSimpleSpellBase "${supplySpell}/Gem|${supplyGem}" ${Me.ID} False
            }
 				}
-				/delay 20s ${Cursor.ID}
         /call ClearCursor
         /delay 1s
+        /if (${FindItemCount[${supplyItem}]} >= ${supplyQuantity}) {
+          /goto :supplyFinished
+        }
+        /next j
+        :supplyFinished
   		  
 				| If the item is a modulation shard, tell everyone to put it in their bag
 				/if (${supplyItem.Find[Modulation Shard]}) {
@@ -2144,7 +2166,7 @@ SUB check_Supply
 				| Memorize the previous spell if needed
 				/if (${Bool[${previousSpell}]}) {
 					/delay 1s
-					/echo ==> Supply: Memorizing ${previousSpell} to gem ${supplyGem}.
+					/echo [${Time}]: Supply: Memorizing ${previousSpell} to gem ${supplyGem}.
 					/call memorize_spell "${previousSpell}" "${supplyGem}"
 				}
 				/varset SupplyTimer${i} ${supplyTimeout}
