@@ -134,16 +134,17 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 	|CatchAll Function for potentially locked up spell gems.
   	/call check_SpellGemLockup
 
-	/declare beforeSpell string local ${${ArrayName}[${ArrayIndex},${iBeforeSpell}]}
-	/if (${beforeSpell.Length}>1) {
-		/echo BeforeCast configured, calling "${beforeSpell}"
-		/call CastAfterBeforeSpell "${beforeSpell}"
-	}
 	/declare beforeEvent string local ${${ArrayName}[${ArrayIndex},${iBeforeEvent}]}
 	/if (${beforeEvent.Length}>1) {
 		/echo BeforeEvent configured, calling "${beforeEvent}"
 		/docommand ${beforeEvent}
 	}
+	/declare beforeSpell string local ${${ArrayName}[${ArrayIndex},${iBeforeSpell}]}
+	/if (${beforeSpell.Length}>1) {
+		/echo BeforeCast configured, calling "${beforeSpell}"
+		/call CastAfterBeforeSpell "${beforeSpell}"
+	}
+
 	
 	
 	
@@ -677,7 +678,14 @@ Sub check_Ready(ArrayName, int ArrayIndex)
     /if (!${Bool[${Me.Gem[${${ArrayName}[${ArrayIndex},${iCastName}]}]}]}) {
  		/call memorize_spell "${${ArrayName}[${ArrayIndex},${iCastName}]}" ${${ArrayName}[${ArrayIndex},${iSpellGem}]}
 	}
-	/if (${Me.SpellReady[${${ArrayName}[${ArrayIndex},${iCastName}]}]}) /varset c_Ready TRUE
+
+	/if ((${Bool[${Me.Gem[Focused Hail of Arrows]}]}  &&  ${Bool[${Me.Gem[Hail of Arrows]}]}) && (${${ArrayName}[${ArrayIndex},${iCastName}].Equal[Focused Hail of Arrows]} || ${${ArrayName}[${ArrayIndex},${iCastName}].Equal[Hail of Arrows]})) {
+		|spell hard coded as me.spelready returns true when one is on cooldown because of a timer of another.
+		/varset c_Ready TRUE
+		/if (!${Me.SpellReady[Focused Hail of Arrows]}) /varset c_Ready FALSE
+		/if (!${Me.SpellReady[Hail of Arrows]}) /varset c_Ready FALSE
+
+	} else /if (${Me.SpellReady[${${ArrayName}[${ArrayIndex},${iCastName}]}]}) /varset c_Ready TRUE
  
   } else /if (${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Item]}) {
 	|Need to check if we already have this item on cooldown
@@ -693,7 +701,7 @@ Sub check_Ready(ArrayName, int ArrayIndex)
 
 		}
 	} 
-	/if (${Me.ItemReady[=${${ArrayName}[${ArrayIndex},${iCastName}]}]}) {
+	/if (${Me.ItemReady[${${ArrayName}[${ArrayIndex},${iCastName}]}]}) {
 		/varset c_Ready TRUE
 	} 
   
@@ -774,6 +782,8 @@ Sub check_ReadySimple(spellName, gemToUse)
 Sub memorize_spell(spellName,gemNum)
   /if (${Debug} || ${Debug_Casting}) /echo |- memorize_spell =>
   	/memorize "${spellName}" ${gemNum}
+
+	 /echo [${Time}] Delaying up to 5 seconds in memorize_spell
 	/delay 5s ${Bool[${Me.Gem[${spellName}]}]}
 	
 	|only wait for beneficial,self spells
@@ -783,7 +793,7 @@ Sub memorize_spell(spellName,gemNum)
 	|/echo wfr ${waitForReady} rc ${Spell[${spellName}].RecastTime} math ${Math.Calc[25+(${Spell[${spellName}].RecastTime}/100)]}
 	:checkTimer
 		
-		|/echo chectimer ${waitForReady} ${Me.SpellReady[${spellName}]}
+	/echo [${Time}] Delaying waiting for spell to memorize and to be ready in memorize_spell
 	/if (${waitForReady}) {
 		/call check_HealCasting_DuringDetrimental
 		/if (!${c_SubToRun}) {

@@ -571,7 +571,7 @@ SUB BuildSpellArrayBase(ArrayName, NewArrayName, SkipParams)
 			/if (!(${Me.Book[${tmp_castname}]}||${Me.AltAbility[${tmp_castname}]}||${Me.CombatAbility[${tmp_castname}]}||${Me.Ability[${tmp_castname}]})) {
 				
 				|default to item - no way to validate an item thats on my corpse
-				/if (!${FindItem[=${tmp_castname}].ID}) {
+				/if (!${FindItem[${tmp_castname}].ID}) {
 
 					/if (!${Bool[${Me.Inventory[Chest]}]} && !${Me.Platinum}) {
 						/varset reloadOnLoot TRUE
@@ -612,7 +612,7 @@ SUB BuildSpellArrayBase(ArrayName, NewArrayName, SkipParams)
 		} else {
 			/varset ${NewArrayName}[${i},${iCastType}] Item
 		}
-		
+		|/echo ${${NewArrayName}[${i},${iCastName}]} type is: ${${NewArrayName}[${i},${iCastType}]}
 		|set the normal defaults
 		/varset ${NewArrayName}[${i},${iSpellGem}] ${DefaultGem}
 		/varset ${NewArrayName}[${i},${iMaxTries}] 5
@@ -851,9 +851,9 @@ SUB BuildSpellArrayBase(ArrayName, NewArrayName, SkipParams)
 			|Instead of calling FindItem 12 times, we call it twice and get a direct reference to the item in question
 
 			| ${Me.Inventory[23].Item[7].Spell.TargetType}
-			/varset invSlot ${FindItem[=${${NewArrayName}[${i},${iCastName}]}].ItemSlot}
-			/varset bagSlot ${FindItem[=${${NewArrayName}[${i},${iCastName}]}].ItemSlot2}
-
+			/varset invSlot ${FindItem[${${NewArrayName}[${i},${iCastName}]}].ItemSlot}
+			/varset bagSlot ${FindItem[${${NewArrayName}[${i},${iCastName}]}].ItemSlot2}
+			|/echo ${${NewArrayName}[${i},${iCastName}]} inv slot: ${invSlot} bag slot: ${bagSlot}
 			/if (${bagSlot}==-1) {
 				|/echo root item: id:${invSlot} :${${ArrayName}[${i}].Arg[1,/]}
 				|Means this is not in a bag and in the root inventory

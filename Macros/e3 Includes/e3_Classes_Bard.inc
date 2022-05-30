@@ -527,7 +527,7 @@ SUB unpauseTwist
       /return
    }
   
-	/delay 3s !${Me.Casting.ID}
+	/delay 3s !${Window[CastingWindow].Open}
 	
   /if (!${Bool[${playingMelody}]}) {
      /declare songList string local
@@ -548,7 +548,7 @@ SUB unpauseTwist
        
         /twist ${songSet}
       } 
-      /delay 1s ${Me.Casting.ID}
+      /delay 1s ${Window[CastingWindow].Open}
     
     } else {
 

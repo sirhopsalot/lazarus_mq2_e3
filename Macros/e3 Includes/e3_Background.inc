@@ -136,7 +136,7 @@ SUB check_Active
 	}
 
   |prevent guys from getting stuck trying to buff while moving
-	/if (${Me.Moving}) {
+	/if (${Me.Moving} && !${Me.Class.ShortName.Equal[BRD]}) {
 	  /if (${Me.CombatState.Equal[COMBAT]}) {
       /varset activeTimer 2
       /varset rebuffTimer 10

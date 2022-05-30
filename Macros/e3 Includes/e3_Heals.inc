@@ -11,17 +11,30 @@
 |------------------------------------------------------------|
 SUB check_Heals
 /if (${Debug} || ${Debug_Heals}) /echo |- healLoop  ==>
-  /doevents wordHeal
-	/if (${do_GroupHeals}) 							      /call groupHeals
-	/if (!${ActionTaken} && ${healTanks}) 		/call heal_tanks
-	/if (!${ActionTaken} && ${healImportant}) /call heal_importantBots
-	/if (!${ActionTaken} && ${healAll}) 			/call heal_allbots
-	/if (!${ActionTaken} && ${healXTargets}) 			/call heal_xtargets
-	/if (!${ActionTaken} && ${hotTanks}) 			/call hot_tanks
-	/if (!${ActionTaken} && ${hotImportant}) 	/call hot_importantBots
-	/if (!${ActionTaken} && ${hotAll}) 				/call hot_allbots
-	/if (!${ActionTaken} && ${healPets}) 			/call heal_Pets
-	/if (!${ActionTaken} && ${hotPets}) 			/call hot_Pets
+  	/doevents wordHeal
+
+	/varset ActionTaken True
+	/declare AtLeastOneActionTaken bool local False
+	/while (${ActionTaken}) {
+		/varset ActionTaken False
+		/if (${healTanks}) 		/call heal_tanks
+		/if (${healXTargets}) 	/call heal_xtargets
+		/if (!${ActionTaken} && ${healImportant})   /call heal_importantBots
+		/if (!${ActionTaken} && ${do_GroupHeals}) 	/call groupHeals
+		/if (!${ActionTaken} && ${healAll}) 			/call heal_allbots
+		/if (!${ActionTaken} && ${hotTanks}) 			/call hot_tanks
+		/if (!${ActionTaken} && ${hotImportant}) 	/call hot_importantBots
+		/if (!${ActionTaken} && ${hotAll}) 				/call hot_allbots
+		/if (!${ActionTaken} && ${healPets}) 			/call heal_Pets
+		/if (!${ActionTaken} && ${hotPets}) 			/call hot_Pets
+		
+		/if (${ActionTaken}) {
+			/varset AtLeastOneActionTaken true
+		}
+	}
+	|set actiontaken back to what it should be, if any action was taken.
+	/varset ActionTaken ${AtLeastOneActionTaken}
+	
 /if (${Debug} || ${Debug_Heals}) /echo <== healLoop -|
 /return
 
@@ -61,15 +74,39 @@ SUB heal_tanks
 	/declare currentBot string local NULL
 	/declare currentSpellIndx int local
 	/declare t int local
-	/declare s int local	
+	/declare s int local
+	/declare GroupMemberIndex int local -1	
 	/for t 1 to ${tanks.Size}
 		/for s 1 to ${tankHeals2D.Size[1]}
-			/if (${Bool[${NetBots[${tanks[${t}]}].InZone}]} && ${NetBots[${tanks[${t}]}].PctHPs} <= ${tankHeals2D[${s},${iHealPct}]}) {
+		/varset GroupMemberIndex -1
+
+			|Netbots seems to sometimes.. lag? freeze? etc. Have a local group heal check as backup
+			|if we can't find a local group heal to heal, then check netbots. at worst case we overheal.
+			/if (${Bool[${Group.Member[${tanks[${t}]}].Index}]}) {
+				/varset GroupMemberIndex ${Group.Member[${tanks[${t}]}].Index}
+			|	/echo Group member index for tank : ${GroupMemberIndex}
+			}
+			|try a group based check
+			/if (${GroupMemberIndex} >-1 && !${Group.Member[${GroupMemberIndex}].OtherZone} && ${Group.Member[${GroupMemberIndex}].Spawn.CurrentHPs} < ${tankHeals2D[${s},${iHealPct}]}) {
+				/call check_Ready "tankHeals2D" ${s}		
+				/if (${c_Ready} && ${tankHeals2D[${s},${iIfs}]}) {
+					/if (${check_Distance[${NetBots[${tanks[${t}]}].ID},${tankHeals2D[${s},${iMyRange}]}]}) {
+						/if (${check_Mana["tankHeals2D",${s}]}) {
+									/echo [${Time}] heal_tanks: selecting :  ${tanks[${t}]} To heal from group heal code. ${Group.Member[${GroupMemberIndex}].Spawn.CurrentHPs} vs ${NetBots[${tanks[${t}]}].PctHPs}
+									/varset currentBot ${tanks[${t}]}
+									/varset currentSpellIndx ${s}
+						}
+					}
+				}
+			}
+			|did we find current bot to heal? if not fall back to netbots to check
+			/if (!${Bool[${currentBot}]} && ${Bool[${NetBots[${tanks[${t}]}].InZone}]} && ${NetBots[${tanks[${t}]}].PctHPs} <= ${tankHeals2D[${s},${iHealPct}]}) {
 
 				/call check_Ready "tankHeals2D" ${s}		
 				/if (${c_Ready} && ${tankHeals2D[${s},${iIfs}]}) {
 					/if (${check_Distance[${NetBots[${tanks[${t}]}].ID},${tankHeals2D[${s},${iMyRange}]}]}) {
 						/if (${check_Mana["tankHeals2D",${s}]}) {
+									/echo [${Time}] heal_tanks: selecting :  ${tanks[${t}]} To heal from netbots heal code.  ${Group.Member[${GroupMemberIndex}].Spawn.CurrentHPs} vs ${NetBots[${tanks[${t}]}].PctHPs}
 									/varset currentBot ${tanks[${t}]}
 									/varset currentSpellIndx ${s}
 						}
@@ -102,8 +139,29 @@ SUB heal_importantBots
   /declare currentSpellIndx int local
   /declare t int local
   /declare s int local
+  /declare GroupMemberIndex int local -1	
   /for t 1 to ${importantBots.Size}
     /for s 1 to ${importantHeals2D.Size[1]}
+	/varset GroupMemberIndex -1
+
+	|Netbots seems to sometimes.. lag? freeze? etc. Have a local group heal check as backup
+	|if we can't find a local group heal to heal, then check netbots. at worst case we overheal.
+	/if (${Bool[${Group.Member[${importantBots[${t}]}].Index}]}) {
+		/varset GroupMemberIndex ${Group.Member[${importantBots[${t}]}].Index}
+	|	/echo Group member index for tank : ${GroupMemberIndex}
+	}
+	|try a group based check
+	/if (${GroupMemberIndex} >-1 && !${Group.Member[${GroupMemberIndex}].OtherZone} && ${Group.Member[${GroupMemberIndex}].Spawn.CurrentHPs} < ${importantHeals2D[${s},${iHealPct}]}) {
+		/call check_Ready "importantHeals2D" ${s}		
+		/if (${c_Ready} && ${importantHeals2D[${s},${iIfs}]}) {
+			/if (${check_Distance[${NetBots[${importantBots[${t}]}].ID},${importantHeals2D[${s},${iMyRange}]}]}) {
+				/if (${check_Mana["importantHeals2D",${s}]}) {
+							/varset currentBot ${importantBots[${t}]}
+							/varset currentSpellIndx ${s}
+				}
+			}
+		}
+	}
     /if (${Bool[${NetBots[${importantBots[${t}]}].InZone}]} && ${NetBots[${importantBots[${t}]}].PctHPs} <= ${importantHeals2D[${s},${iHealPct}]}) {
      /call check_Ready "importantHeals2D" ${s}
       /if (${c_Ready} && ${importantHeals2D[${s},${iIfs}]}) {

@@ -112,6 +112,7 @@ SUB EVENT_Stop(line, ChatSender)
     /if (${line.Find[,]}) /varset line ${line.Left[${Math.Calc[${line.Find[,]}-1]}]} ${line.Right[-${line.Find[,]}]}
     /if (!${checkEventArgs[${ChatSender},${line},UZR]}) /return
       | -Wait to get close to the followTarget.
+    /echo [${Time}] Delaying up to 1 second(s) in EVENT_Stop
     /delay 1s ${Spawn[${FollowTarget}].Distance} < 25
     | -Stop following
     /if (${Stick.Active}) /squelch /stick off
@@ -180,7 +181,7 @@ SUB EVENT_bark(line, ChatSender, msgTarget, barkMsg)
   /varset barkTarget ${Spawn[id ${msgTarget}].CleanName}
   /varset barkReturned FALSE
 
-  /declare retryTimer timer local 15s
+  /declare retryTimer timer local 3s
   /declare startingLoc string local
 
   /if (${Spawn[id ${msgTarget}].Distance}>${MaxResponseDist}) {
@@ -194,7 +195,8 @@ SUB EVENT_bark(line, ChatSender, msgTarget, barkMsg)
 
   /doevents barkReturn flush
 
-  :retry_Bark
+  /declare barkStartZone int ${Zone.ID}
+
   /if (${Me.Invis}) /makemevisible
   /call TrueTarget ${msgTarget}
   /if (${Target.Distance} > 5) /call MoveToLoc ${Target.Y} ${Target.X} 50 5
@@ -207,11 +209,11 @@ SUB EVENT_bark(line, ChatSender, msgTarget, barkMsg)
     /varset barkMsg ${c_eventArgData.Arg[1,-]}
     /varset barkMsg ${c_eventArgData.Left[${Math.Calc[${c_eventArgData.Length} - 1].Int}]}
   }
-
+  :retry_Bark
   /say ${barkMsg}
   | -Wait up to 2 seconds for something to happen.
-  /delay 2s ${Zone.ID} != ${currentZone} || ${Me.Loc.Replace[ ,].NotEqual[${startingLoc}]} || ${Window[ConfirmationDialogBox].Open} || ${Window[LargeDialogWindow].Open}
-
+  |/delay 1s ${Zone.ID} != ${currentZone} || ${Me.Loc.Replace[ ,].NotEqual[${startingLoc}]} || ${Window[ConfirmationDialogBox].Open} || ${Window[LargeDialogWindow].Open}
+  /delay 1s
   | -Click Yes to a confirmation box.
   /if (${Window[ConfirmationDialogBox].Open}) {
     /notify ConfirmationDialogBox Yes_Button leftmouseup
@@ -222,14 +224,21 @@ SUB EVENT_bark(line, ChatSender, msgTarget, barkMsg)
   }
 
   /doevents barkReturn
+  /delay 1s
+  | /if (!${barkReturned}) {
+  |  /delay 5s    
+  |}
   | -Check to see if the bark was successful.
-  /if (${Zone.ID} == ${currentZone} && ${Math.Distance[${startingLoc}]} < 8 && !${barkReturned}) {
+  /if (${Zone.ID} == ${barkStartZone} && ${Math.Distance[${startingLoc}]} < 8 && !${barkReturned}) {
+    /echo Retrying. ${Zone.ID} == ${barkStartZone} && ${Math.Distance[${startingLoc}]} < 8 && !${barkReturned}
     /if (${retryTimer}) {
       /goto :retry_Bark
     } else {
       /docommand ${ChatToggle} Nothing seems to have happened...
     }
   }
+  /varset barkReturned False
+
 /if (${Debug} || ${Debug_Basics}) /echo <== EVENT_Bark -|
 /RETURN
 
@@ -299,7 +308,7 @@ SUB EVENT_clickIt(line, ChatSender, eventParams)
     /declare clickDelay int local ${Math.Calc[${Math.Rand[${Me.ID}]}%${clickitRandomDelay}|1]}
     /declare startingLoc ${Me.Loc}
     :retryClickDoor
-    /delay ${clickDelay}
+    
     /squelch /doortarget id ${closestDoorID}
     
     |casting while zoning has been reported to cause a problem
@@ -309,6 +318,8 @@ SUB EVENT_clickIt(line, ChatSender, eventParams)
       /stopcast
     }
     /squelch /click left door
+    |give time for the click and zoning to take place.
+    /delay ${clickDelay}
     /if (${MyZone}==${Zone.ID} && ${Math.Distance[${startingLoc}]} < 10) {
       /if (${clickTimer}) {
         /goto :retryClickDoor
@@ -431,6 +442,7 @@ SUB EVENT_runThruZone(line, ChatSender, eventParams)
       /delay 2
       /keypress forward hold
       | -Wait to zone.
+      /echo [${Time}] Delaying up to 6 seconds in EVENT_runThruZone
       /delay 6s !${Zone.ID} || ${Zone.ID} != ${startZone}
       | -Check if I zoned.
       /if (${Zone.ID} == ${startZone}) {
@@ -955,8 +967,10 @@ SUB EVENT_Swap_Items(line, IniEntry)
 	} else {
 		/if (${Cursor.ID}) /call ClearCursor
 		/if (${Bool[${Me.Casting}]} && ${Me.Class.ShortName.NotEqual[BRD]}) {
+      /echo [${Time}] Delaying up to 3 seconds in EVENT_Swap_Items
 		  /delay 3s !${Me.Casting.ID}
       /call interrupt
+      /echo [${Time}] Delaying up to 3 seconds in EVENT_Swap_Items
       /delay 3s !${Me.Casting.ID}
     }
 		/declare i int local 1
@@ -1240,13 +1254,15 @@ SUB EVENT_Invite(line, ChatSender)
   /if (!${checkEventArgs[${ChatSender},${line},U,""]}) /return
   /if (${Me.Casting.ID} && ${Me.Class.ShortName.NotEqual[BRD]}) {
     /call interrupt
-    /delay 5s !${Me.Casting.ID}
+    /echo [${Time}] Delaying up to 5 seconds in EVENT_Invite
+    /delay 5s !${Window[CastingWindow].Open}
   }
   /declare retryTimer timer local 5s
   :retry_Invite
   /squelch /target clear
   /delay 3
   /invite
+  /echo [${Time}] Delaying up to 1 second(s) in EVENT_Invite
   /delay 1s ${Bool[${Group}]}
   /if (!${Bool[${Group}]}) {
     /if (${retryTimer}) {
@@ -1301,9 +1317,11 @@ SUB EVENT_saveGroup(line, ChatSender, eventParams)
         }
       }
     } else {
+      /echo [${Time}] Delaying up to 2 second(s) in EVENT_saveGroup
       /delay 2s
     }
     | Delay for a moment to allow other bots to catch up, so they don't overwrite our soon to be saved group.
+    /echo [${Time}] Delaying up to 2.5 second(s) in EVENT_saveGroup
     /delay ${Math.Rand[25]}
     | Save the group configuration
     /echo Group configuration(s) saved. Use [/group ${groupName}] to recall this group setup.
@@ -1387,6 +1405,7 @@ SUB EVENT_groupUp(line, ChatSender, createGroup)
     | check to see if I am the group leader(GroupMember#0)
     /if (${${IniMode}[${Group_Ini},${${IniMode}[${Group_Ini}].Arg[${i},|]},GroupMember#0].Equal[${Me.CleanName}]}) {
       /echo Recalling [${groupName}]...
+      /echo [${Time}] Delaying up to 1.5 second(s) in EVENT_groupUp
       /delay 15
       | Invite group members while ignoring placeholders, and set
       /for e 1 to 5
@@ -1397,7 +1416,7 @@ SUB EVENT_groupUp(line, ChatSender, createGroup)
         /invite ${groupMembers[${e}]}
       }
       /next e
-
+      /echo [${Time}] Delaying up to 8 second(s) in EVENT_groupUp
       /delay 8s ${Group} == ${groupSize}
       /if (${Group} != ${groupSize}) {
         /for e 1 to 5
@@ -1761,7 +1780,8 @@ sub event_gimme(line, ChatSender, RequestedItem)
 	| check if the requestor can be reached
 	/if (!${Spawn[${ChatSender}].LineOfSight}) {
 		/call notifyViaBCTell  ${ChatSender} "Where are you? I don't see you. Please move closer if you want me to give you something."
-		/delay 10
+	  /echo [${Time}] Delaying up to 1 second(s) in event_gimme
+  	/delay 10
 		/return
 	}	
 	
@@ -1783,16 +1803,22 @@ sub event_gimme(line, ChatSender, RequestedItem)
 		/echo Collecting Diamond Coins to give to ${ChatSender}
 		/delay 1
 		/if (${Window[InventoryWindow].DoOpen}) /echo Inventory Window Open
+    /echo [${Time}] Delaying up to 5 second(s) in event_gimme
 		/delay 5s ${Window[InventoryWindow].Open}
 		/notify InventoryWindow IW_Subwindows tabselect 5
+     /echo [${Time}] Delaying up to 1 second(s) in event_gimme
 		/delay 1s
 		/notify InventoryWindow AltCurr_PointList listselect 8
+     /echo [${Time}] Delaying up to 1 second(s) in event_gimme
 		/delay 1s
 		/notify InventoryWindow IW_AltCurr_ReclaimButton leftmouseup
+     /echo [${Time}] Delaying up to 1 second(s) in event_gimme
 		/delay 1s
 		/notify InventoryWindow IW_AltCurr_CreateItemButton leftmouseup
+     /echo [${Time}] Delaying up to 1 second(s) in event_gimme
 		/delay 1s
 		/notify QuantityWnd QTYW_Accept_Button leftmouseup
+    /echo [${Time}] Delaying up to 3 second(s) in event_gimme
 		/delay 3s ${Bool[${Cursor.ID}]}
 		/if (${Window[InventoryWindow].Child[IW_AltCurrPage].Open}) /if (${Window[InventoryWindow].DoClose}) /echo Inventory Window Closed
 	} else /if (${IsMyBot} && (${RequestedItem.Equal[platinum]} || ${RequestedItem.Equal[pp]} || ${RequestedItem.Equal[plat]})) {
@@ -1801,10 +1827,13 @@ sub event_gimme(line, ChatSender, RequestedItem)
 			/echo Collecting Plat to give to ${ChatSender}
 			/delay 1
 			/if (${Window[InventoryWindow].DoOpen}) /echo Inventory Window Open
+      /echo [${Time}] Delaying up to 5 second(s) in event_gimme
 			/delay 5s ${Window[InventoryWindow].Open}
 			/notify InventoryWindow IW_Money0 leftmouseup
+      /echo [${Time}] Delaying up to 1 second(s) in event_gimme
 			/delay 1s
 			/notify QuantityWnd QTYW_Accept_Button leftmouseup
+      /echo [${Time}] Delaying up to 1 second(s) in event_gimme
 			/delay 1s
 			/varset platOnCursor true
 		} else {
@@ -1818,15 +1847,19 @@ sub event_gimme(line, ChatSender, RequestedItem)
 		/if (${DebugGimme}) /echo IsMyBot = ${IsMyBot}		
 		/if (${IsNoRent} || ${IsMyBot}) {
 			/ItemNotify "${RequestedItem}" leftmouseup
+      /echo [${Time}] Delaying up to 2 second(s) in event_gimme
 			/delay 2s ${Bool[${Cursor.ID}]}
 		} else {
+      /echo [${Time}] Delaying up to 2 second(s) in event_gimme
 			/delay 2s
 			/tell ${ChatSender} Only temporary items can be requested
 			/return
 		}
 	} else /if (${Bool[${FindItem[=Summoned: ${RequestedItem}]}]}) {
 		/ItemNotify "Summoned: ${RequestedItem}" leftmouseup
+    /echo [${Time}] Delaying up to 3 second(s) in event_gimme
 		/delay 3s ${Bool[${Cursor.ID}]}
+    /echo [${Time}] Delaying up to 1 second(s) in event_gimme
     /delay 1s
 		
 	} else {
@@ -1838,6 +1871,7 @@ sub event_gimme(line, ChatSender, RequestedItem)
 		/echo ${RequestedItem}
 		/if (${IsRequestedItemModShard}) {
       /bc A request for Modulation shards has been made, please pause for a moment.
+      /echo [${Time}] Delaying up to 1 second(s) in event_gimme
       /delay 2s
       /bc Deleting old Mulation Shards, watch your cursor.
 			|get rid of old mod rods, to remote then local
@@ -1896,7 +1930,9 @@ sub event_gimme(line, ChatSender, RequestedItem)
 		}
 		/if (${SummoningItem}) {
         |we delay 1 sec after cusror id says it has something due to timing issues
+        /echo [${Time}] Delaying up to 15 second(s) in event_gimme
         /delay 15s ${Bool[${Cursor.ID}]}
+        /echo [${Time}] Delaying up to 1 second(s) in event_gimme
         /delay 1s
 
     } 
@@ -1919,6 +1955,7 @@ sub event_gimme(line, ChatSender, RequestedItem)
 		
     /Echo Gimmie: Getting target of requester
     /target pc ${ChatSender}
+    /echo [${Time}] Delaying up to 10 second(s) in event_gimme
     /delay 10s ${Target.ID}==${Spawn[${ChatSender}].ID}
 
     /declare originalLoc string local ${Me.Loc}
@@ -1926,17 +1963,20 @@ sub event_gimme(line, ChatSender, RequestedItem)
 		/stick 12
 		/while (${Math.Distance[${Spawn[${ChatSender}].Loc}]}>20) {
 			/if (${Debug}) /echo Distance = ${Math.Distance[${senderLoc}]}
+      /echo [${Time}] Delaying up to 1 second(s) in event_gimme
 			/delay 1s
 		}
 		/if (${DebugGimme}) /echo Distance = ${Math.Distance[${senderLoc}]}
 		/if (${DebugGimme}) /echo IsClose = ${Bool[${Math.Distance[${senderLoc}]}<20]}
 		/click left target
+    /echo [${Time}] Delaying up to 3 second(s) in event_gimme
 		/delay 3s ${Window[TradeWnd].Open}
 		/declare tradeTries int local 0
 		/while (${Window[TradeWnd].Open} && ${tradeTries} < 2) {
 			/notify TradeWnd TRDW_Trade_Button leftmouseup 
 			/delay 5
 			/bct ${Target.CleanName} //notify TradeWnd TRDW_Trade_Button leftmouseup 
+      /echo [${Time}] Delaying up to 1 second(s) in event_gimme
 			/delay 1s
 			/varset tradeTries ${Math.Calc[${tradeTries} + 1]}
       /echo tradeTries=${tradeTries}
@@ -2030,6 +2070,7 @@ SUB check_Gimme
 					}
 					/varset GimmeTimer${i} ${gimmeTimeout}
 					| Minimum of 10s delay between requests
+          /echo [${Time}] Delaying up to 10 second(s) in check_Gimme
 					/delay 10s
 					/return
 				}
@@ -2116,10 +2157,12 @@ SUB check_Supply
 				/if (${supplyItem.Find[Modulation Shard]}) {
             |get rid of old mod rods, to remote then local
             /bc A request for Modulation shards has been made, please pause for a moment. Starting in 4 seconds
+            /echo [${Time}] Delaying up to 4 second(s) in check_Supply
             /delay 4s
             /bc Deleting old Mulation Shards, watch your cursor.
             /bca ItemDeleteSummoned ${supplyItem}
             /call ItemDeleteSummoned "${supplyItem}"
+            /echo [${Time}] Delaying up to 2 second(s) in check_Supply
             /delay 2s
 				}
 
@@ -2146,7 +2189,12 @@ SUB check_Supply
               /call castSimpleSpellBase "${supplySpell}/Gem|${supplyGem}" ${Me.ID} False
            }
 				}
+
+        /echo [${Time}] Delaying up to 20 second(s) in check_Supply
+				/delay 20s ${Cursor.ID}
+
         /call ClearCursor
+        /echo [${Time}] Delaying up to 1 second(s) in check_Supply
         /delay 1s
         /if (${FindItemCount[${supplyItem}]} >= ${supplyQuantity}) {
           /goto :supplyFinished
@@ -2165,6 +2213,7 @@ SUB check_Supply
       	}
 				| Memorize the previous spell if needed
 				/if (${Bool[${previousSpell}]}) {
+          /echo [${Time}] Delaying up to 1 second(s) in check_Supply
 					/delay 1s
 					/echo [${Time}]: Supply: Memorizing ${previousSpell} to gem ${supplyGem}.
 					/call memorize_spell "${previousSpell}" "${supplyGem}"
@@ -2199,6 +2248,7 @@ SUB event_collect(line, ChatSender, RequestedItem)
     /declare i int local
     /for i 1 to ${Group.Members}
       /t ${Group.Member[${i}]} Gimme ${RequestedItem}
+      /echo [${Time}] Delaying up to 4 second(s) in event_collect
       /delay 4s
     /next i 
   }
@@ -2596,9 +2646,11 @@ SUB check_Forage
     /if (${ForageOn} && ${Me.AbilityReady[Forage]} && !${medBreak} && !${Me.CombatState.Equal[DEBUFFED]} && !${Me.Invis} && (${Me.MaxMana} == 0 || ${Me.PctMana} == 100) && ${Me.PctHPs} == 100 && ${Me.PctAggro} < 1 && !${Me.CombatState.Equal[COMBAT]} && !${Assisting}) {   
 		/echo == Foraging ==
 		/doability forage
+    /echo [${Time}] Delaying up to 2 second(s) in check_Forage
 		/delay 2s ${Bool[${Cursor.ID}]}
 		/while (${Bool[${Cursor.ID}]}) {
 			/call ClearCursor
+       /echo [${Time}] Delaying up to 1 second(s) in check_Forage
 			/delay 1s
 		}
 	}
@@ -2639,13 +2691,16 @@ SUB ItemDeleteSummoned(ItemString)
         } 
         /echo Trying to Deleting ${ItemString}
         /call ClearCursor
+        /echo [${Time}] Delaying up to 1 second(s) in ItemDeleteSummoned
         /delay 1s
         |Found the issue of char disconnect. If you try and do a leftmouse up on an item and your casting
         |the server will disconnect you. So doing this out of bound of E3's event loop is dangerous
-        /while (${Cast.Status.Find[C]}) {
+        /while (${Window[CastingWindow].Open}) {
+          /echo [${Time}] Delaying up to 1 second(s) in ItemDeleteSummoned
           /delay 1
         }
         /itemnotify "${ItemString}" leftmouseup
+        /echo [${Time}] Delaying up to 10 second(s) in ItemDeleteSummoned
         /delay 10s ${Bool[${Cursor.ID}]}
         /if (${Bool[${Cursor.ID}]} &&  ${Cursor.Name.Find[Summoned:]}) /destroy
 
