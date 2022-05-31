@@ -561,9 +561,11 @@ SUB BuildSpellArrayBase(ArrayName, NewArrayName, SkipParams)
 	/declare printMin bool local False
 	|first loop through array to ensure i can identify all listed spells
 	/declare tmp_castname string local
+	/declare tmp_foundItem bool local false
 	|check to see if the spell/aa/etc actually exists.
 	/for i 1 to ${${ArrayName}.Size}
-		
+		/varset tmp_foundItem False
+
 		/varset tmp_castname ${${ArrayName}[${i}].Arg[1,/]}
 		|First check for super common items to ignore this
 		/if (!(${tmp_castname.Equal[Molten Orb]} || ${tmp_castname.Equal[Orb of Shadows]}|| ${tmp_castname.Equal[Orb of Souls]})) {
@@ -571,7 +573,14 @@ SUB BuildSpellArrayBase(ArrayName, NewArrayName, SkipParams)
 			/if (!(${Me.Book[${tmp_castname}]}||${Me.AltAbility[${tmp_castname}]}||${Me.CombatAbility[${tmp_castname}]}||${Me.Ability[${tmp_castname}]})) {
 				
 				|default to item - no way to validate an item thats on my corpse
-				/if (!${FindItem[${tmp_castname}].ID}) {
+
+				|we are doing it this way in case the 'item' is an itemID instead
+				/if (${Int[${tmp_castname}]}>0) {
+					/varset tmp_foundItem ${Bool[${FindItem[${tmp_castname}].ID}]}
+				} else {
+					/varset tmp_foundItem ${Bool[${FindItem[=${tmp_castname}].ID}]}
+				}
+				/if (!${tmp_foundItem}) {
 
 					/if (!${Bool[${Me.Inventory[Chest]}]} && !${Me.Platinum}) {
 						/varset reloadOnLoot TRUE
@@ -851,8 +860,20 @@ SUB BuildSpellArrayBase(ArrayName, NewArrayName, SkipParams)
 			|Instead of calling FindItem 12 times, we call it twice and get a direct reference to the item in question
 
 			| ${Me.Inventory[23].Item[7].Spell.TargetType}
-			/varset invSlot ${FindItem[${${NewArrayName}[${i},${iCastName}]}].ItemSlot}
-			/varset bagSlot ${FindItem[${${NewArrayName}[${i},${iCastName}]}].ItemSlot2}
+
+			|check to see if its an itemID, and thus we need to do a non exact query
+			/if (${Int[${${NewArrayName}[${i},${iCastName}]}]}>0) {
+				
+				/varset invSlot ${FindItem[${${NewArrayName}[${i},${iCastName}]}].ItemSlot}
+				/varset bagSlot ${FindItem[${${NewArrayName}[${i},${iCastName}]}].ItemSlot2}
+
+			} else {
+				
+				/varset invSlot ${FindItem[=${${NewArrayName}[${i},${iCastName}]}].ItemSlot}
+				/varset bagSlot ${FindItem[=${${NewArrayName}[${i},${iCastName}]}].ItemSlot2}
+
+			}
+		
 			|/echo ${${NewArrayName}[${i},${iCastName}]} inv slot: ${invSlot} bag slot: ${bagSlot}
 			/if (${bagSlot}==-1) {
 				|/echo root item: id:${invSlot} :${${ArrayName}[${i}].Arg[1,/]}

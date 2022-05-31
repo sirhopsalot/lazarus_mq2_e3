@@ -181,7 +181,7 @@ SUB EVENT_bark(line, ChatSender, msgTarget, barkMsg)
   /varset barkTarget ${Spawn[id ${msgTarget}].CleanName}
   /varset barkReturned FALSE
 
-  /declare retryTimer timer local 3s
+  /declare retryTimer timer local 5s
   /declare startingLoc string local
 
   /if (${Spawn[id ${msgTarget}].Distance}>${MaxResponseDist}) {
