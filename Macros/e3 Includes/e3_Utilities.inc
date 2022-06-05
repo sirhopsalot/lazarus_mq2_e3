@@ -590,7 +590,7 @@ SUB BuildSpellArrayBase(ArrayName, NewArrayName, SkipParams)
 						/varset reloadOnLoot TRUE
 						/varset missingSpellItem ${tmp_castname}
 						/bc [${${ArrayName}[${i}]}] : ${tmp_castname} i do not have this spell|aa|ability|disc|item accessible
-						/beep
+						|/beep
 						/call RemoveArrayElement "${ArrayName}" "${ArrayName}[${i}]"
 					}
 				}
@@ -1271,7 +1271,7 @@ SUB ClearCursor
       /popup ${Me.Name} cannot clear cursor, ending macro
       /endmacro
     } else {
-      /delay 1s !${Cursor.ID}
+      /delay 3s !${Cursor.ID}
     }
     /varcalc i ${i}+1
     /goto :check_cursor

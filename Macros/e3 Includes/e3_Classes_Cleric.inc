@@ -187,7 +187,12 @@ SUB EVENT_AE_Rez(line, ChatSender)
           }
           /docommand ${ChatToggle}  Resurrecting-${corpseID} ${playerName}
           /squelch /bca //RezzingCorpseID ${Me} ${corpseID}
-          /call e3_cast ${corpseID} "rezArray2D" 1
+          /if (${Me.AltAbilityReady[Blessing of Resurrection]}) {
+             /call castSimpleSpell "Blessing of Resurrection" 0
+          } else {
+             /call e3_cast ${corpseID} "rezArray2D" 1
+          }
+         
           /if (${castReturn.Equal[CAST_SUCCESS]}) /varset corpseList ${corpseList}${corpseID},
         }
       :skipRez

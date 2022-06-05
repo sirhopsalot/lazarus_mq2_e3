@@ -16,6 +16,8 @@ SUB check_Heals
 	/varset ActionTaken True
 	/declare AtLeastOneActionTaken bool local False
 	/while (${ActionTaken}) {
+
+		/if (${Defined[lifeSupport2D]} && ${Me.PctHPs} < 99) /call check_lifeSupport
 		/varset ActionTaken False
 		/if (${healTanks}) 		/call heal_tanks
 		/if (${healXTargets}) 	/call heal_xtargets
@@ -44,25 +46,30 @@ SUB check_Heals
 SUB check_lifeSupport
 /if (${Debug} || ${Debug_Heals}) /echo |- check_lifeSupport ==>
 	/declare s int local
-	| only use life support when near mobs and in combat
-	/if  (${SpawnCount[npc radius 200]} > 0 && ${Me.CombatState.Equal[COMBAT]}) {
-		/for s 1 to ${lifeSupport2D.Size[1]}
-			/if (${Me.PctHPs} <= ${lifeSupport2D[${s},${iHealPct}]}) {
-				/call check_Ready "lifeSupport2D" "${s}"
-				/if (${c_Ready} && ${lifeSupport2D[${s},${iIfs}]}) {
-					/if (${Bool[${Me.AbilityReady[${lifeSupport2D[${s},${iCastName}]}]}]}) {
-           				 /if (${Me.Casting.ID} && ${Me.Class.ShortName.NotEqual[BRD]}) /call interrupt
-						/doability "${lifeSupport2D[${s},${iCastName}]}"
-					} else {
-            				/if (${check_Mana["lifeSupport2D",${s}]}) {
-								/if (${Me.Casting.ID} && ${Me.Class.ShortName.NotEqual[BRD]}) /call interrupt
-								/call e3_Cast ${Me.ID} "lifeSupport2D" ${s}
+	|no need to do queries if are are full life
+	/if (${Me.PctHPs}<99) {
+		| only use life support when near mobs and it is agressive to us or we are in combat and there are npcs in 200 radius
+		/if  (${Bool[${Spawn[npc radius 50].Aggressive}]}|| (${SpawnCount[npc radius 200]} > 0 && ${Me.CombatState.Equal[COMBAT]})) {
+			/for s 1 to ${lifeSupport2D.Size[1]}
+				/if (${Me.PctHPs} <= ${lifeSupport2D[${s},${iHealPct}]}) {
+					/call check_Ready "lifeSupport2D" "${s}"
+					/if (${c_Ready} && ${lifeSupport2D[${s},${iIfs}]}) {
+						/if (${Bool[${Me.AbilityReady[${lifeSupport2D[${s},${iCastName}]}]}]}) {
+							/if (${Me.Casting.ID} && ${Me.Class.ShortName.NotEqual[BRD]}) /call interrupt
+							/doability "${lifeSupport2D[${s},${iCastName}]}"
+						} else {
+								/if (${check_Mana["lifeSupport2D",${s}]}) {
+									/if (${Me.Casting.ID} && ${Me.Class.ShortName.NotEqual[BRD]}) /call interrupt
+									/call e3_Cast ${Me.ID} "lifeSupport2D" ${s}
+							}
 						}
 					}
 				}
-			}
-		/next s
+			/next s
+		}
+
 	}
+
 /if (${Debug} || ${Debug_Heals}) /echo <== check_lifeSupport -|
 /RETURN
 

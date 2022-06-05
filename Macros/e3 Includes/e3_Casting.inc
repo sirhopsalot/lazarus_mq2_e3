@@ -455,7 +455,10 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 				 /call ActivateSelosKick
 		   }
 		 	
-
+		|-Check LifeSupport if more than 1.5 sec left to cast end
+			/if (${Defined[lifeSupport2D]}) {
+					/if (${Me.PctHPs}<70 && ${castEndTime}>15) /call check_lifeSupport
+			}
 			/if (${oldItem.Length} || ${e3_CastNoInterrupt}) {
 				/delay 1
 				/goto :cast_still_pending
@@ -546,10 +549,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 						/goto :skipCast
 					}
 				}
-						|-Check LifeSupport if more than 1.5 sec left to cast end
-						/if (${Defined[lifeSupport2D]}) {
-						/if (${Me.PctHPs}<70 && ${castEndTime}>15) /call check_lifeSupport
-				}
+				
 				|-check only select background events
 						/doevents Follow
 						/doevents Stop
@@ -618,7 +618,9 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 	}
 	/declare afterEvent string local ${${ArrayName}[${ArrayIndex},${iAfterEvent}]}
 	/if (${afterEvent.Length}>1) {
-		/echo AfterEvent configured, calling "${afterEvent}"
+		|give time for buffs to land, in case they want toi remove one.
+		/delay 5
+		/echo [${Time}] AfterEvent configured, calling "${afterEvent}"
 		/docommand ${afterEvent}
 	}
 
@@ -793,7 +795,7 @@ Sub memorize_spell(spellName,gemNum)
 	|/echo wfr ${waitForReady} rc ${Spell[${spellName}].RecastTime} math ${Math.Calc[25+(${Spell[${spellName}].RecastTime}/100)]}
 	:checkTimer
 		
-	/echo [${Time}] Delaying waiting for spell to memorize and to be ready in memorize_spell
+	/echo [${Time}] Delaying waiting for spell to memorize and to be ready in memorize_spell: ${spellName}
 	/if (${waitForReady}) {
 		/call check_HealCasting_DuringDetrimental
 		/if (!${c_SubToRun}) {

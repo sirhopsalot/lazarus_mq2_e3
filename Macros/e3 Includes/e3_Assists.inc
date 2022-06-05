@@ -153,6 +153,10 @@ SUB AssistOff
 |- Engages /stick on an AssistTarget.	-|
 |----------------------------------------|
 SUB StickToAssistTarget
+  |fix in case assist distance is ever 0, set it to max melee
+  /if (${AssistStickDistance}<1) {
+    /varset AssistStickDistance ${Math.Calc[${Spawn[id ${AssistTarget}].MaxRangeTo}*.75].Int}
+  }
 /if (${Debug} || ${Debug_Assists}) /echo |- StickToAssistTarget ==> assistPoint ${AssistStickPoint} dist ${AssistStickDistance}
 		/if (${AssistStickPoint.Equal[behind]}) {
 			/if (${Debug} || ${Debug_Assists}) /echo Attempting to stick behind [${AssistStickDistance}].
@@ -224,6 +228,11 @@ SUB check_AssistStatus
           /if (${Me.PctHPs} < 80 && !${Bool[${Select[${Me.TargetOfTarget.Class.ShortName},WAR,PAL,SHD]}]}) /attack off
           /stick off
         } else {
+          |turn off autofire if on
+          /if (${Me.AutoFire}) {
+            /autofire
+            /delay 1s
+          } 
           | If the mob is not targeting me
           /if (!${Me.Combat}) /attack on
           /if (!${Stick.Active} || (${Target.Distance} > ${AssistStickDistance}) || (${AssistStickPoint.Find[behind]} && !${Stick.Behind})) {
@@ -362,7 +371,8 @@ SUB CombatAbilities
       }
       |- AA, only those with 0 cast time can go here
     } else /if (${Abilities2D[${i},${iCastType}].Equal[AA]}) {
-      /if (${Me.AltAbilityReady[${Abilities2D[${i},${iCastName}]}]}) {
+      |/echo Checking i: ${i}  with cast name ${Abilities2D[${i},${iCastName}]} with value:${Abilities2D[${i},${iIfs}]}
+      /if (${Me.AltAbilityReady[${Abilities2D[${i},${iCastName}]}]} && ${Abilities2D[${i},${iIfs}]}) {
         /call castSimpleSpell "${Abilities2D[${i},${iCastName}]}" 0
       }
       |- Discipline, no disc with a duration can go here
