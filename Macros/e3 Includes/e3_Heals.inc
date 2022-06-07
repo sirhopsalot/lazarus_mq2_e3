@@ -46,6 +46,8 @@ SUB check_Heals
 SUB check_lifeSupport
 /if (${Debug} || ${Debug_Heals}) /echo |- check_lifeSupport ==>
 	/declare s int local
+	/declare previousTarget int local 0
+	/declare castName string local ${lifeSupport2D[${s},${iCastName}]
 	|no need to do queries if are are full life
 	/if (${Me.PctHPs}<99) {
 		| only use life support when near mobs and it is agressive to us or we are in combat and there are npcs in 200 radius
@@ -60,7 +62,18 @@ SUB check_lifeSupport
 						} else {
 								/if (${check_Mana["lifeSupport2D",${s}]}) {
 									/if (${Me.Casting.ID} && ${Me.Class.ShortName.NotEqual[BRD]}) /call interrupt
-									/call e3_Cast ${Me.ID} "lifeSupport2D" ${s}
+									
+									/if (${castName.Find[Divine Healing]} || ${castName.Find[Sanguine Mind Crystal]}) {
+										/bc [${Time}] ****calling ${castName} without changing target
+										/call e3_Cast ${Target.ID} "lifeSupport2D" ${s}
+
+									} else {
+
+										/varset previousTarget ${Target.ID}
+										/call e3_Cast ${Me.ID} "lifeSupport2D" ${s}
+										/target id ${previousTarget}
+									}
+									
 							}
 						}
 					}
@@ -124,14 +137,18 @@ SUB heal_tanks
 	/if (!${Bool[${currentBot}]}) /next t
 
 	/if (${Bool[${currentBot}]}) {
-		/call e3_Cast ${NetBots[${currentBot}].ID} "tankHeals2D" ${currentSpellIndx}
-		/if (${UseNecroHealOrbs} && ${Target.PctHPs} < 90) {
+		/if (${UseNecroHealOrbs} && ${Target.PctHPs} < 60) {
+			
 			/if (${Me.ItemReady[Orb of Shadows]}) {
-				/call castSimpleSpell "Orb of Shadows" ${NetBots[${currentBot}].ID}
+				/bc [${Time}] <e3_Heals> insta casting heal via orb of shadows to ${currentBot}
+				/call castSimpleSpell "Orb of Shadows" ${NetBots[${currentBot}].ID} True
 			} else /if (${Me.ItemReady[Orb of Souls]}) {
-				/call castSimpleSpell "Orb of Souls" ${NetBots[${currentBot}].ID}
+				/bc [${Time}] <e3_Heals> insta casting heal via Orb of Souls to ${currentBot}
+				/call castSimpleSpell "Orb of Souls" ${NetBots[${currentBot}].ID} True
 			}
 		}
+		/call e3_Cast ${NetBots[${currentBot}].ID} "tankHeals2D" ${currentSpellIndx}
+		
 	}	
 	
 /if (${Debug} || ${Debug_Heals}) /echo <== heal_tanks -|

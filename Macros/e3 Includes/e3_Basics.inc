@@ -1743,6 +1743,20 @@ Sub basics_Aliases
 #event gimme "[#1#(msg)] Gimme #2#"
 sub event_gimme(line, ChatSender, RequestedItem)
 
+  /declare tempPackNumber int local 0
+  /declare GiveQty int local 0
+  /declare QtyTotalIndex int local 0
+
+  /if (${Bool[${RequestedItem.Length}]}) {
+      /varset QtyTotalIndex ${RequestedItem.Find[qtytotal]}
+      /if (${QtyTotalIndex}>0) {
+          /varset GiveQty ${RequestedItem.Token[2,=]}
+          /varset RequestedItem ${RequestedItem.Left[${Math.Calc[${QtyTotalIndex}-2]}]}       
+      }
+  }
+
+  /echo [${Time}] ChatSender: ${ChatSender} item: ${RequestedItem} with qty ${GiveQty}
+
   /declare DebugGimme false
 	/declare SummonSpellCast 
 	/if (${DebugGimme}) /echo |- event_gimme ==>
@@ -1846,7 +1860,29 @@ sub event_gimme(line, ChatSender, RequestedItem)
 		/if (${DebugGimme}) /echo Item is NoRent = ${IsNoRent}
 		/if (${DebugGimme}) /echo IsMyBot = ${IsMyBot}		
 		/if (${IsNoRent} || ${IsMyBot}) {
-			/ItemNotify "${RequestedItem}" leftmouseup
+			
+      /if (${GiveQty}>0) {
+          |open the bag, if not already open
+          /varset tempPackNumber ${Math.Calc[${FindItem[${RequestedItem}].ItemSlot}-22].Int}
+          /if (!${Bool[${Window[Pack${tempPackNumber}].Open}]}) {
+            /itemnotify pack${tempPackNumber} rightmouseup
+            /delay 2
+          }
+          /itemnotify ${FindItem[${RequestedItem}].InvSlot} leftmouseup
+          |select the item
+          /delay 1
+          /notify QuantityWnd QTYW_slider newvalue ${GiveQty}
+          /delay 1
+          /notify QuantityWnd QTYW_Accept_Button leftmouseup
+          /delay 2
+          |close the bag
+          /itemnotify pack${tempPackNumber} rightmouseup
+      } else {
+         /ItemNotify "${RequestedItem}" leftmouseup
+     
+      }
+      
+      
       /echo [${Time}] Delaying up to 2 second(s) in event_gimme
 			/delay 2s ${Bool[${Cursor.ID}]}
 		} else {
@@ -1954,9 +1990,9 @@ sub event_gimme(line, ChatSender, RequestedItem)
 	/if ((${Cursor.ID} || ${platOnCursor}) && !${IsRequestedItemModShard}) {
 		
     /Echo Gimmie: Getting target of requester
-    /target pc ${ChatSender}
-    /echo [${Time}] Delaying up to 10 second(s) in event_gimme
-    /delay 10s ${Target.ID}==${Spawn[${ChatSender}].ID}
+    /call TrueTarget ${Spawn[pc ${ChatSender}].ID}
+    |/echo [${Time}] Delaying up to 3 second(s) in event_gimme
+    |/delay 3s ${Target.ID}==${Spawn[${ChatSender}].ID}
 
     /declare originalLoc string local ${Me.Loc}
 		/if (${DebugGimme}) /echo IsClose = ${Bool[${Math.Distance[${senderLoc}]}<20]}

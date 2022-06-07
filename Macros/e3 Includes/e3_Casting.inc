@@ -26,7 +26,11 @@
 | CAST_DISTRACTED      | To Distracted ( spell book open )                                    |
 | CAST_COMPONENTS| Missing Component													                                |
 |---------------------------------------------------------------------------------------------|
-Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
+Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos, bool NoDelay)
+
+/if (${Bool[${NoDelay}]}) {
+		/echo <e3_Cast> ${${ArrayName}[${ArrayIndex},${iCastName}]} asked to be called without delay
+}
 |StopEchos = Skips the /echo on successful cast if a value other than 0 is passed with the /call e3_Cast
 /if (${Debug} || ${Debug_Casting}) /echo |- e3_Cast ==>
 
@@ -379,7 +383,13 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 			} else {
 				/casting "${pendingCast}|${pendingType}"
 			}
-			/delay 3
+			/if (!${Bool[${NoDelay}]}) {
+
+				/delay 3
+			} else {
+
+				/echo <E3Cast> Casting without a delay! for ${pendingCast}
+			}
 			/declare castWindowWaitCounter int local 0
 			/if (${e3_CastTime}>500) {
 				/while (!${Window[CastingWindow].Open}) {
@@ -420,7 +430,13 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos)
 			}
 			
 			|delay 3 is enough time to have result come back with fizzle
-			/delay 3
+			/if (!${Bool[${NoDelay}]}) {
+
+				/delay 3
+			} else {
+
+				/echo <E3Cast> Casting without a delay! for ${pendingCast}
+			}
 			/declare castWindowWaitCounter int local 0
 			/if (${e3_CastTime}>500) {
 				/while (!${Window[CastingWindow].Open}) {
@@ -1171,13 +1187,19 @@ SUB check_SpellGemLockup
 |--------------------------------------------------------------------------------------------|
 |- Used to call the e3_Cast for simple spells that cannot normally fail.                   	-|
 |--------------------------------------------------------------------------------------------|
-sub castSimpleSpell(spellNameToBase, simpleTargetIDToBase)
+sub castSimpleSpell(spellNameToBase, simpleTargetIDToBase, csNoDelay)
 
-    /call castSimpleSpellBase "${spellNameToBase}" ${simpleTargetIDToBase} True
+	/if (${Bool[${csNoDelay}]}) {
+		/echo <CastSimpleSpell> ${spellNameToBase} asked to be called without delay
+	}
+    /call castSimpleSpellBase "${spellNameToBase}" ${simpleTargetIDToBase} True ${Bool[${csNoDelay}]}
 
 /return
-sub castSimpleSpellBase(spellName, simpleTargetID, SkipParams)
+sub castSimpleSpellBase(spellName, simpleTargetID, SkipParams, csbNoDelay)
 
+	/if (${Bool[${csbNoDelay}]}) {
+		/echo <castSimpleSpellBase> ${spellName} asked to be called without delay
+	}
 	/if (${simpleTargetID}==0) {
 		|if 0 passed in, set it to whatever they are targeting
 		/varset simpleTargetID ${Target.ID}
@@ -1197,10 +1219,10 @@ sub castSimpleSpellBase(spellName, simpleTargetID, SkipParams)
 		}
 	}
 	
-    /call e3_Cast ${simpleTargetID} "castSimpleSpellArray2D" 1 False
+    /call e3_Cast ${simpleTargetID} "castSimpleSpellArray2D" 1 False  ${Bool[${csbNoDelay}]}
     /while (${Select[${castReturn},CAST_FIZZLE]}) {
           /delay 1s
-          /call e3_Cast  ${simpleTargetID} "castSimpleSpellArray2D" 1 False
+          /call e3_Cast  ${simpleTargetID} "castSimpleSpellArray2D" 1 False ${Bool[${csbNoDelay}]}
     }
 
 /return
