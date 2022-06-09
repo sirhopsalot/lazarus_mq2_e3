@@ -140,11 +140,13 @@ SUB heal_tanks
 		/if (${UseNecroHealOrbs} && ${Target.PctHPs} < 60) {
 			
 			/if (${Me.ItemReady[Orb of Shadows]}) {
-				/bc [${Time}] <e3_Heals> insta casting heal via orb of shadows to ${currentBot}
+				/bc [${Time}] <e3_Heals> Instant casting heal via orb of shadows to ${currentBot}
 				/call castSimpleSpell "Orb of Shadows" ${NetBots[${currentBot}].ID} True
+				/delay 3
 			} else /if (${Me.ItemReady[Orb of Souls]}) {
-				/bc [${Time}] <e3_Heals> insta casting heal via Orb of Souls to ${currentBot}
+				/bc [${Time}] <e3_Heals> Instant casting heal via Orb of Souls to ${currentBot}
 				/call castSimpleSpell "Orb of Souls" ${NetBots[${currentBot}].ID} True
+				/delay 3
 			}
 		}
 		/call e3_Cast ${NetBots[${currentBot}].ID} "tankHeals2D" ${currentSpellIndx}

@@ -28,9 +28,6 @@
 |---------------------------------------------------------------------------------------------|
 Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos, bool NoDelay)
 
-/if (${Bool[${NoDelay}]}) {
-		/echo <e3_Cast> ${${ArrayName}[${ArrayIndex},${iCastName}]} asked to be called without delay
-}
 |StopEchos = Skips the /echo on successful cast if a value other than 0 is passed with the /call e3_Cast
 /if (${Debug} || ${Debug_Casting}) /echo |- e3_Cast ==>
 
@@ -1189,17 +1186,13 @@ SUB check_SpellGemLockup
 |--------------------------------------------------------------------------------------------|
 sub castSimpleSpell(spellNameToBase, simpleTargetIDToBase, csNoDelay)
 
-	/if (${Bool[${csNoDelay}]}) {
-		/echo <CastSimpleSpell> ${spellNameToBase} asked to be called without delay
-	}
+	
     /call castSimpleSpellBase "${spellNameToBase}" ${simpleTargetIDToBase} True ${Bool[${csNoDelay}]}
 
 /return
 sub castSimpleSpellBase(spellName, simpleTargetID, SkipParams, csbNoDelay)
 
-	/if (${Bool[${csbNoDelay}]}) {
-		/echo <castSimpleSpellBase> ${spellName} asked to be called without delay
-	}
+
 	/if (${simpleTargetID}==0) {
 		|if 0 passed in, set it to whatever they are targeting
 		/varset simpleTargetID ${Target.ID}

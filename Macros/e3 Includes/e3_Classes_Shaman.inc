@@ -12,7 +12,7 @@ SUB check_Canni
           /call check_Ready "canniSpells2D" ${s}
           /if (${c_Ready}) {
             /if (${check_Mana["canniSpells2D",${s}]}) {
-            	/if (!${canniSpells2D[${s},${iCastName}].Equal[Cannibalization]} || ${Me.CurrentHPs} > 2000) {
+            	/if (!${canniSpells2D[${s},${iCastName}].Equal[Cannibalization]} || ${Me.CurrentHPs} > 5600) {
 								/if (${canniSpells2D[${s},${iMinHP}]} <= ${Me.PctHPs}) {
               		/call e3_Cast ${Me.ID} "canniSpells2D" ${s}
                 }

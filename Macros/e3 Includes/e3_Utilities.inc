@@ -1325,6 +1325,40 @@ SUB MoveToLoc(yLoc,xLoc,timeToWait,arrivalDist)
   	/goto :retryMove
 	} else /moveto off
 /return
+|-------------------------------------------------------------|
+|- Use MQ2MoveUtils /moveto function, to move to destination.	||
+SUB MoveToTarget(timeToWait,arrivalDist)
+  
+  
+  	/if (!${Bool[${arrivalDist}]}) /varset arrivalDist 10
+	/if (!${Bool[${timeToWait}]}) /varset timeToWait 30
+	/declare moveTimer timer local ${timeToWait}
+	|/echo MoveToLoc ${yLoc},${xLoc},${timeToWait},${arrivalDist}
+	/if (${Math.Distance[${yLoc},${xLoc}]}<=${arrivalDist}) /return
+	/if (${Bool[${Navigation.MeshLoaded}]}) {
+		/echo <MoveToTarget> Naving to target...
+		/if (${Me.Casting.ID} && ${Me.Class.ShortName.NotEqual[BRD]}) /call interrupt
+		/nav target
+		/delay 3
+		/delay ${timeToWait} !${Navigation.Active}
+		/return
+		
+	} else {
+		/echo <MoveToTarget> using /moveto to target...
+		/if (${Me.Casting.ID} && ${Me.Class.ShortName.NotEqual[BRD]}) /call interrupt
+		/squelch /moveto loc ${yLoc} ${xLoc} dist ${arrivalDist}
+		:retryMove
+		/call Background_Events
+		/delay ${Math.Calc[${timeToWait}/5]} ${Math.Distance[${yLoc},${xLoc}]} <=${arrivalDist}
+		/if (${Math.Distance[${yLoc},${xLoc}]}<=${arrivalDist}) {
+			/moveto off
+			/return
+		} else /if (${moveTimer}) {
+			/goto :retryMove
+			} else /moveto off
+	}
+    
+/return
 |--------------------------------------------------------------------------|
 |- Type Stuff
 |- Lifted from commonsubs.inc by Armysoldier

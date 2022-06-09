@@ -125,8 +125,9 @@ SUB loot_Area
       /if (${Debug} || ${Debug_Loot}) /echo Cant Target ${ClosestCorpse}
       /goto :skipCorpse
     }
-    /if (${Target.Distance}>16 && ${Target.DistanceZ} < 80) {
-      /call MoveToLoc ${Target.Y} ${Target.X} 20 12
+    /if (${Target.Distance}>6 && ${Target.DistanceZ} < 80) {
+      /call MoveToTarget 20 8
+      |/call MoveToLoc ${Target.Y} ${Target.X} 20 12
     }
     /if (${Target.Distance}<=20 &&  ${Target.DistanceZ} < 40) {
       /call lootCorpse
@@ -168,6 +169,7 @@ SUB lootCorpse
   /delay 5 ${Window[LootWnd].Open}
   /doevents NotYourKill
   /delay 1s ${Corpse.Items} || !${canLootCorpse}
+  /delay 3 |so we found one item, now need to let the corpse fully fill out
   /declare numItems int local ${Corpse.Items}
   /if (${Debug} || ${Debug_Loot}) {
     /echo ===========================
@@ -384,11 +386,19 @@ SUB lootCorpse
       |if it is, uncomment out loot_handle and commonent out the itemnotify and /delay 4
       /itemnotify loot${i} rightmouseup
       /delay 2
+
+      /if (${Window[QuantityWnd].Open}) {
+          /notify QuantityWnd QTYW_Accept_Button leftmouseup
+      }
       /while (${Bool[${Corpse.Item[${i}]}]}) {
           |if item still on corpse, try again.
           |/echo trying to loot again ${i}
           /itemnotify loot${i} rightmouseup
-          /delay 1
+          /delay 3
+          /if (${Window[QuantityWnd].Open}) {
+            /notify QuantityWnd QTYW_Accept_Button leftmouseup
+            /delay 3
+          }
       }
       |/call loot_Handle ${i} keep
       |/if (${Debug} || ${Debug_Loot}) /echo Done Looting i: ${i}
