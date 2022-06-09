@@ -169,7 +169,8 @@ SUB lootCorpse
   /delay 5 ${Window[LootWnd].Open}
   /doevents NotYourKill
   /delay 1s ${Corpse.Items} || !${canLootCorpse}
-  /delay 3 |so we found one item, now need to let the corpse fully fill out
+  |so we found one item, now need to let the corpse fully fill out
+  /delay 3 
   /declare numItems int local ${Corpse.Items}
   /if (${Debug} || ${Debug_Loot}) {
     /echo ===========================
