@@ -515,7 +515,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos, bool NoDela
 				}
 
 				|- Other reasons to cancel
-				/if (!${Assisting} && ${Following}) {
+				/if (!${Assisting} && ${Following} && !${Me.Class.ShortName.Equal[BRD]}) {
 				/if (${SpawnCount[=${FollowTarget}]} && ${Spawn[=${FollowTarget}].Distance} < ${LeashLength}) {
 					/if ((${Spawn[=${FollowTarget}].Distance} > 20 || ${NetBots[${FollowTarget}].Moving})) {
 					/if (${Debug} || ${Debug_Casting}) /echo following interrupt

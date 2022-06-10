@@ -2,6 +2,8 @@
 |- Calls buff functions, returning to the mainloop whenever a spell is cast.		-|
 |--------------------------------------------------------------------------------|
 SUB check_Buffs
+
+  /if (${Me.Invis}) /return
 	/if (${Debug} || ${Debug_BuffCheck}) /echo |- buffCheck ==>
   	
     /if (${Defined[InstantBuffs2D]})		/call buffBotsInstant "InstantBuffs2D"
