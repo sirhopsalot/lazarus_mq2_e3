@@ -332,7 +332,7 @@ Sub CLR_Setup
   /call iniToVarV "${Character_Ini},Cleric,Auto-Yaulp (On/Off)" AutoYaulp bool outer
   /call iniToVarV "${Character_Ini},Cleric,Yaulp Spell" yaulpSpell string outer
   /if (${AutoYaulp}) {
-    /if (!${Defined[yaulpSpell]} || !${yaulpSpell.Length} || !${Me.Book[${yaulpSpell.Arg[1,/]}]} && !${Me.AltAbility[${yaulpSpell}].ID}) {
+    /if (!${Defined[yaulpSpell]} || !${yaulpSpell.Length} || (!${Me.Book[${yaulpSpell.Arg[1,/]}]} && !${Me.AltAbility[${yaulpSpell}].ID})) {
       /echo ERROR! ${Character_Ini} > [Cleric] > Yaulp Spell is not correctly defined.  Please check this entry, and restart the macro.
       /varset AutoYaulp FALSE
     }
