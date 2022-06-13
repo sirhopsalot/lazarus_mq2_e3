@@ -391,7 +391,7 @@ SUB lootCorpse
       /if (${Window[QuantityWnd].Open}) {
           /notify QuantityWnd QTYW_Accept_Button leftmouseup
       }
-      /while (${Bool[${Corpse.Item[${i}]}]}) {
+      /while (${Bool[${Corpse.Item[${i}]}]} && ${Window[LootWnd].Open}) {
           |if item still on corpse, try again.
           |/echo trying to loot again ${i}
           /itemnotify loot${i} rightmouseup

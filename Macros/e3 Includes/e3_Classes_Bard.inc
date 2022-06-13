@@ -132,8 +132,13 @@ sub check_BardSongs
   }
  
   
+  /if (!${playingMelody} && ${Bool[${AssistTarget}]}) {
 
-  |don't do songs when looting
+    /varset playingMelody TRUE
+
+  } 
+
+      |don't do songs when looting
   /if (${Target.CleanName.Equal[${Me}'s corpse]}) { 
       /return 
   } 
@@ -145,6 +150,9 @@ sub check_BardSongs
     } 
     /return
   } 
+
+  
+  
 
  
 

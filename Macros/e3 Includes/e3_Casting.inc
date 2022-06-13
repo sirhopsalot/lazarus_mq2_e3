@@ -1002,7 +1002,7 @@ Sub casting_Setup
 	/varset itemCooldownList[16,2] 90
 	/varset itemCooldownList[17,1] Aged Hammer of the Dragonborn
 	/varset itemCooldownList[17,2] 210
-	/varset itemCooldownList[18,1] Azure Mind Crystal
+	/varset itemCooldownList[18,1] Azure Mind Crystal III
 	/varset itemCooldownList[18,2] 180
 	/varset itemCooldownList[19,1] Zun'Muram's Spear of Doom
 	/varset itemCooldownList[19,2] 210
