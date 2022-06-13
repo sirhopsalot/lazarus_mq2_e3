@@ -185,16 +185,24 @@ sub check_BardSongs
     /call BardClass_CircularQueue_Pop
     /varset songGemValue ${Macro.Return}
     /call BardClass_CircularQueue_Insert "${songGemValue}"
-
+    /declare bardSongArrayQueueCount_temp int local 0
     /while (!${songGemValue.Equal[${bardImportantSong}]}) {
 
       /call BardClass_CircularQueue_Pop
       /varset songGemValue ${Macro.Return}
       /call BardClass_CircularQueue_Insert "${songGemValue}"
+      /varcalc bardSongArrayQueueCount_temp ${bardSongArrayQueueCount_temp} +1
+      /echo bardSongArrayQueueCount_temp: ${bardSongArrayQueueCount_temp}
+      /if (${bardSongArrayQueueCount_temp} > ${bardSongArrayQueueCount}) {
+
+        /bc <BardPlayer> : Cannot rewind to ${bardImportantSong}. Error.
+        /goto :normalSongSelection
+      }
     }
 
   } else {
-  
+
+    :normalSongSelection
     /call BardClass_CircularQueue_Pop
     /varset songGemValue ${Macro.Return}
     /call BardClass_CircularQueue_Insert "${songGemValue}"
