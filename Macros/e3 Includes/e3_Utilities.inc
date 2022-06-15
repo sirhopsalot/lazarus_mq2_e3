@@ -1351,15 +1351,19 @@ SUB MoveToTarget(timeToWait,arrivalDist)
 		/echo <MoveToTarget> Naving to target...
 		/if (${Me.Casting.ID} && ${Me.Class.ShortName.NotEqual[BRD]}) /call interrupt
 		/nav target
-		/delay 3
+		/delay 1
+		/if (!${Navigation.Active}) {
+			/goto :retryMove
+		}
+		/delay 2
 		/delay ${timeToWait} !${Navigation.Active}
 		/return
 		
 	} else {
 		/echo <MoveToTarget> using /moveto to target...
 		/if (${Me.Casting.ID} && ${Me.Class.ShortName.NotEqual[BRD]}) /call interrupt
-		/squelch /moveto loc ${yLoc} ${xLoc} dist ${arrivalDist}
 		:retryMove
+		/squelch /moveto loc ${yLoc} ${xLoc} dist ${arrivalDist}
 		/call Background_Events
 		/delay ${Math.Calc[${timeToWait}/5]} ${Math.Distance[${yLoc},${xLoc}]} <=${arrivalDist}
 		/if (${Math.Distance[${yLoc},${xLoc}]}<=${arrivalDist}) {

@@ -265,6 +265,8 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos, bool NoDela
 			/varset ActionTaken TRUE
 			/disc ${pendingCast}
 			/delay 3
+			/varset castReturn CAST_SUCCESS
+            /varset ActionTaken True
 		}
 	|-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	|- Abilities

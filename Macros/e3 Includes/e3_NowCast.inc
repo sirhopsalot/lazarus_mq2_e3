@@ -149,7 +149,7 @@ SUB castNowSpells
                     /delay 1
                 }
         }   
-        /if (${Me.SpellReady[${spellName}]} || ${Me.AltAbilityReady[${spellName}]} || ${Me.ItemReady[${spellName}]}) {
+        /if (${Me.SpellReady[${spellName}]} || ${Me.AltAbilityReady[${spellName}]} || ${Me.ItemReady[=${spellName}]}|| ${Me.CombatAbilityReady[${spellName}]}) {
             /varset castReturn
              /bc <NowCast>: Casting ${spellName}  on ${spellTargetID}  
             /call castNowSpell "${spellName}" ${spellTargetID}
@@ -171,11 +171,11 @@ SUB castNowSpells
 SUB castNowSpell(spellName, targetID)
 
 	/declare whatToCast string local
-	/if (${Bool[${Me.Book[${spellName}]}]} || ${Bool[${Me.AltAbility[${spellName}]}]}) {
+	/if (${Bool[${Me.Book[${spellName}]}]} || ${Bool[${Me.AltAbility[${spellName}]}]} || ${Me.CombatAbilityReady[${spellName}]}) {
 		/varset whatToCast ${spellName}
 	} else /if (${Bool[${FindItemCount[=${spellName}]}]}) {
 		/varset whatToCast ${FindItem[=${spellName}]}
-	}	
+	} 	
 	/if (${Bool[${whatToCast}]}) {
         /varset g_CastNowSpellCasting TRUE
         /call castSimpleSpell "${whatToCast}" ${targetID}
