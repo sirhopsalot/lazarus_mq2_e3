@@ -702,6 +702,12 @@ Sub check_Ready(ArrayName, int ArrayIndex)
 		/if (!${Me.SpellReady[Focused Hail of Arrows]}) /varset c_Ready FALSE
 		/if (!${Me.SpellReady[Hail of Arrows]}) /varset c_Ready FALSE
 
+	} else /if ((${Bool[${Me.Gem[Mana Flare]}]}  &&  ${Bool[${Me.Gem[Mana Recursion]}]}) && (${${ArrayName}[${ArrayIndex},${iCastName}].Equal[Mana Flare]} || ${${ArrayName}[${ArrayIndex},${iCastName}].Equal[Mana Recursion]})) {
+		|spell hard coded as me.spelready returns true when one is on cooldown because of a timer of another.
+		/varset c_Ready TRUE
+		/if (!${Me.SpellReady[Mana Flare]}) /varset c_Ready FALSE
+		/if (!${Me.SpellReady[Mana Recursion]}) /varset c_Ready FALSE
+
 	} else /if (${Me.SpellReady[${${ArrayName}[${ArrayIndex},${iCastName}]}]}) /varset c_Ready TRUE
  
   } else /if (${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Item]}) {
