@@ -154,7 +154,7 @@ SUB castNowSpells
              /bc <NowCast>: Casting ${spellName}  on ${spellTargetID}  
             /call castNowSpell "${spellName}" ${spellTargetID}
             /if (!(${ActionTaken} && ${castReturn.Equal[CAST_SUCCESS]})) {
-                /bc <NowCast>: Failed to cast ${spellName} due to ${castReturn}
+                /bc [${Time}] <NowCast>: Failed to cast ${spellName} due to ${castReturn}
             } else /if (${nowSpellArrayQueueCount}>0 ) {
                 |give times global cooldown if this is not an item
                 /if (!${Bool[${FindItemCount[=${spellName}]}]}) {
@@ -163,7 +163,7 @@ SUB castNowSpells
                 
             }
         } else {
-            /bc <NowCast>: Failed to cast ${spellName}, Spell/Ability/Item not ready or not found
+            /bc [${Time}] <NowCast>: Failed to cast ${spellName}, Spell/Ability/Item not ready or not found
         } 
     }
 /RETURN

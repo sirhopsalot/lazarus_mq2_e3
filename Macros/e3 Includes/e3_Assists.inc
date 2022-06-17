@@ -460,6 +460,7 @@ SUB check_Nukes
     /declare assistToT int local
     /declare typeOfCast string local 
     /declare HaveGiftOfManaBuff bool False local
+    
     /if (${Bool[${Me.Song[Gift of Mana].ID}]} || ${Bool[${Me.Song[Celestial Gift].ID}]} || ${Bool[${Me.Song[Celestial Boon].ID}]}) {
         /varset HaveGiftOfManaBuff True
     }
@@ -495,10 +496,11 @@ SUB check_Nukes
 
      
       | skip casting if a delay is defined and active
-      /if (${Defined[castDelay${Nukes2D[${castIndex},${iCastID}]}]}) {
-        /if (${castDelay${Nukes2D[${castIndex},${iCastID}]}}) {
+      /if (${Defined[castDelay]} && ${Bool[${Nukes2D[${castIndex},${iDelay}]}]}) {
+        /if (${castDelay}) {
           /if (${Debug} || ${Debug_Assists}) /echo skipping nukes, /delay from previous cast
-          /return
+          /if (!${ActionTaken}) /next s
+          |/return
         }
       }
       |if im burning and /noburn is set, skip the spell
@@ -643,11 +645,11 @@ SUB check_Nukes
       |mainly used for PBAOE stuns
       /if (${Bool[${Nukes2D[${castIndex},${iDelay}]}]} && ${Select[${castReturn},CAST_SUCCESS]}) {
         /if (${Debug} || ${Debug_Assists}) /echo delaying ${Nukes2D[${castIndex},${iCastName}]} for ${Nukes2D[${castIndex},${iDelay}]}
-        /call CreateTimer "castDelay${Nukes2D[${castIndex},${iCastID}]}" "${Nukes2D[${castIndex},${iDelay}]}"
+        /call CreateTimer "castDelay" "${Nukes2D[${castIndex},${iDelay}]}"
       }
     }
 	:skipCast
-    /if (!${ActionTaken}) /next s
+  /if (!${ActionTaken}) /next s
   }
 /if (${Debug} || ${Debug_Assists}) /echo <== check_Nukes -|
 /RETURN
