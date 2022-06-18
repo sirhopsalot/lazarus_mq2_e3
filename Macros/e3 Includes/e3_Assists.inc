@@ -499,7 +499,7 @@ SUB check_Nukes
       /if (${Defined[castDelay]} && ${Bool[${Nukes2D[${castIndex},${iDelay}]}]}) {
         /if (${castDelay}) {
           /if (${Debug} || ${Debug_Assists}) /echo skipping nukes, /delay from previous cast
-          /if (!${ActionTaken}) /next s
+          /goto :skipcast
           |/return
         }
       }
