@@ -1182,6 +1182,22 @@ SUB createTimer(timerName, timerSetting)
 /if (${Debug}) /echo <== createTimer -| created ${timerName} [${${timerName}}]
 /RETURN
 
+SUB createTimerPerm(timerName, timerSetting)
+/if (${Debug}) /echo |- createTimer ==>
+  /if (${timerName.Length} == 0) /return
+
+   /if (${Defined[${timerName}]}) {
+	|/echo <createTimer>  Setting value of Timer: ${timerName} : ${timerSetting}
+    /varset ${timerName} ${timerSetting}
+  } else {
+    /declare ${timerName} timer outer ${timerSetting}
+	|/echo <createTimer> Creating value of Timer: ${timerName} : ${timerSetting}
+    /call BuildArray timerArrayPerm ${timerName}
+  }
+/if (${Debug}) /echo <== createTimer -| created ${timerName} [${${timerName}}]
+/RETURN
+
+
 SUB createTimerGlobal(timerName, timerSetting)
 /if (${Debug}) /echo |- createTimer ==>
   /if (${timerName.Length} == 0) /return
