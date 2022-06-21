@@ -230,7 +230,7 @@ SUB EVENT_bark(line, ChatSender, msgTarget, barkMsg)
   |}
   | -Check to see if the bark was successful.
   /if (${Zone.ID} == ${barkStartZone} && ${Math.Distance[${startingLoc}]} < 8 && !${barkReturned}) {
-    /echo Retrying. ${Zone.ID} == ${barkStartZone} && ${Math.Distance[${startingLoc}]} < 8 && !${barkReturned}
+    |/echo Retrying. ${Zone.ID} == ${barkStartZone} && ${Math.Distance[${startingLoc}]} < 8 && !${barkReturned}
     /if (${retryTimer}) {
       /goto :retry_Bark
     } else {

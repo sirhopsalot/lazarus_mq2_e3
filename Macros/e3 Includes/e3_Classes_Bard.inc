@@ -116,7 +116,7 @@ Sub BardClass_CircularQueue_ToString
 
 sub check_BardSongs
 
-  /if (!${songPlayer.Equal["Twist"]} || ${Me.Invis} || ${Me.Stunned}) {
+  /if (!${songPlayer.Equal["Twist"]} || ${Me.Invis} || ${Me.Stunned}|| ${Window[MerchantWnd].Open}) {
       /return
   }
 

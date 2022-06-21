@@ -100,7 +100,7 @@ sub event_charmOn(line, ChatSender, targetID)
   /if (${Me.Class.ShortName.Equal[ENC]} || ${Me.Class.ShortName.Equal[BRD]}) {
     /if (${Debug} || ${Debug_Ench}) /echo |-  charmOn ==>
     |&& (!${Spawn[id ${targetID}].Named} || ${Spawn[id ${targetID}].CleanName.Equal[Coerced Lieutenant]})
-      /if ((${Spawn[id ${targetID}].Distance} < 240 && ${Spawn[id ${targetID}].Level} <= ${Me.Level} && ${SpawnCount[npc id ${targetID}]}>0) || ${targetID}==${Me.Pet.ID}) {
+      /if ((${Spawn[id ${targetID}].Distance} < 240  && ${SpawnCount[npc id ${targetID}]}>0) || ${targetID}==${Me.Pet.ID}) {
         /varset charmTarget ${targetID}
         /varset doCharm TRUE
         /docommand ${ChatToggle} << Charm enabled ${Spawn[id ${charmTarget}].CleanName} >>
