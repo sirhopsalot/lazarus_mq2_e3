@@ -110,12 +110,19 @@ SUB check_Idle
 SUB check_ClearCursor
     |Lets check our cursor, as having something on our cursor and casting spells can .. cause issues.
     |main thing we want to check for is Azure Mind Crystals, Sanguine Crystals, Molten orbs, Large modulation shards
-    /if (${Bool[${Cursor.ID}]} &&  (${Cursor.Name.Equal[Azure Mind Crystal III]} ||${Cursor.Name.Equal[Summoned: Large Modulation Shard]} || ${Cursor.Name.Equal[Sanguine Mind Crystal III]} || ${Cursor.Name.Equal[Molten orb]} || ${Cursor.Name.Equal[Lava orb]})) {
-       |new charges, lets get inventoried
-       /if (${Cursor.Charges}==3) {
-         /call ClearCursor
-       }
-    }
+    /if (${Bool[${Cursor.ID}]}) {
+      /if ((${Cursor.Name.Equal[Azure Mind Crystal III]} ||${Cursor.Name.Equal[Summoned: Large Modulation Shard]} || ${Cursor.Name.Equal[Sanguine Mind Crystal III]} )) {
+        |new charges, lets get inventoried
+        /if (${Cursor.Charges}==3) {
+          /call ClearCursor
+        }
+      } else /if (${Cursor.Name.Equal[Molten orb]} || ${Cursor.Name.Equal[Lava orb]}) {
+         |new charges, lets get inventoried
+        /if (${Cursor.Charges}==10) {
+          /call ClearCursor
+        }
+      }
+    } 
 /return
 |--------------------------------------------------------------------------------------------|
 |- Checks to see if your character is active, if so pauses macro loop                       -|
