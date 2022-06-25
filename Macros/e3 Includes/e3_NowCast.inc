@@ -188,8 +188,14 @@ SUB castNowSpell(spellName, targetID)
 #event nowCast "<#1#> nowCast #3#"
 #event nowCast "[#1#(msg)]#2# nowCast #3#"
 SUB event_nowCast(line, ChatSender, Caster, spellName)
-    /echo <NowCast> called with Caster: ${Caster}
+    |/echo <NowCast> called with Caster: ${Caster}
     /if (${Bool[${Caster}]} &&!${Me.Name.Equal[${Caster}]}) /return
+     
+    /if (!(${NetBots[${ChatSender}].ID} || ${Bool[${Raid.Member[${ChatSender}]}]})) {
+        |Not one of my toons or part of my raid, ignore
+        /bc <NowCast> ${ChatSender} outside of your group/raid tried to issue a nowcast for spell:${spellName}
+        /return
+    }
 
     /declare nowTargetID int local ${Me.ID}
     /declare spellIndexStart int local 0
