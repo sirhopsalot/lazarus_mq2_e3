@@ -119,8 +119,8 @@ SUB castNowSpells
         /varset spellTargetID ${spellArgs.Arg[2,,]}
 
         /if (${DebugNowCast}) /echo spellName:${spellName}
-        /if (${spellTargetID}==0) {
-            /echo nowCast targetID is 0, Target was not supplied correctly
+        /if (${spellTargetID}==0 || ${SpawnCount[id ${spellTargetID}]}==0) {
+            /bc <nowCast> targetID is invalid: ${spellTargetID}
             /return
         }
         /if (${DebugNowCast}) /echo nowCast targetID: ${spellTargetID} 	

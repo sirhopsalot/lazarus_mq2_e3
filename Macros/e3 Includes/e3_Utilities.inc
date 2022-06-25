@@ -1299,7 +1299,7 @@ SUB ClearCursor
       /popup ${Me.Name} cannot clear cursor, ending macro
       /endmacro
     } else {
-      /delay 3s !${Cursor.ID}
+      /delay 1s !${Cursor.ID}
     }
     /varcalc i ${i}+1
     /goto :check_cursor

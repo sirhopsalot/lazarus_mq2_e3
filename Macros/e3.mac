@@ -36,7 +36,6 @@ SUB Main(modeSelect)
 		/varset ActionTaken FALSE
     
     /call check_Basics
-    
  		/call check_Active
 		/call check_Idle
     /call check_autoTribute
@@ -55,6 +54,10 @@ SUB Main(modeSelect)
    	/if (!${activeTimer}) {
       |These are functions in the e3_setup/Advanced.ini class sections... ex CLR Function#1=check_DivineArb
 		  :restartMainLoopSubLoop
+
+      |Lets check our cursor, as having something on our cursor and casting spells can .. cause issues.
+      |main thing we want to check for is Azure Mind Crystals, Sanguine Crystals, Molten orbs, Large modulation shards
+      /call check_ClearCursor
       |if you are a healer, hard coding a check_heals. This is to deal with sub methods being able to call
       |interrupts for heals and then then ActionTaken is set to true, which may never get to your check_heals
       |all healers should have check_Heals as their #1, this is just making sure it is. 

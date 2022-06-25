@@ -116,7 +116,7 @@ Sub BardClass_CircularQueue_ToString
 
 sub check_BardSongs
 
-  /if (!${songPlayer.Equal["Twist"]} || ${Me.Invis} || ${Me.Stunned}|| ${Window[MerchantWnd].Open}) {
+  /if (!${songPlayer.Equal["Twist"]} || ${Me.Invis} || ${Me.Stunned} ||${Window[BigBankWnd].Open} || ${Window[MerchantWnd].Open} || ${Window[TradeWnd].Open} || ${Window[GuildBankWnd].Open}) {
       /return
   }
 
@@ -271,10 +271,7 @@ sub check_BardSongs
   
     |is ths song ready? if not, kick out and loop back in
     /if (${songGemValue.Equal[Verse of Vesagran]}) { 
-       /while (!${Me.SpellReady[${songGemValue}]}) {
-            |This is one of those *special* spells. Lets wait on its stupid cooldown
-            /delay 1
-         } 
+      /delay 1s ${Me.SpellReady[${songGemValue}]}
     }
     |a delay check, for sync 
     /if (!${Me.SpellReady[${songGemValue}]}) {

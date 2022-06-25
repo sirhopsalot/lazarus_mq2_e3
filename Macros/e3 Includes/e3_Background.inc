@@ -106,13 +106,25 @@ SUB check_Idle
   /if (${Debug}) /echo <== check_Idle -| idleTimer = [${idleTimer}] || idle = [${idle}]
 /RETURN
 
+
+SUB check_ClearCursor
+    |Lets check our cursor, as having something on our cursor and casting spells can .. cause issues.
+    |main thing we want to check for is Azure Mind Crystals, Sanguine Crystals, Molten orbs, Large modulation shards
+    /if (${Bool[${Cursor.ID}]} &&  (${Cursor.Name.Equal[Azure Mind Crystal III]} ||${Cursor.Name.Equal[Summoned: Large Modulation Shard]} || ${Cursor.Name.Equal[Sanguine Mind Crystal III]} || ${Cursor.Name.Equal[Molten orb]} || ${Cursor.Name.Equal[Lava orb]})) {
+       |new charges, lets get inventoried
+       /if (${Cursor.Charges}==3) {
+         /call ClearCursor
+       }
+    }
+/return
 |--------------------------------------------------------------------------------------------|
 |- Checks to see if your character is active, if so pauses macro loop                       -|
 |--------------------------------------------------------------------------------------------|			
 SUB check_Active
 /if (${Debug} || ${Debug_Background}) /echo |- check_Active ==>
 	| Check Cursor
-	/if (${Cursor.ID}) {	
+	  
+    /if (${Cursor.ID}) {	
 		| Destroy badItems.
 		/if (${Defined[badItems]}) {
 			/if (${Select[${Cursor},${badItems}]} || ${Select[${Cursor.ID},${badItems}]}) {
@@ -120,21 +132,23 @@ SUB check_Active
 				/destroy
 			}
 		}
+    |**
 		| Check to see if I'm waiting to drop this item, or if I've picked up something new
 		/if (${Old_cursorID} != ${Cursor.ID}) {
 			/varset cursorTimer ${Math.Calc[${inventoryTimer} * 10].Int}
 			/varset Old_cursorID ${Cursor.ID}
 		} else {
-			/if (!${cursorTimer}) /call clearCursor
+			/if (!${cursorTimer}) /call ClearCursor
 		}		
 		/varset activeTimer 5
-	} else {
+	  } else {
 		/if (${Old_cursorID}) {
 			/varset cursorTimer 0
 			/varset Old_cursorID 0
 		}
+    **|
 	}
-
+  
   |prevent guys from getting stuck trying to buff while moving
 	/if (${Me.Moving} && !${Me.Class.ShortName.Equal[BRD]}) {
 	  /if (${Me.CombatState.Equal[COMBAT]}) {
