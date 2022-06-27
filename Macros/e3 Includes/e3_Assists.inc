@@ -604,8 +604,8 @@ SUB check_Nukes
         }
       }
 
-      | fix for using Ifs in Nukes, retarget to the AssistTarget before checking Ifs
-  	  |/if (${Target.ID} != ${AssistTarget}) /call TrueTarget ${AssistTarget}
+      |for using CastIfs in Nukes, retarget to the AssistTarget before checking CastIfs
+  	  /if (${Target.ID} != ${AssistTarget}) /call TrueTarget ${AssistTarget}
 
       /varset castIfName	${Nukes2D[${s},${iCastIf}]}
       /if (!${castIfName.Equal[-1]} ) {
