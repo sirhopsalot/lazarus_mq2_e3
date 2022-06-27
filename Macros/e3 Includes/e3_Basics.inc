@@ -1743,6 +1743,20 @@ Sub basics_Aliases
 #event gimme "[#1#(msg)] Gimme #2#"
 sub event_gimme(line, ChatSender, RequestedItem)
 
+  /echo [${Time}] <Gimme_Event>: ChatSender: ${ChatSender} item: ${RequestedItem} with qty ${GiveQty}
+  
+  |Check to see if we should actually pay attention to this.
+  /call check_AmIDead 10 5
+  /if (${Macro.Return}) {
+    /call notifyViaBCTell  ${ChatSender} "I'm dead"
+    /return
+  } 
+  /if (${Bool[${Cursor.ID}]} || ${medBreak} || ${Me.Invis} || ${Me.PctHPs} < 85 || ${Me.PctAggro} > 1 || ${Me.CombatState.Equal[COMBAT]} || ${Assisting} || ${Me.Moving} || ${Me.Combat}) {
+    /call notifyViaBCTell  ${ChatSender} "I'm busy"
+  	/return
+	}
+
+
   /declare tempPackNumber int local 0
   /declare GiveQty int local 0
   /declare QtyTotalIndex int local 0
@@ -1755,14 +1769,189 @@ sub event_gimme(line, ChatSender, RequestedItem)
       }
   }
 
-  /echo [${Time}] ChatSender: ${ChatSender} item: ${RequestedItem} with qty ${GiveQty}
+  
+  /if (${DebugGimme}) /echo |- event_gimme ==>
+  /if (${Waiting4Rez}) /return
+  /if (${Bool[${Me.Buff[Resurrection Sickness]}]}) /return
+	
+
+  |Speical case setup for group based spells of crystals/shards/orbs/etc
+  /declare counter int local 0
+  /for counter 0 to 5
+
+    /if (${Bool[${Group.Member[${counter}]}]} && !${Defined[${Group.Member[${counter}].Name}_GimmeAzureCrystal]}) {
+      /declare ${Group.Member[${counter}].Name}_GimmeAzureCrystal int outer 0
+    }
+    /if (${Bool[${Group.Member[${counter}]}]} && !${Defined[${Group.Member[${counter}].Name}_GimmeModShard]}) {
+      /declare ${Group.Member[${counter}].Name}_GimmeModShard int outer 0
+    }
+
+    /if (${Bool[${Group.Member[${counter}]}]} && !${Defined[${Group.Member[${counter}].Name}_GimmeSanguine]}) {
+      /declare ${Group.Member[${counter}].Name}_GimmeSanguine int outer 0
+    }
+
+    /if (${Bool[${Group.Member[${counter}]}]} && !${Defined[${Group.Member[${counter}].Name}_GimmeMoltenOrb]}) {
+      /declare ${Group.Member[${counter}].Name}_GimmeMoltenOrb int outer 0
+      
+    }
+
+  /next counter
+
+  /if ((${RequestedItem.Equal[Azure Mind Crystal III]} ||${RequestedItem.Equal[Summoned: Large Modulation Shard]} || ${RequestedItem.Equal[Sanguine Mind Crystal III]} ||${RequestedItem.Equal[Molten orb]})) { 
+
+      |if not a group member requesting it, kick out
+      /if (!${Bool[${Group.Member[${Group.Member[${ChatSender}].Index}]}]}) /return
+
+   
+      |a group member requested this, so lets add to their counter
+      /if (${RequestedItem.Equal[Azure Mind Crystal III]}) {
+          /varcalc ${ChatSender}_GimmeAzureCrystal ${${ChatSender}_GimmeAzureCrystal}+1
+      } else /if (${RequestedItem.Equal[Summoned: Large Modulation Shard]}) {
+          /varcalc ${ChatSender}_GimmeModShard ${${ChatSender}_GimmeModShard}+1
+      } else /if (${RequestedItem.Equal[Sanguine Mind Crystal III]}) {
+         /echo <Gimme> Setting ${ChatSender}_GimmeModShard +1
+          /varcalc ${ChatSender}_GimmeSanguine ${${ChatSender}_GimmeSanguine}+1
+      }  else /if (${RequestedItem.Equal[Molten orb]}) {
+        /echo <Gimme> Setting ${ChatSender}_GimmeMoltenOrb +1
+          /varcalc ${ChatSender}_GimmeMoltenOrb ${${ChatSender}_GimmeMoltenOrb}+1
+      }
+    |now lets check to see
+
+    |now lets see if we have enough group members who need this.
+    /declare AzureCount_needMore int local 0
+    /declare SanguineCount_needMore int local 0
+    /declare ShardCount_needMore int local 0
+    /declare OrbCount_needMore int local 0
+
+
+    /declare AzureLimit int local 3
+    /declare SanguineLimit int local 1
+    /declare ModShardLimit int local 2
+    /declare MoltenOrbLimit int local 4 
+
+    /if (${idle}) {
+      /varset AzureLimit 0
+      /varset SanguineLimit 0
+      /varset ModShardLimit 0
+      /varset MoltenOrbLimit 0
+    }
+
+    /for counter 0 to 5
+        
+        /if (${${Group.Member[${counter}]}_GimmeModShard}>0) {
+            /varcalc ShardCount_needMore ${ShardCount_needMore}+1
+        }
+        /if (${${Group.Member[${counter}]}_GimmeSanguine}>0) {
+           
+            /varcalc SanguineCount_needMore ${SanguineCount_needMore}+1
+        }
+        /if (${${Group.Member[${counter}]}_GimmeAzureCrystal}>0) {
+            /varcalc AzureCount_needMore ${AzureCount_needMore}+1
+        }
+        /if (${${Group.Member[${counter}]}_GimmeMoltenOrb}>0) {
+             /echo <Gimme> OrbCount_needMore +1
+            /varcalc OrbCount_needMore ${OrbCount_needMore}+1
+             /echo <Gimme> OrbCount_needMore value:${OrbCount_needMore}
+        }
+
+    /next counter
+
+     /if (${RequestedItem.Equal[Azure Mind Crystal III]} ) {
+  
+          /if (${AzureCount_needMore}>=${AzureLimit} && ${Me.CurrentMana}>8500 && ${Me.AltAbilityReady[Azure Mind Crystal]}) {
+
+              /bc [${Time}] <Gimme_Event>:Creating Azure Mind Crystal III. Total Requests: ${AzureCount_needMore}
+  
+              /call castSimpleSpell "Azure Mind Crystal" 0
+              /for counter 0 to 5
+                /varset ${Group.Member[${counter}]}_GimmeAzureCrystal 0
+              /next counter
+
+          } else /if ( ${Me.CurrentMana}<=8000) {
+            
+               /bc [${Time}] <Gimme_Event>: Cannot supply Azure Mind Crystal III yet. Need more mana. Total Requests: ${AzureCount_needMore}, Needed Requests ${AzureLimit}
+          
+          } else /if (!${Me.AltAbilityReady[Azure Mind Crystal]}) {
+
+               /bc [${Time}] <Gimme_Event>: Cannot supply Azure Mind Crystal III yet. AA is not ready yet. Total Requests: ${AzureCount_needMore}, Needed Requests ${AzureLimit}
+          } else {
+
+             /bc [${Time}] <Gimme_Event>: Cannot supply Azure Mind Crystal III yet. Total Requests: ${AzureCount_needMore}, Needed Requests ${AzureLimit}
+          }
+         
+      } else /if (${RequestedItem.Equal[Sanguine Mind Crystal III]} ) {
+
+
+          /if (${SanguineCount_needMore}>=${SanguineLimit} &&  ${Me.CurrentMana}>4500 &&  ${Me.AltAbilityReady[Sanguine Mind Crystal]}) {
+
+                /bc [${Time}] <Gimme_Event>:Creating Sanguine Azure Mind Crystal III. Total Requests: ${SanguineCount_needMore}
+  
+                /call castSimpleSpell "Sanguine Mind Crystal" 0
+                /for counter 0 to 5
+                    /varset ${Group.Member[${counter}]}_GimmeSanguine 0
+                  /next counter
+
+          } else /if ( ${Me.CurrentMana}<=4500) {
+            
+               /bc [${Time}] <Gimme_Event>: Cannot supply Azure Mind Crystal III yet. Need more mana. Total Requests: ${SanguineCount_needMore}, Needed Requests ${SanguineLimit}
+          
+          } else /if (!${Me.AltAbilityReady[Sanguine Mind Crystal]}) {
+
+               /bc [${Time}] <Gimme_Event>: Cannot supply Sanguine Mind Crystal III yet. AA is not ready yet. Total Requests: ${SanguineCount_needMore}, Needed Requests ${SanguineLimit}
+          } else {
+
+             /bc [${Time}] <Gimme_Event>: Cannot supply Sanguine Mind Crystal III yet. Total Requests: ${SanguineCount_needMore}, Needed Requests ${SanguineLimit}
+          }
+
+       
+
+      } else /if (${RequestedItem.Equal[Summoned: Large Modulation Shard]} ) {
+        
+        /if (${ShardCount_needMore}>=${ModShardLimit} &&  ${Me.AltAbilityReady[Large Modulation Shard]}) {
+          /bc [${Time}] <Gimme_Event>:Large Modulation Shard. Total Requests: ${ShardCount_needMore}
+          /call castSimpleSpell "Large Modulation Shard" 0
+          /for counter 0 to 5
+              /varset ${Group.Member[${counter}]}_GimmeModShard 0
+          /next counter
+
+        } else {
+
+           /bc [${Time}] <Gimme_Event>: Cannot supply Large Modulation Shard.  Total Requests: ${ShardCount_needMore}, Needed Requests ${ModShardLimit}
+        }
+        
+      } else /if (${RequestedItem.Equal[Molten orb]}) {
+        
+        /if (${OrbCount_needMore}>=${MoltenOrbLimit} &&  ${Me.CurrentMana}>3500 &&  ${Me.SpellReady[Summon: Molten Orb]}) {
+
+              /bc [${Time}] <Gimme_Event>:Molten orb. Total Requests: ${OrbCount_needMore}
+              /call castSimpleSpell "Summon: Molten Orb" 0
+              /for counter 0 to 5
+                  /varset ${Group.Member[${counter}]}_GimmeMoltenOrb 0
+              /next counter
+
+          } else /if ( ${Me.CurrentMana}<=3500) {
+            
+               /bc [${Time}] <Gimme_Event>: Cannot supply Molten orb yet. Need more mana. Total Requests: ${OrbCount_needMore}, Needed Requests ${MoltenOrbLimit}
+          
+          } else /if (!${Me.SpellReady[Summon: Molten Orb]}) {
+
+               /bc [${Time}] <Gimme_Event>: Cannot supply Molten orb yet. Spell is not ready yet. Total Requests: ${OrbCount_needMore}, Needed Requests ${MoltenOrbLimit}
+          } else {
+
+             /bc [${Time}] <Gimme_Event>: Cannot supply Molten or yet. Total Requests: ${OrbCount_needMore}, Needed Requests ${MoltenOrbLimit}
+          }
+        
+      }
+
+    |clear out all the other events that may have piled up
+    /doevents flush gimme
+    /return
+  }
+  |End special case for group summon spells, old code below
 
   /declare DebugGimme false
 	/declare SummonSpellCast 
-	/if (${DebugGimme}) /echo |- event_gimme ==>
-  /if (${Waiting4Rez}) /return
-  /if (${Bool[${Me.Buff[Resurrection Sickness]}]}) /return
-	/echo Gimme Event: ${ChatSender} has requested a ${RequestedItem}
+	
 	/declare senderLoc string local ${Spawn[${ChatSender}].Loc}
 	/if (${DebugGimme}) /echo ${senderLoc}
 	/if (${DebugGimme}) /echo Distance = ${Math.Distance[${senderLoc}]}
@@ -1770,10 +1959,7 @@ sub event_gimme(line, ChatSender, RequestedItem)
 		/call notifyViaBCTell  ${ChatSender} "You're too far away. Please move closer and ask again."
    	/return
 	}
-	/if (${Bool[${Cursor.ID}]} || ${medBreak} || ${Me.Invis} || ${Me.PctHPs} < 85 || ${Me.PctAggro} > 1 || ${Me.CombatState.Equal[COMBAT]} || ${Assisting} || ${Me.Moving} || ${Me.Combat}) {
-    /call notifyViaBCTell  ${ChatSender} "I'm busy"
-  	/return
-	}
+
 	/declare platOnCursor local false
 	/target pc ${ChatSender}
 	/declare IsMyBot bool local ${Bool[${Select[${ChatSender}, ${NetBots.Client}]}]}
@@ -2105,9 +2291,6 @@ SUB check_Gimme
             /call notifyViaBCTell ${gimmeCharacter} "Gimme ${gimmeItem}"
 					}
 					/varset GimmeTimer${i} ${gimmeTimeout}
-					| Minimum of 10s delay between requests
-          /echo [${Time}] Delaying up to 10 second(s) in check_Gimme
-					/delay 10s
 					/return
 				}
 			}

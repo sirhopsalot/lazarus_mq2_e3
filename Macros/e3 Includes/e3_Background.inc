@@ -139,6 +139,8 @@ SUB check_Active
 				/destroy
 			}
 		}
+    |this would prevent casting if something was on the cursor, which in many cases is undesireable.
+    |tho this also impacts the auto inv feature....
     |**
 		| Check to see if I'm waiting to drop this item, or if I've picked up something new
 		/if (${Old_cursorID} != ${Cursor.ID}) {

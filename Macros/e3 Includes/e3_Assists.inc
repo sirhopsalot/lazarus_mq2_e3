@@ -494,7 +494,7 @@ SUB check_Nukes
       }
     } else {
 
-     
+  
       | skip casting if a delay is defined and active
       /if (${Defined[castDelay]} && ${Bool[${Nukes2D[${castIndex},${iDelay}]}]}) {
         /if (${castDelay}) {
@@ -579,7 +579,7 @@ SUB check_Nukes
           /if (${Debug} || ${Debug_Assists}) /echo skipping gift of mana spell ${Nukes2D[${castIndex},${iCastName}]}
           /goto :skipcast
       }
-
+       
       |if i have aggro and /noaggro is set, skip the spell
       /if (${Nukes2D[${castIndex},${iNoAggro}]}) {
         /if (${Me.TargetOfTarget.CleanName.Equal[${Me.CleanName}]}) {
@@ -605,14 +605,17 @@ SUB check_Nukes
       }
 
       | fix for using Ifs in Nukes, retarget to the AssistTarget before checking Ifs
-  	  /if (${Target.ID} != ${AssistTarget}) /call TrueTarget ${AssistTarget}
+  	  |/if (${Target.ID} != ${AssistTarget}) /call TrueTarget ${AssistTarget}
+
       /varset castIfName	${Nukes2D[${s},${iCastIf}]}
       /if (!${castIfName.Equal[-1]} ) {
             /if (!${Bool[${Target.Buff[${castIfName}]}]}) {
               |/echo \ag [${Time}] ${Target.CleanName} is not debuffed with ${castIfName} , skipping
+               /if (${Debug} || ${Debug_Assists}) /echo [${Time}] ${Target.CleanName} is not debuffed with ${castIfName} , skipping
               /goto :skipCast
             }   
       }
+      /if (${Debug} || ${Debug_Assists}) /echo Doing a ready check
       /call check_Ready "Nukes2D" ${castIndex}
 	  
       /if (${Debug} || ${Debug_Assists}) {
