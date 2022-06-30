@@ -493,7 +493,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos, bool NoDela
 						/varset c_SubToRun True
 						/echo [${Time}]: E3_Cast SubToRun called interrupt for spell: ${pendingCast}
 					 	/call interrupt
-						/delay 1s
+						/varset ActionTaken True
 						/varset castReturn CAST_INTERRUPTED
 						/goto :skipCast
 					}

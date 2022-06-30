@@ -1031,16 +1031,7 @@ SUB EVENT_EndMacro
 SUB EVENT_medOn(line, ChatSender)
 /if (${Debug} || ${Debug_Basics}) /echo |- EVENT_medOn ==>
   /if (!${checkEventArgs[${ChatSender},${line},UZR]}) /return
-  /if (${Me.Class.ShortName.NotEqual[BRD]}) {
-      /docommand ${ChatToggle} Meditating...
-      /varset medBreak TRUE
-	  /if (${Select[${Me.Class.ShortName},CLR,DRU,ENC,MAG,NEC,SHM,WIZ]}) /varset AssistType Off
-      /if (${line.Find[ Hold]}) {
-        /varset medBreak_Hold TRUE
-      } else {
-        /varset medBreak_Hold FALSE
-      }
-  }
+  /varset medBreak TRUE
 /if (${Debug} || ${Debug_Basics}) /echo <== EVENT_medOn -|
 /RETURN
 
@@ -1055,7 +1046,7 @@ SUB EVENT_medOff(line, ChatSender)
     /docommand ${ChatToggle} Ending Medbreak.
     /varset medBreak FALSE
     /varset medBreak_Hold FALSE
-	/if (${Ini[${Character_Ini},Assist Settings,Assist Type (Melee/Ranged/Off)].Length}) /call iniToVarV "${Character_Ini},Assist Settings,Assist Type (Melee/Ranged/Off)" AssistType string outer
+    |/if (${Ini[${Character_Ini},Assist Settings,Assist Type (Melee/Ranged/Off)].Length}) /call iniToVarV "${Character_Ini},Assist Settings,Assist Type (Melee/Ranged/Off)" AssistType string outer
     /if (${Me.Sitting}) /stand
   }
 /if (${Debug} || ${Debug_Basics}) /echo <== EVENT_medOff -|
@@ -1067,6 +1058,16 @@ SUB EVENT_medOff(line, ChatSender)
 |--------------------------------------------------------------------------------|
 SUB check_MedBreak
 /if (${Debug} || ${Debug_Basics}) /echo |- check_MedBreak ==>
+
+  /if (!${Bool[${medBreak}]} || ${Select[${Me.Class.ShortName},BRD]}) {
+    /return
+  }
+
+  |end medding if your following or attacking
+  /if ((${Bool[${Assisting}]} || ${Me.CombatState.Equal[COMBAT]} || ${Following})) {
+    /if (${Me.Sitting}) /stand
+    /return
+  }
 	| If End MedBreak in Combat (On/Off)=On in General and Character, and a netbot is in combat, call medOff
 	/if (${medOn_combatBreak} && ${medOn_combatBreakChar} && ${Me.CombatState.Equal[COMBAT]}) {
     /docommand ${ChatToggle} Ending Medbreak early due to combat.
@@ -1076,19 +1077,31 @@ SUB check_MedBreak
     /if (${Me.Sitting}) /stand
 	}
 	/if (!${Me.Feigning}) {
-		/if (!${medbreak_Popup_Timer}) {
-			/popup ***Meditating***
-			/varset medbreak_Popup_Timer 30
-		}
-		| end MedBreak when we are full mana or end for melee, unless hold is engaged
-		/if (${medBreak} && !${medBreak_Hold} && (${Me.PctMana} >= 99 || (${Me.MaxMana} ==0 && ${Me.PctEndurance}>=99))) {
-			/docommand ${ChatToggle} Full Mana/Endurance, ending MedBreak.
-			/if (${Me.Sitting}) /stand
-			/varset medBreak FALSE
-			/varset medBreak_Hold FALSE	
-			/if (${Ini[${Character_Ini},Assist Settings,Assist Type (Melee/Ranged/Off)].Length}) /call iniToVarV "${Character_Ini},Assist Settings,Assist Type (Melee/Ranged/Off)" AssistType string outer			
-		} else {
+	
+    /declare needsMed bool local False
+    /if (${Select[${Me.Class.ShortName},RNG]}) {
+        /if (${Me.PctMana} <=80 || ${Me.PctEndurance}<=80) {
+            /varset needsMed true
+        }
+    } else /if (${Me.MaxMana} ==0) {
+      /if (${Me.PctEndurance}<=80) {
+         /varset needsMed true
+      }
+    } else /if (${Me.PctMana} <=80 ) {
+        /varset needsMed true
+    }
+    | end MedBreak when we are full mana or end for melee, unless hold is engaged
+		/if ((${medBreak} && ${needsMed})||${Me.Sitting} ) {
+      /if (${medbreak_Popup_Timer}<1) {
+			  /popup ***Meditating***
+			  /varset medbreak_Popup_Timer 60
+		  }
+		
       /if (!${Me.Sitting} && !${Me.Casting.ID} && !${Me.Moving}) /sit
+    	|/docommand ${ChatToggle} Full Mana/Endurance, ending MedBreak.
+			|/varset medBreak FALSE
+			|/varset medBreak_Hold FALSE	
+			|/if (${Ini[${Character_Ini},Assist Settings,Assist Type (Melee/Ranged/Off)].Length}) /call iniToVarV "${Character_Ini},Assist Settings,Assist Type (Melee/Ranged/Off)" AssistType string outer			
 		}
 	}
 /if (${Debug} || ${Debug_Basics}) /echo <== check_MedBreak -|
@@ -1800,7 +1813,10 @@ sub event_gimme(line, ChatSender, RequestedItem)
   /if ((${RequestedItem.Equal[Azure Mind Crystal III]} ||${RequestedItem.Equal[Summoned: Large Modulation Shard]} || ${RequestedItem.Equal[Sanguine Mind Crystal III]} ||${RequestedItem.Equal[Molten orb]})) { 
 
       |if not a group member requesting it, kick out
-      /if (!${Bool[${Group.Member[${Group.Member[${ChatSender}].Index}]}]}) /return
+      /if (!${Bool[${Group.Member[${Group.Member[${ChatSender}].Index}]}]}) {
+        /call notifyViaBCTell  ${ChatSender} "Not a group member"
+        /return
+      }
 
    
       |a group member requested this, so lets add to their counter
@@ -1824,7 +1840,7 @@ sub event_gimme(line, ChatSender, RequestedItem)
     /declare OrbCount_needMore int local 0
 
 
-    /declare AzureLimit int local 3
+    /declare AzureLimit int local 2
     /declare SanguineLimit int local 1
     /declare ModShardLimit int local 2
     /declare MoltenOrbLimit int local 4 
@@ -2272,6 +2288,16 @@ SUB check_Gimme
 			/varset gimmeItem ${Gimmies[${i}].Arg[2,|]}
 			/varset gimmeTimeout ${Gimmies[${i}].Arg[3,|]}
 			
+       /if ((${gimmeItem.Equal[Azure Mind Crystal III]} ||${gimmeItem.Equal[Summoned: Large Modulation Shard]} || ${gimmeItem.Equal[Sanguine Mind Crystal III]} ||${gimmeItem.Equal[Molten orb]})) { 
+         
+         |if we are not part of the group, don't ask
+           |if not a group member requesting it, kick out
+          /if (!${Bool[${Group.Member[${Group.Member[${gimmeCharacter}].Index}]}]}) {
+            /goto :skipgGimme
+          }
+         
+       }
+
 			| If it's my bot, check if the target bot is available to gimme
 			/varset IsTargetMyBot ${Bool[${Select[${gimmeCharacter}, ${NetBots.Client}]}]}			
 			/if (${DebugCheckGimme}) /echo ${gimmeCharacter} IsTargetMyBot=${IsTargetMyBot}
@@ -2294,6 +2320,7 @@ SUB check_Gimme
 					/return
 				}
 			}
+      :skipgGimme
 		/next i
 	}
 	/if (${Debug}) /echo <== check_Gimme -|

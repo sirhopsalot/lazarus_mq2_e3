@@ -451,7 +451,6 @@ SUB check_Nukes
 
 /if (${Debug} || ${Debug_Assists}) /echo |- check_Nukes ==>
 	/if (${Defined[Nukes2D]} && ${Assisting} && ${use_Nukes}) {
-
    
     /declare castIfName string local  
 	  /declare castIndex int local
@@ -477,7 +476,8 @@ SUB check_Nukes
     
 
     |allows use of druid/mage DS, etc, in nukes based on spellset. casts on assistTargets target
-    /if (${Nukes2D[${castIndex},${iSpellType}].Find[Beneficial]} && !${Nukes2D[${castIndex},${iCastName}].Find[ Magic]}) {
+    /if (${Select[${Me.Class.ShortName},DRU,MAG]} && ${Nukes2D[${castIndex},${iSpellType}].Find[Beneficial]} && !${Nukes2D[${castIndex},${iCastName}].Find[ Magic]}) {
+     
       /if (${Target.ID} != ${AssistTarget}) /call TrueTarget ${AssistTarget}
       /if (${Select[${Me.TargetOfTarget.Class.ShortName},WAR,PAL,SHD]}) {
         /if (${Spawn[pc ${Me.TargetOfTarget}].ID}) {
@@ -604,13 +604,14 @@ SUB check_Nukes
         }
       }
 
-      |for using CastIfs in Nukes, retarget to the AssistTarget before checking CastIfs
-  	  /if (${Target.ID} != ${AssistTarget}) /call TrueTarget ${AssistTarget}
+     
 
       /varset castIfName	${Nukes2D[${s},${iCastIf}]}
       /if (!${castIfName.Equal[-1]} ) {
+             |for using CastIfs in Nukes, retarget to the AssistTarget before checking CastIfs
+  	        /if (${Target.ID} != ${AssistTarget}) /call TrueTarget ${AssistTarget}
             /if (!${Bool[${Target.Buff[${castIfName}]}]}) {
-              |/echo \ag [${Time}] ${Target.CleanName} is not debuffed with ${castIfName} , skipping
+              /echo \ag [${Time}] ${Target.CleanName} is not debuffed with ${castIfName} , skipping
                /if (${Debug} || ${Debug_Assists}) /echo [${Time}] ${Target.CleanName} is not debuffed with ${castIfName} , skipping
               /goto :skipCast
             }   
@@ -627,23 +628,32 @@ SUB check_Nukes
       /echo Range ${Nukes2D[${s},${iMyRange}]}
       }
 	  
-      /if (${c_Ready} && ${Nukes2D[${castIndex},${iIfs}]}) {
+      /if (${c_Ready}) {
         /if (${check_Mana["Nukes2D",${castIndex}]}) {
           /if (${check_Distance[${AssistTarget},${Nukes2D[${s},${iMyRange}]}]}) {
-
              /if (${Select[${Me.Class.ShortName},CLR,DRU,SHM]}) {
-     
+              |before we even begin to cast, verify again if we need to heal, and kickout if so
+               /call check_HealCasting_DuringDetrimental
+               /if (!${c_SubToRun}) {
+                  /bc [${Time}] Before Nuke cast check for Heals, Heals needed, kicking out.
+                  /varset ActionTaken True
+                  /if (${Debug} || ${Debug_Assists}) /echo <== check_Nukes -|
+                  /return
+               }
+                |set the checks for during the cast for interrupts
                /varset Nukes2D[${castIndex},${iSubToRun}] check_HealCasting_DuringDetrimental
-           
             }
             /varset typeOfCast ${Nukes2D[${castIndex},${iCastType}]}
-            /call e3_Cast ${AssistTarget} "Nukes2D" "${castIndex}"
+            |for ifs check they may want to check the target buffs, so have to make sure we are targeting before we cast
+            /if (${Target.ID} != ${AssistTarget}) /call TrueTarget ${AssistTarget}
+            /if (${Nukes2D[${castIndex},${iIfs}]}) {
+                  /call e3_Cast ${AssistTarget} "Nukes2D" "${castIndex}"
+            }
+        
           }
         }
       }
       
-
-     
       |if the nuke was succesful, see if there is a delay defined and create a timer which locks out all nukes for the duration
       |mainly used for PBAOE stuns
       /if (${Bool[${Nukes2D[${castIndex},${iDelay}]}]} && ${Select[${castReturn},CAST_SUCCESS]}) {
@@ -1185,7 +1195,7 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
     }
  
 
-    /if (!${Bool[${Me.Casting}]}) {
+    /if (!${Window[CastingWindow].Open}) {
 
      
       |Cast the spell!
@@ -1905,13 +1915,17 @@ SUB assist_SpellArrays
   } else /if (${Me.Class.ShortName.Equal[CLR]}) {
     /if (${Bool[${Me.AltAbility[Celestial Hammer]}]}) /call BuildArray "swarmPets" "Celestial Hammer"
     /if (${Bool[${FindItem[Graverobber's Icon]}]}) /call BuildArray "swarmPets" "Graverobber's Icon"
+  } else /if (${Me.Class.ShortName.Equal[WAR]}) {
+    /if (${Bool[${FindItem[Battered Smuggler's Barrel]}]}) /call BuildArray "swarmPets" "Battered Smuggler's Barrel"
   } else /if (${Me.Class.ShortName.Equal[ENC]}) {
     /if (${Bool[${Me.AltAbility[Doppelganger]}]}) {
       |/call BuildArray "swarmPets" "Doppelganger"
+     
     }
     /if (${Bool[${Me.AltAbility[Phantasmal Opponent]}]}) {
       /call BuildArray "swarmPets" "Phantasmal Opponent"
     }
+    /if (${Bool[${FindItem[Tarnished Skeleton Key]}]}) /call BuildArray "swarmPets" "Tarnished Skeleton Key"
   } else /if (${Me.Class.ShortName.Equal[PAL]}) {
     |/if (${Bool[${Me.AltAbility[Projection of Piety]}]}) /call BuildArray "swarmPets" "Projection of Piety"
   } else /if (${Me.Class.ShortName.Equal[DRU]}) {
