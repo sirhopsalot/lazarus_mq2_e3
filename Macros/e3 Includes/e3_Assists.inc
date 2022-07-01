@@ -611,8 +611,7 @@ SUB check_Nukes
              |for using CastIfs in Nukes, retarget to the AssistTarget before checking CastIfs
   	        /if (${Target.ID} != ${AssistTarget}) /call TrueTarget ${AssistTarget}
             /if (!${Bool[${Target.Buff[${castIfName}]}]}) {
-              /echo \ag [${Time}] ${Target.CleanName} is not debuffed with ${castIfName} , skipping
-               /if (${Debug} || ${Debug_Assists}) /echo [${Time}] ${Target.CleanName} is not debuffed with ${castIfName} , skipping
+              /if (${Debug} || ${Debug_Assists}) /echo [+g+] [${Time}] ${Target.CleanName} is not debuffed with ${castIfName} , skipping
               /goto :skipCast
             }   
       }
@@ -740,6 +739,7 @@ SUB cast_longTermSpells(int spellTarget, string ArrayName)
   /declare spellRecast int local 0
   /declare s int local
   /declare checkForName string local
+  /declare castIfName string local  
 
 	/for s 1 to ${${ArrayName}.Size[1]}
     /varset checkForName	${${ArrayName}[${s},${iCheckFor}]}
@@ -788,12 +788,30 @@ SUB cast_longTermSpells(int spellTarget, string ArrayName)
         /if (${Debug} || ${Debug_Assists}) /echo \gy Skipping ${${ArrayName}[${s},${iSpellName}]} due to Ifs on ${Target.CleanName}
         /goto :skipCast
     }
+    
+    /varset castIfName	${${ArrayName}[${s},${iCastIf}]}
+    /if (!${castIfName.Equal[-1]} ) {
+            |for using CastIfs in Nukes, retarget to the AssistTarget before checking CastIfs
+          /if (${Target.ID} != ${AssistTarget}) /call TrueTarget ${AssistTarget}
+          /if (!${Bool[${Target.Buff[${castIfName}]}]}) {
+            /echo \ag [${Time}] ${Target.CleanName} is not debuffed with [${castIfName}]  Skipping
+            /goto :skipCast
+          }   
+    }
     /call check_Ready "${ArrayName}" ${s}
     /if (${c_Ready}) {
       /if (${check_Mana[${ArrayName},${s}]}) {
         /if (${check_Distance[${spellTarg},${${ArrayName}[${s},${iMyRange}]}]}) {
     
             /if (${Select[${Me.Class.ShortName},CLR,DRU,SHM]}) {
+              |before we even begin to cast, verify again if we need to heal, and kickout if so
+               /call check_HealCasting_DuringDetrimental
+               /if (!${c_SubToRun}) {
+                  /bc [+g+] [${Time}] Before Nuke cast check for Heals, Heals needed, kicking out.
+                  /varset ActionTaken True
+                  /if (${Debug} || ${Debug_Assists}) /echo <== cast_longTermSpells -|
+                  /return
+               }
                /varset ${ArrayName}[${s},${iSubToRun}] check_HealCasting_DuringDetrimental
             }
           /call e3_Cast ${spellTarg} "${ArrayName}" "${s}"
@@ -1118,6 +1136,7 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
 /declare i int local
 /declare iSpellSwap int local 0
 /declare spellTimer string local
+/declare timeleftOnSpell int local 0
 |${${ArrayName}[${i},${iCastName}]}        --> strSpellName
 |${${ArrayName}[${i},${iAllowSpellSwap}]} --> 0/1 
 |${${ArrayName}[${i},${iNoEarlyRecast}]}  --> 0/1
@@ -1128,6 +1147,7 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
 |${${ArrayName}[${i},${iSpellGem}]}        --> int 
 
 /for i 1 to ${${ArrayName}.Size[1]}
+
     /doevents DoTsOff
     |make sure we have the right target    
     |make sure we don't need to do any healing
@@ -1163,18 +1183,33 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
     /if (!${${ArrayName}[${i},${iIfs}]}) {
       /continue
     }
-    |verify the spell we want to use is actulaly ready
-    /if (!(${Me.ItemReady[${${ArrayName}[${i},${iCastName}]}]} || ${Me.SpellReady[${${ArrayName}[${i},${iCastName}]}]} || ${Me.AltAbilityReady[${${ArrayName}[${i},${iCastName}]}]})) {
-       /continue
-    }
     |Change the target here, as we need the correct target if using TimeLeftOnMySpell
-    /if (${Bool[${Target.ID} != ${TargetID}]}) {
-      /if (${Debug} || ${Debug_Assists})  /echo changing target to ${TargetID}
+    /if (${Target.ID} != ${TargetID}) {
+      |/if (${Debug} || ${Debug_Assists})  /echo changing target to ${TargetID}
+      |/echo <cast_Dots> changing target to ${TargetID} from targetid: ${Target.ID}
       /target id ${TargetID}
       /delay 2
     }
+    /varset timeleftOnSpell ${TimeLeftOnMySpell[${${ArrayName}[${i},${iCastName}]}]} 
+    |Skip if this spell is already on the NPC from me and has more than 4 seconds left on it. (This is spell casts)
+    /if (${timeleftOnSpell} > 4 && !${Bool[${${ArrayName}[${i},${iTriggerSpell}]}]}) {
+      /continue
+    }
+
+    |verify the spell we want to use is actually ready
+    :recheckCooldown
+    /if (!(${Me.ItemReady[${${ArrayName}[${i},${iCastName}]}]} || ${Me.SpellReady[${${ArrayName}[${i},${iCastName}]}]} || ${Me.AltAbilityReady[${${ArrayName}[${i},${iCastName}]}]})) {
+
+       |we are here because our spells are on cooldown, 
+       /if (${Me.SpellInCooldown}) {
+          /delay 1
+          /goto :recheckCooldown
+       }
+
+       /continue
+    }
     |Skip if /NoEarlyRecast is set and the mob has this spell from me
-    /if (${TimeLeftOnMySpell[${${ArrayName}[${i},${iCastName}]}]} > 0 && ${${ArrayName}[${i},${iNoEarlyRecast}]}) {
+    /if (${timeleftOnSpell} > 0 && ${${ArrayName}[${i},${iNoEarlyRecast}]}) {
       /continue
     }
     |Skip if /NoStack is set and ANYONE (including myself) have already casted this on the NPC
@@ -1182,17 +1217,14 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
       /continue
     }
     |Skip if /TriggerSpell|SpellName is set and both the spell and TriggerSpell are already on the NPC from me
-    /if (${Bool[${${ArrayName}[${i},${iTriggerSpell}]}]} && ${TimeLeftOnMySpell[${${ArrayName}[${i},${iTriggerSpell}]}]} > 4 && ${TimeLeftOnMySpell[${${ArrayName}[${i},${iCastName}]}]} > 4) {
+    /if (${Bool[${${ArrayName}[${i},${iTriggerSpell}]}]} && ${TimeLeftOnMySpell[${${ArrayName}[${i},${iTriggerSpell}]}]} > 4 && ${timeleftOnSpell} > 4) {
       /continue
     }
     |Skip if this spell is already on the NPC from me and has more than 4 seconds left on it. (This is item casts)
     /if (${Bool[${FindItem[=${${ArrayName}[${i},${iCastName}]}]}]} && ${TimeLeftOnMySpell[${FindItem[=${${ArrayName}[${i},${iCastName}]}].Spell}]} > 4) {
       /continue
     }
-    |Skip if this spell is already on the NPC from me and has more than 4 seconds left on it. (This is spell casts)
-    /if (${TimeLeftOnMySpell[${${ArrayName}[${i},${iCastName}]}]} > 4 && !${Bool[${${ArrayName}[${i},${iTriggerSpell}]}]}) {
-      /continue
-    }
+    
  
 
     /if (!${Window[CastingWindow].Open}) {
@@ -1201,6 +1233,7 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
       |Cast the spell!
       /call e3_Cast ${TargetID} ${ArrayName} ${i}
       
+      |Resist checks
       /if (${Cast.Stored.Name.Equal[${${ArrayName}[${i},${iSpellName}]}]} && ${castReturn.Equal[CAST_RESIST]}) {
        
         /if (!${Defined[${resistCount}]}) {
@@ -1278,6 +1311,8 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
       |End Spell Swap Code
 
       |These checks are the same as above--but for the NEXT spell in the DoT array. This is so we don't QuickCast a spell that wouldn't be casted already.
+
+      |verify that the next thing is an AA or Item, so we can ignore the GCD
       /if (${i} < ${${ArrayName}.Size[1]} && ${Bool[${Me.Book[${${ArrayName}[${i},${iCastName}]}]}]} && !${Bool[${Me.Book[${${ArrayName}[${Math.Calc[${i}+1]},${iCastName}]}]}]}) {
         
         |Incrementing loop up 1 so we can check the next spell in sequence. 
@@ -1318,6 +1353,7 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
         }
         /echo QuickCast:: ${${ArrayName}[${i},${iCastName}]}
         /call e3_Cast ${TargetID} ${ArrayName} ${i} True
+        
       } else {
         /return
       }
@@ -1915,17 +1951,13 @@ SUB assist_SpellArrays
   } else /if (${Me.Class.ShortName.Equal[CLR]}) {
     /if (${Bool[${Me.AltAbility[Celestial Hammer]}]}) /call BuildArray "swarmPets" "Celestial Hammer"
     /if (${Bool[${FindItem[Graverobber's Icon]}]}) /call BuildArray "swarmPets" "Graverobber's Icon"
-  } else /if (${Me.Class.ShortName.Equal[WAR]}) {
-    /if (${Bool[${FindItem[Battered Smuggler's Barrel]}]}) /call BuildArray "swarmPets" "Battered Smuggler's Barrel"
   } else /if (${Me.Class.ShortName.Equal[ENC]}) {
     /if (${Bool[${Me.AltAbility[Doppelganger]}]}) {
       |/call BuildArray "swarmPets" "Doppelganger"
-     
     }
     /if (${Bool[${Me.AltAbility[Phantasmal Opponent]}]}) {
       /call BuildArray "swarmPets" "Phantasmal Opponent"
     }
-    /if (${Bool[${FindItem[Tarnished Skeleton Key]}]}) /call BuildArray "swarmPets" "Tarnished Skeleton Key"
   } else /if (${Me.Class.ShortName.Equal[PAL]}) {
     |/if (${Bool[${Me.AltAbility[Projection of Piety]}]}) /call BuildArray "swarmPets" "Projection of Piety"
   } else /if (${Me.Class.ShortName.Equal[DRU]}) {

@@ -1756,7 +1756,7 @@ Sub basics_Aliases
 #event gimme "[#1#(msg)] Gimme #2#"
 sub event_gimme(line, ChatSender, RequestedItem)
 
-  /echo [${Time}] <Gimme_Event>: ChatSender: ${ChatSender} item: ${RequestedItem} with qty ${GiveQty}
+
   
   |Check to see if we should actually pay attention to this.
   /call check_AmIDead 10 5
@@ -1774,14 +1774,18 @@ sub event_gimme(line, ChatSender, RequestedItem)
   /declare GiveQty int local 0
   /declare QtyTotalIndex int local 0
 
+  
+
   /if (${Bool[${RequestedItem.Length}]}) {
       /varset QtyTotalIndex ${RequestedItem.Find[qtytotal]}
+      /echo qtyTotalIndex: ${QtyTotalIndex}
       /if (${QtyTotalIndex}>0) {
           /varset GiveQty ${RequestedItem.Token[2,=]}
           /varset RequestedItem ${RequestedItem.Left[${Math.Calc[${QtyTotalIndex}-2]}]}       
       }
   }
 
+  /echo [${Time}] <Gimme_Event>: ChatSender: ${ChatSender} item: ${RequestedItem} with qty ${GiveQty}
   
   /if (${DebugGimme}) /echo |- event_gimme ==>
   /if (${Waiting4Rez}) /return

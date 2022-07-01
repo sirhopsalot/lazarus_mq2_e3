@@ -662,23 +662,22 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos, bool NoDela
 sub CastAfterBeforeSpell(spellName)
 	
 	/if (${spellName.Length}>1) {
-		/declare spellItemReady bool local ${Me.ItemReady[${spellName}]}
-		/if (${Me.SpellReady[${spellName}]} || ${Me.AltAbilityReady[${spellName}]} || ${spellItemReady} ) {
-			/if (${spellItemReady}) {
-				|need to check if there is a cooldown on it
-				/declare spellItemID int local ${FindItem[${spellName}].ID}
-				/if (${Defined[SpellRecast_${spellItemID}]}) {
-							
-					/if (${SpellRecast_${spellItemID}}) {
-						|our timer is still active, skip this and say we are not recovered yet.
-						|No action taken, so they can cast the next thing in the list.
-						|/echo CastAfterBeforeSpell SpellRecast is on cooldown still for: ${SpellRecast_${spellItemID}} seconds
-						/return
-					}
-				} 
-			}
+		/call check_ReadySimple "${spellName}"
+        /if (${c_Ready}) {
+			|need to check if there is a cooldown on it
+			/declare spellItemID int local ${FindItem[${spellName}].ID}
+			/if (${Defined[SpellRecast_${spellItemID}]}) {
+						
+				/if (${SpellRecast_${spellItemID}}) {
+					|our timer is still active, skip this and say we are not recovered yet.
+					|No action taken, so they can cast the next thing in the list.
+					|/echo CastAfterBeforeSpell SpellRecast is on cooldown still for: ${SpellRecast_${spellItemID}} seconds
+					/return
+				}
+			} 
 			/call castSimpleSpell "${spellName}" 0
-		}
+	    }
+		
 	}
 /return
 
@@ -695,20 +694,34 @@ Sub check_Ready(ArrayName, int ArrayIndex)
     /if (!${Bool[${Me.Gem[${${ArrayName}[${ArrayIndex},${iCastName}]}]}]}) {
  		/call memorize_spell "${${ArrayName}[${ArrayIndex},${iCastName}]}" ${${ArrayName}[${ArrayIndex},${iSpellGem}]}
 	}
-
+	:recheckCooldown
 	/if ((${Bool[${Me.Gem[Focused Hail of Arrows]}]}  &&  ${Bool[${Me.Gem[Hail of Arrows]}]}) && (${${ArrayName}[${ArrayIndex},${iCastName}].Equal[Focused Hail of Arrows]} || ${${ArrayName}[${ArrayIndex},${iCastName}].Equal[Hail of Arrows]})) {
 		|spell hard coded as me.spelready returns true when one is on cooldown because of a timer of another.
 		/varset c_Ready TRUE
 		/if (!${Me.SpellReady[Focused Hail of Arrows]}) /varset c_Ready FALSE
 		/if (!${Me.SpellReady[Hail of Arrows]}) /varset c_Ready FALSE
+		/return ${c_Ready}
 
-	} else /if ((${Bool[${Me.Gem[Mana Flare]}]}  &&  ${Bool[${Me.Gem[Mana Recursion]}]}) && (${${ArrayName}[${ArrayIndex},${iCastName}].Equal[Mana Flare]} || ${${ArrayName}[${ArrayIndex},${iCastName}].Equal[Mana Recursion]})) {
+	}
+	/if ((${Bool[${Me.Gem[Mana Flare]}]}  &&  ${Bool[${Me.Gem[Mana Recursion]}]}) && (${${ArrayName}[${ArrayIndex},${iCastName}].Equal[Mana Flare]} || ${${ArrayName}[${ArrayIndex},${iCastName}].Equal[Mana Recursion]})) {
 		|spell hard coded as me.spelready returns true when one is on cooldown because of a timer of another.
 		/varset c_Ready TRUE
 		/if (!${Me.SpellReady[Mana Flare]}) /varset c_Ready FALSE
 		/if (!${Me.SpellReady[Mana Recursion]}) /varset c_Ready FALSE
+		/return ${c_Ready}
+	}
+	/if (${Me.SpellReady[${${ArrayName}[${ArrayIndex},${iCastName}]}]}) {
+		|verify the spell we want to use is actually ready
+    
+  	    /varset c_Ready TRUE
+		/return ${c_Ready}
+    }
+	/if (${Me.SpellInCooldown} && ${Bool[${Me.Gem[${${ArrayName}[${ArrayIndex},${iCastName}]}]}]}) {
+		|we are here because our spells are on cooldown, 
+		/delay 1
+		/goto :recheckCooldown
+	}
 
-	} else /if (${Me.SpellReady[${${ArrayName}[${ArrayIndex},${iCastName}]}]}) /varset c_Ready TRUE
  
   } else /if (${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Item]}) {
 	|Need to check if we already have this item on cooldown
@@ -770,7 +783,18 @@ Sub check_ReadySimple(spellName, gemToUse)
 		}
 		/call memorize_spell "${spellName}" ${tempGemNum}
 	}
-	/if (${Me.SpellReady[${spellName}]}) /varset c_Ready TRUE
+	:recheckCooldown
+     /if (${Me.SpellReady[${spellName}]}) {
+		  /varset c_Ready TRUE
+		  /RETURN ${c_Ready}
+	}
+	/if (${Me.SpellInCooldown} && ${Bool[${Me.Gem[${spellName}]}]}) {
+		|we are here because our spells are on cooldown, 
+		/delay 1
+		/goto :recheckCooldown
+	}
+
+
   } else /if (${spellType.Equal[Item]}) {
 	|Need to check if we already have this item on cooldown
 	/declare itemID int local ${FindItem[=${spellName}].ID}
