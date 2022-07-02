@@ -1801,7 +1801,11 @@ sub event_gimme(line, ChatSender, RequestedItem)
 	
 	/if (${DebugGimme}) /echo RequestedItem IsModShard = ${Bool[${RequestedItem.Find[Modulation Shard]}]}
 	/declare IsRequestedItemModShard bool local ${Bool[${RequestedItem.Find[Modulation Shard]}]}
-	
+	/declare IsRequestedPetWeapons bool local ${Bool[${RequestedItem.Find[Pet Weapons]}]}
+  /declare IsRequestedManaCrystal bool local ${Bool[${RequestedItem.Find[Azure Mind Crystal]}]}
+  /declare IsRequestedHealCrystal bool local ${Bool[${RequestedItem.Find[Sanguine Mind Crystal]}]}
+  /declare IsRequestedMoltenOrb bool local ${Bool[${RequestedItem.Find[Molten Orb]}]}
+
 	/call notifyViaBCTell  ${ChatSender} "${RequestedItem}, coming right up"
 	/declare DiamondCoinName Diamond Coin
 	/declare DCName DC
@@ -1812,6 +1816,35 @@ sub event_gimme(line, ChatSender, RequestedItem)
 	}	
 	/if (${DebugGimme}) /echo IsMyBot = ${IsMyBot}
 	/if (${DebugGimme}) /echo RequestedItem = ${RequestedItem}
+ 
+  /if (${IsRequestedPetWeapons}) {
+    /call castSimpleSpell "Grant Spectral Armaments" ${Spawn[${ChatSender}].ID}
+    /call castSimpleSpell "Grant Spectral Plate" ${Spawn[${ChatSender}].ID}
+    /call castSimpleSpell "Grant Enibik's Heirlooms" ${Spawn[${ChatSender}].ID}
+    /doevents flush gimme
+    /RETURN
+  }
+
+  /if (${IsRequestedHealCrystal}) {
+    /call castSimpleSpell "Sanguine Mind Crystal" ${Spawn[${ChatSender}].ID}
+    /doevents flush gimme
+    /RETURN
+  }
+
+  /if (${IsRequestedManaCrystal}) {
+    /call castSimpleSpell "Azure Mind Crystal" ${Spawn[${ChatSender}].ID}
+    /doevents flush gimme
+    /RETURN
+  }
+
+  /if (${IsRequestedMoltenOrb}) {
+    /call castSimpleSpell "Molten Orb" ${Spawn[${ChatSender}].ID}
+    /doevents flush gimme
+    /RETURN
+  }
+
+  /declare i int local 0
+
 	/if (${IsMyBot} && ${DiamondCoinName.Equal[${RequestedItem}]}) {
 		/delay 1
 		/echo Collecting Diamond Coins to give to ${ChatSender}
@@ -1823,15 +1856,19 @@ sub event_gimme(line, ChatSender, RequestedItem)
      /echo [${Time}] Delaying up to 1 second(s) in event_gimme
 		/delay 1s
 		/notify InventoryWindow AltCurr_PointList listselect 8
-     /echo [${Time}] Delaying up to 1 second(s) in event_gimme
+    /echo [${Time}] Delaying up to 1 second(s) in event_gimme
 		/delay 1s
 		/notify InventoryWindow IW_AltCurr_ReclaimButton leftmouseup
      /echo [${Time}] Delaying up to 1 second(s) in event_gimme
 		/delay 1s
-		/notify InventoryWindow IW_AltCurr_CreateItemButton leftmouseup
-     /echo [${Time}] Delaying up to 1 second(s) in event_gimme
-		/delay 1s
-		/notify QuantityWnd QTYW_Accept_Button leftmouseup
+    /for i 1 to 8
+		  /notify InventoryWindow IW_AltCurr_CreateItemButton leftmouseup
+      /echo [${Time}] Delaying up to 1 second(s) in event_gimme
+		  /delay 3
+		  /notify QuantityWnd QTYW_Accept_Button leftmouseup
+      /delay 3
+    /next i
+
     /echo [${Time}] Delaying up to 3 second(s) in event_gimme
 		/delay 3s ${Bool[${Cursor.ID}]}
 		/if (${Window[InventoryWindow].Child[IW_AltCurrPage].Open}) /if (${Window[InventoryWindow].DoClose}) /echo Inventory Window Closed
@@ -1996,7 +2033,7 @@ sub event_gimme(line, ChatSender, RequestedItem)
 
     /declare originalLoc string local ${Me.Loc}
 		/if (${DebugGimme}) /echo IsClose = ${Bool[${Math.Distance[${senderLoc}]}<20]}
-		/stick 12
+		/stick 12 
 		/while (${Math.Distance[${Spawn[${ChatSender}].Loc}]}>20) {
 			/if (${Debug}) /echo Distance = ${Math.Distance[${senderLoc}]}
       /echo [${Time}] Delaying up to 1 second(s) in event_gimme
@@ -2004,7 +2041,13 @@ sub event_gimme(line, ChatSender, RequestedItem)
 		}
 		/if (${DebugGimme}) /echo Distance = ${Math.Distance[${senderLoc}]}
 		/if (${DebugGimme}) /echo IsClose = ${Bool[${Math.Distance[${senderLoc}]}<20]}
-		/click left target
+    /for i 1 to 8
+		  /click left target
+      /if (${Bool[${Cursor.Name.NotEqual[Diamond Coin]}]}) {
+        /break
+      }
+      /delay 1s
+    /next i
     /echo [${Time}] Delaying up to 3 second(s) in event_gimme
 		/delay 3s ${Window[TradeWnd].Open}
 		/declare tradeTries int local 0
@@ -2072,6 +2115,7 @@ SUB check_Gimme
   /if (${Waiting4Rez}) /return
   /if (${Bool[${Me.Buff[Resurrection Sickness]}]}) /return
 	/declare DebugCheckGimme local false
+  /declare DoINeedBags bool local false
 	/if (!${Defined[GimmeEnabled]}) /declare GimmeEnabled bool outer ${Bool[${Ini[${Character_Ini},Gimme]}]}
     /if (${GimmeEnabled} && !${Bool[${Cursor.ID}]} && !${medBreak} && !${Me.CombatState.Equal[DEBUFFED]} && !${Me.Invis} && ${Me.PctHPs} == 100 && ${Me.PctAggro} < 1 && !${Me.CombatState.Equal[COMBAT]} && !${Assisting} && !${Me.Moving} && !${Me.Combat}) {   
 		/if (!${Defined[Gimmies]}) /call IniToArrayV "${Character_Ini},Gimme,Gimme#" Gimmies
@@ -2098,7 +2142,25 @@ SUB check_Gimme
 				/if (${DebugCheckGimme}) /echo ${gimmeCharacter} PctHPs ${NetBots[${gimmeCharacter}].PctHPs}
 			} else {
 				/if (!${Defined[GimmeTimer${i}]}) /declare GimmeTimer${i} timer outer 0
-				/if (!${Bool[${FindItem[=${gimmeItem}]}]} && ${GimmeTimer${i}} == 0 && ${Bool[${Spawn[${gimmeCharacter}]}]}) {
+
+        /if (${gimmeItem.Equal[Pet Weapons]}) {
+            /declare HeirloomBag string local Folded Pack of Enibik's Heirlooms
+            /declare ArmorBag string local Folded Pack of Spectral Plate
+            /declare WeaponBag string local Folded Pack of Spectral Armaments
+            /if (!${Bool[${FindItem[=${HeirloomBag}]}]}) {
+                /varset DoINeedBags true
+            }
+            /if (!${Bool[${FindItem[=${ArmorBag}]}]}) {
+                /varset DoINeedBags true
+            }  
+            /if (!${Bool[${FindItem[=${WeaponBag}]}]}) {
+                /varset DoINeedBags true
+            }
+
+
+        }
+
+				/if (!${Bool[${FindItem[=${gimmeItem}]}]} && ${GimmeTimer${i}} == 0 && ${Bool[${Spawn[${gimmeCharacter}]}]} && ${DoINeedBags}) {
 					/if (${Bool[${Spawn[pc ${gimmeCharacter}]}]}) {
 						/echo ==> Gimme: Hey ${gimmeCharacter} Gimme a ${gimmeItem}
 						/delay 1
@@ -2284,8 +2346,8 @@ SUB event_collect(line, ChatSender, RequestedItem)
     /declare i int local
     /for i 1 to ${Group.Members}
       /t ${Group.Member[${i}]} Gimme ${RequestedItem}
-      /echo [${Time}] Delaying up to 4 second(s) in event_collect
-      /delay 4s
+      /echo [${Time}] Delaying up to 15 second(s) in event_collect
+      /delay 15s
     /next i 
   }
 /RETURN

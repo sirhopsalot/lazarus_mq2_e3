@@ -41,6 +41,235 @@ SUB summonPet
     /squelch /pet ghold on
   }  
 	/if (${Debug} || ${Debug_Pets}) /echo <== summonPet -|
+  |Removing this until SelfArmPets is fully functional
+  |Right now it works great if you add a gimme for pet weapons and KNOW that you have open space.
+  |/call selfArmPet
+/RETURN
+
+SUB selfArmPet
+  /if (${Debug} || ${Debug_Pets}) /echo |- selfArmPet ==>
+
+  /if (!${Bool[${Me.Pet}]}) {
+    |I don't have a pet!
+    /RETURN
+  }
+  /declare HeirloomBag string local Folded Pack of Enibik's Heirlooms
+  /declare ArmorBag string local Folded Pack of Spectral Plate
+  /declare WeaponBag string local Folded Pack of Spectral Armaments
+  /declare MissingBagCount int local 0
+  /declare TryCounter int local 0
+
+  /call CleanUpSummonedBags "Pouch of Quellious"
+  /call CleanUpSummonedBags "Phantom Satchel"
+
+  /call PrepareInventorySpace
+
+
+  /if (!${Bool[${FindItem[=${HeirloomBag}]}]} && ${Bool[${Me.Pet}]}) {
+    /varcalc MissingBagCount ${MissingBagCount}+1
+  }
+  /if (!${Bool[${FindItem[=${ArmorBag}]}]} && ${Bool[${Me.Pet}]}) {
+    /varcalc MissingBagCount ${MissingBagCount}+1
+  }  
+  /if (!${Bool[${FindItem[=${WeaponBag}]}]} && ${Bool[${Me.Pet}]}) {
+    /varcalc MissingBagCount ${MissingBagCount}+1
+  }
+
+  /if (${MissingBagCount} == 3) {
+    /RETURN
+  }
+
+  /declare wasFollowing bool local ${Following}
+  /varset Following FALSE
+
+  /if (${Bool[${Me.Pet}]} && (!${Spawn[${Me.Pet}].LineOfSight} || ${Spawn[${Me.Pet}].Distance} > 5) && ${Me.AltAbilityReady[Summon Compansion]}) {
+    /call castSimpleSpell "Summon Companion" ${Me.Pet.ID}
+    /delay 1s
+
+      /if (${Spawn[${Me.Pet}].Distance} > 10) {
+        /bc My pet is running away?
+      /RETURN
+    }
+  } 
+
+  /if (${Bool[${FindItem[=${WeaponBag}]}]}) {
+    /call castSimpleSpell "${WeaponBag}" ${Me.Pet.ID}
+  } 
+  |Lets do Fire/Ice/Armor/Heirlooms first
+  /if (${Bool[${FindItem[=${HeirloomBag}]}]}) {
+    /call castSimpleSpell "${HeirloomBag}" ${Me.Pet.ID}
+  }
+  /if (${Bool[${FindItem[=${ArmorBag}]}]}) {
+    /call castSimpleSpell "${ArmorBag}" ${Me.Pet.ID}
+  } 
+
+  /target id ${Me.Pet.ID}
+
+  /if (${Cursor.Name.Equal[Pouch of Quellious]}) {
+    /autoinventory
+    /delay 1s
+  }
+  
+  /while (${Cursor.Name.Equal[Phantom Satchel]} && ${TryCounter} <= 10) {
+    /click left target
+    /varset TryCounter ${Math.Calc[${TryCounter}+1]}
+    /if (${Cursor.Name.Equal[Phantom Satchel]}) /delay 1s
+  }
+
+  /if (${Cursor.Name.Equal[Phantom Satchel]}) {
+    /bc Failed to hand item to pet. Ending
+    /autoinventory
+    /delay 1s
+    /autoinventory
+    /RETURN
+  }
+
+  /if (${Bool[${FindItem[Summoned: Orb of Chilling Water]}]}) {
+    /ItemNotify "Summoned: Orb of Chilling Water" leftmouseup
+      /while (${Cursor.Name.Equal[Summoned: Orb of Chilling Water]} && ${TryCounter} <= 5) {
+        /click left target
+        /varset TryCounter ${Math.Calc[${TryCounter}+1]}
+        /if (${Cursor.Name.Equal[Summoned: Orb of Chilling Water]}) /delay 1s
+      }
+
+      /if (${Cursor.Name.Equal[Summoned: Orb of Chilling Water]}) {
+        /bc Failed to hand item to pet. Ending
+        /autoinventory
+        /RETURN
+      }
+  }
+
+  /if (${Bool[${FindItem[Summoned: Orb of Chilling Water]}]}) {
+    /ItemNotify "Summoned: Orb of Chilling Water" leftmouseup
+      /while (${Cursor.Name.Equal[Summoned: Orb of Chilling Water]} && ${TryCounter} <= 5) {
+        /click left target
+        /varset TryCounter ${Math.Calc[${TryCounter}+1]}
+        /if (${Cursor.Name.Equal[Summoned: Orb of Chilling Water]}) /delay 1s
+      }
+
+      /if (${Cursor.Name.Equal[Summoned: Orb of Chilling Water]}) {
+        /bc Failed to hand item to pet. Ending
+        /autoinventory
+        /RETURN
+      }
+  }
+
+    |Accept trade window
+  /varset TryCounter 0
+  /while (${Window[GiveWnd].Open} && ${TryCounter} <= 20) {
+    /notify GiveWnd GVW_Give_Button LeftMouseUp
+    /varset TryCounter ${Math.Calc[${TryCounter}+1]}
+    /if (!${Window[GiveWnd].Open}) /delay 1
+  }
+
+  /call CleanUpSummonedBags "Pouch of Quellious"
+  /call CleanUpSummonedBags "Phantom Satchel"
+  
+/RETURN
+
+|TODO: Organize inventory to put the weapon bag in a bag slot
+SUB PrepareInventorySpace
+  /declare i int local 23
+  /declare IsBagSlotFree bool local false
+
+  /for i 23 to 32
+
+  /next
+
+
+/RETURN
+
+SUB CleanUpSummonedBags(BagName)
+    |Start Clean Up Bags
+      /if (${Bool[${FindItem[${BagName}]}]}) {
+        /declare bagCount int local 0
+        /declare BagSlot int local 0
+        /declare i int local 0
+        /declare okToDestroy bool local true
+
+      /for bagCount 1 to 10
+        /varset BagSlot ${FindItem[${BagName}].ItemSlot}
+        /if (${BagSlot} >= 23 && ${BagSlot} <= 32) {
+          /varset okToDestroy true
+          |-- Make sure everything inside this bag is a summoned item as defined in IsItemSummoned
+          /for i 1 to 10
+            /if (${Bool[${Me.Inventory[${BagSlot}].Item[${i}]}]}) {
+              /if (!${IsItemSummoned[${Me.Inventory[${BagSlot}].Item[${i}]}]}) {
+                /echo Don't destroy ${Me.Inventory[${BagSlot}].Item[${i}]} in ${BagSlot}
+                /varset okToDestroy false
+             }
+           }
+          /next i
+          | -- Delete the whole bag if everything inside it is summoned
+         /if (${okToDestroy}) {
+           /ItemNotify "${Me.Inventory[${BagSlot}]}" leftmouseup
+           /delay 1s
+            /if (${Cursor.Name.Equal[${BagName}]}) {
+             /destroy
+            }
+          } else {
+           /bc ${Me.Name} has an item in the Pouch of Quellious that I want to destroy. 
+          }
+        }
+        /if (!${Bool[${FindItem[${BagName}]}]}) {
+          /break
+        }
+       /next bagCount
+      }
+      | -- End Clean Up Bags
+/RETURN
+
+
+SUB IsItemSummoned(ItemName)
+
+  /if (${ItemName.Equal[Summoned: Buckler of Draining Defense]}) {
+   /RETURN True
+  } else /if (${ItemName.Equal[Summoned: Fist of Flame]}) {
+   /RETURN True
+  } else /if (${ItemName.Equal[Summoned: Orb of Chilling Water]}) {
+    /RETURN True
+  } else /if (${ItemName.Equal[Summoned: Short Sword of Warding]}) {
+   /RETURN True
+  } else /if (${ItemName.Equal[Summoned: Mace of Temporal Distortion]}) {
+   /RETURN True
+  } else /if (${ItemName.Equal[Summoned: Spear of Maliciousness]}) {
+   /RETURN True
+  } else /if (${ItemName.Equal[Summoned: Wand of Dismissal]}) {
+   /RETURN True
+  } else /if (${ItemName.Equal[Summoned: Tendon Carver]}) {
+   /RETURN True
+  } else /if (${ItemName.Equal[Enibik's Satin Choker]}) {
+   /RETURN True
+  } else /if (${ItemName.Equal[Enibik's Woven Shawl]}) {
+   /RETURN True
+  } else /if (${ItemName.Equal[Enibik's Linked Bracelet]}) {
+   /RETURN True
+  } else /if (${ItemName.Equal[Summoned: Visor of Vabtik]}) {
+   /RETURN True
+  } else /if (${ItemName.Equal[Enibik's Jade Bracelet]}) {
+   /RETURN True
+  } else /if (${ItemName.Equal[Enibik's Gold Ring]}) {
+   /RETURN True
+  } else /if (${ItemName.Equal[Enibik's Ridged Earhoop]}) {
+   /RETURN True
+  } else /if (${ItemName.Equal[Spectral Plate Helm]}) {
+   /RETURN True
+  } else /if (${ItemName.Equal[Spectral Plate Vambraces]}) {
+   /RETURN True
+  } else /if (${ItemName.Equal[Spectral Plate Gauntlets]}) {
+   /RETURN True
+  } else /if (${ItemName.Equal[Spectral Plate Boots]}) {
+   /RETURN True
+  } else /if (${ItemName.Equal[Spectral Plate Bracers]}) {
+   /RETURN True
+  } else /if (${ItemName.Equal[Spectral Plate Breastplate]}) {
+   /RETURN True
+  } else /if (${ItemName.Equal[Spectral Plate Greaves]}) {
+   /RETURN True
+  } else /if (${ItemName.Equal[Summoned: Spectral Belt]}) {
+   /RETURN True
+  }
+
 /RETURN
 
 |------------------------------------------|
