@@ -1563,6 +1563,10 @@ Sub basics_Setup
   /squelch /alias /anchoron /bcga //varset anchorOn TRUE
   /declare medbreak_Popup_Timer timer outer
 	/declare clickitRandomDelay int outer 7
+  /declare GimmeAzureLimit int outer 2
+  /declare GimmeSanguineLimit int outer 1
+  /declare GimmeModShardLimit int outer 2
+  /declare GimmeMoltenOrbLimit int outer 4 
 
 	/if (${Ini[${genSettings_Ini},ExpGroup,NoKS_WeaponSet].Length}) 		/call iniToVarV "${genSettings_Ini},ExpGroup,NoKS_WeaponSet" NoKSWeaponSet string outer
 	/if (${Ini[${genSettings_Ini},ExpGroup,KS_WeaponSet].Length}) 			/call iniToVarV "${genSettings_Ini},ExpGroup,KS_WeaponSet" KSWeaponSet string outer
@@ -1579,6 +1583,10 @@ Sub basics_Setup
   /if (${Ini[${Character_Ini},Misc,End MedBreak in Combat(On/Off)].Length}) /call iniToVarV "${Character_Ini},Misc,End MedBreak in Combat(On/Off)" medOn_combatBreakChar bool outer
 	/if (${Ini[${Character_Ini},Misc,AutoMedBreak (On/Off)].Length}) /call iniToVarV "${Character_Ini},Misc,AutoMedBreak (On/Off)" autoMedChar bool outer
   /if (${Ini[${Character_Ini},Misc,Anchor (Char to Anchor to)].Length}) /call iniToVarV "${Character_Ini},Misc,Anchor (Char to Anchor to)" anchorChar string outer
+  /if (${Ini[${genSettings_Ini},Misc,Gimmie Azure Min Requests].Length}) /call iniToVarV "${genSettings_Ini},Misc,Gimmie Azure Min Requests" GimmeAzureLimit int outer
+  /if (${Ini[${genSettings_Ini},Misc,Gimmie Sanguine Min Requests].Length}) /call iniToVarV "${genSettings_Ini},Misc,Gimmie Sanguine Min Requests" GimmeSanguineLimit int outer
+  /if (${Ini[${genSettings_Ini},Misc,Gimmie Large Mod Shard Min Requests].Length}) /call iniToVarV "${genSettings_Ini},Misc,Gimmie Large Mod Shard Min Requests" GimmeModShardLimit int outer
+  /if (${Ini[${genSettings_Ini},Misc,Gimmie MoltenOrb Min Requests].Length}) /call iniToVarV "${genSettings_Ini},Misc,Gimmie MoltenOrb Min Requests" GimmeMoltenOrbLimit int outer
 
   | -Add Groups_Ini file path
 	/if (!${Ini[${MacroData_Ini},File Paths,Saved Groups].Length}) /call WriteToIni "${MacroData_Ini},File Paths,Saved Groups" "e3 Macro Inis\Saved Groups.ini" 1
@@ -1671,6 +1679,11 @@ SUB basics_CharacterSettings
 /call WriteToIni "${Character_Ini},Misc,Food"
 /call WriteToIni "${Character_Ini},Misc,Drink"
 /call WriteToIni "${Character_Ini},Misc,Anchor (Char to Anchor to)" ""
+/call WriteToIni "${genSettings_Ini},Misc,Gimmie Azure Min Requests" "2"
+/call WriteToIni "${genSettings_Ini},Misc,Gimmie Sanguine Min Requests" "1"
+/call WriteToIni "${genSettings_Ini},Misc,Gimmie Large Mod Shard Min Requests" "1"
+/call WriteToIni "${genSettings_Ini},Misc,Gimmie MoltenOrb Min Requests" "3"
+
 /if (${Select[${Me.Class.ShortName},CLR,DRU,ENC,MAG,NEC,SHM,WIZ]}) {
 	/call WriteToIni "${Character_Ini},Misc,End MedBreak in Combat(On/Off)" Off
 } else /if (${Me.Class.ShortName.NotEqual[BRD]}) {
@@ -1843,11 +1856,10 @@ sub event_gimme(line, ChatSender, RequestedItem)
     /declare ShardCount_needMore int local 0
     /declare OrbCount_needMore int local 0
 
-
-    /declare AzureLimit int local 2
-    /declare SanguineLimit int local 1
-    /declare ModShardLimit int local 2
-    /declare MoltenOrbLimit int local 4 
+    /declare AzureLimit int local ${GimmeAzureLimit}
+    /declare SanguineLimit int local ${GimmeSanguineLimit}
+    /declare ModShardLimit int local ${GimmeModShardLimit}
+    /declare MoltenOrbLimit int local ${GimmeMoltenOrbLimit}
 
     /if (${idle}) {
       /varset AzureLimit 0
@@ -1881,7 +1893,7 @@ sub event_gimme(line, ChatSender, RequestedItem)
           /if (${AzureCount_needMore}>=${AzureLimit} && ${Me.CurrentMana}>8500 && ${Me.AltAbilityReady[Azure Mind Crystal]}) {
 
               /bc [${Time}] <Gimme_Event>:Creating Azure Mind Crystal III. Total Requests: ${AzureCount_needMore}
-  
+              /call ItemDeleteSummoned  "Azure Mind Crystal III"
               /call castSimpleSpell "Azure Mind Crystal" 0
               /for counter 0 to 5
                 /varset ${Group.Member[${counter}]}_GimmeAzureCrystal 0
@@ -1889,14 +1901,14 @@ sub event_gimme(line, ChatSender, RequestedItem)
 
           } else /if ( ${Me.CurrentMana}<=8000) {
             
-               /bc [${Time}] <Gimme_Event>: Cannot supply Azure Mind Crystal III yet. Need more mana. Total Requests: ${AzureCount_needMore}, Needed Requests ${AzureLimit}
+               /call notifyViaBCTell  ${ChatSender} "[${Time}] <Gimme_Event>: Cannot supply Azure Mind Crystal III yet. Need more mana. Total Requests: ${AzureCount_needMore}, Needed Requests ${AzureLimit}"
           
           } else /if (!${Me.AltAbilityReady[Azure Mind Crystal]}) {
 
-               /bc [${Time}] <Gimme_Event>: Cannot supply Azure Mind Crystal III yet. AA is not ready yet. Total Requests: ${AzureCount_needMore}, Needed Requests ${AzureLimit}
+               /call notifyViaBCTell  ${ChatSender} "[${Time}] <Gimme_Event>: Cannot supply Azure Mind Crystal III yet. AA is not ready yet. Total Requests: ${AzureCount_needMore}, Needed Requests ${AzureLimit}"
           } else {
 
-             /bc [${Time}] <Gimme_Event>: Cannot supply Azure Mind Crystal III yet. Total Requests: ${AzureCount_needMore}, Needed Requests ${AzureLimit}
+             /call notifyViaBCTell  ${ChatSender} "[${Time}] <Gimme_Event>: Cannot supply Azure Mind Crystal III yet. Total Requests: ${AzureCount_needMore}, Needed Requests ${AzureLimit}"
           }
          
       } else /if (${RequestedItem.Equal[Sanguine Mind Crystal III]} ) {
@@ -1905,7 +1917,7 @@ sub event_gimme(line, ChatSender, RequestedItem)
           /if (${SanguineCount_needMore}>=${SanguineLimit} &&  ${Me.CurrentMana}>4500 &&  ${Me.AltAbilityReady[Sanguine Mind Crystal]}) {
 
                 /bc [${Time}] <Gimme_Event>:Creating Sanguine Azure Mind Crystal III. Total Requests: ${SanguineCount_needMore}
-  
+                /call ItemDeleteSummoned  "Sanguine Mind Crystal III"
                 /call castSimpleSpell "Sanguine Mind Crystal" 0
                 /for counter 0 to 5
                     /varset ${Group.Member[${counter}]}_GimmeSanguine 0
@@ -1913,14 +1925,14 @@ sub event_gimme(line, ChatSender, RequestedItem)
 
           } else /if ( ${Me.CurrentMana}<=4500) {
             
-               /bc [${Time}] <Gimme_Event>: Cannot supply Azure Mind Crystal III yet. Need more mana. Total Requests: ${SanguineCount_needMore}, Needed Requests ${SanguineLimit}
+               /call notifyViaBCTell  ${ChatSender} "[${Time}] <Gimme_Event>: Cannot supply Azure Mind Crystal III yet. Need more mana. Total Requests: ${SanguineCount_needMore}, Needed Requests ${SanguineLimit}"
           
           } else /if (!${Me.AltAbilityReady[Sanguine Mind Crystal]}) {
 
-               /bc [${Time}] <Gimme_Event>: Cannot supply Sanguine Mind Crystal III yet. AA is not ready yet. Total Requests: ${SanguineCount_needMore}, Needed Requests ${SanguineLimit}
+               /call notifyViaBCTell  ${ChatSender} "[${Time}] <Gimme_Event>: Cannot supply Sanguine Mind Crystal III yet. AA is not ready yet. Total Requests: ${SanguineCount_needMore}, Needed Requests ${SanguineLimit}"
           } else {
 
-             /bc [${Time}] <Gimme_Event>: Cannot supply Sanguine Mind Crystal III yet. Total Requests: ${SanguineCount_needMore}, Needed Requests ${SanguineLimit}
+             /call notifyViaBCTell  ${ChatSender} "[${Time}] <Gimme_Event>: Cannot supply Sanguine Mind Crystal III yet. Total Requests: ${SanguineCount_needMore}, Needed Requests ${SanguineLimit}"
           }
 
        
@@ -1929,6 +1941,7 @@ sub event_gimme(line, ChatSender, RequestedItem)
         
         /if (${ShardCount_needMore}>=${ModShardLimit} &&  ${Me.AltAbilityReady[Large Modulation Shard]}) {
           /bc [${Time}] <Gimme_Event>:Large Modulation Shard. Total Requests: ${ShardCount_needMore}
+          /call ItemDeleteSummoned  "Summoned: Large Modulation Shard"
           /call castSimpleSpell "Large Modulation Shard" 0
           /for counter 0 to 5
               /varset ${Group.Member[${counter}]}_GimmeModShard 0
@@ -1936,7 +1949,7 @@ sub event_gimme(line, ChatSender, RequestedItem)
 
         } else {
 
-           /bc [${Time}] <Gimme_Event>: Cannot supply Large Modulation Shard.  Total Requests: ${ShardCount_needMore}, Needed Requests ${ModShardLimit}
+           /call notifyViaBCTell  ${ChatSender} "[${Time}] <Gimme_Event>: Cannot supply Large Modulation Shard.  Total Requests: ${ShardCount_needMore}, Needed Requests ${ModShardLimit}"
         }
         
       } else /if (${RequestedItem.Equal[Molten orb]}) {
@@ -1944,6 +1957,7 @@ sub event_gimme(line, ChatSender, RequestedItem)
         /if (${OrbCount_needMore}>=${MoltenOrbLimit} &&  ${Me.CurrentMana}>3500 &&  ${Me.SpellReady[Summon: Molten Orb]}) {
 
               /bc [${Time}] <Gimme_Event>:Molten orb. Total Requests: ${OrbCount_needMore}
+              /call ItemDeleteSummoned  "Molten orb"
               /call castSimpleSpell "Summon: Molten Orb" 0
               /for counter 0 to 5
                   /varset ${Group.Member[${counter}]}_GimmeMoltenOrb 0
@@ -1951,14 +1965,14 @@ sub event_gimme(line, ChatSender, RequestedItem)
 
           } else /if ( ${Me.CurrentMana}<=3500) {
             
-               /bc [${Time}] <Gimme_Event>: Cannot supply Molten orb yet. Need more mana. Total Requests: ${OrbCount_needMore}, Needed Requests ${MoltenOrbLimit}
+               /call notifyViaBCTell  ${ChatSender} "[${Time}] <Gimme_Event>: Cannot supply Molten orb yet. Need more mana. Total Requests: ${OrbCount_needMore}, Needed Requests ${MoltenOrbLimit}"
           
           } else /if (!${Me.SpellReady[Summon: Molten Orb]}) {
 
-               /bc [${Time}] <Gimme_Event>: Cannot supply Molten orb yet. Spell is not ready yet. Total Requests: ${OrbCount_needMore}, Needed Requests ${MoltenOrbLimit}
+               /call notifyViaBCTell  ${ChatSender} "[${Time}] <Gimme_Event>: Cannot supply Molten orb yet. Spell is not ready yet. Total Requests: ${OrbCount_needMore}, Needed Requests ${MoltenOrbLimit}"
           } else {
 
-             /bc [${Time}] <Gimme_Event>: Cannot supply Molten or yet. Total Requests: ${OrbCount_needMore}, Needed Requests ${MoltenOrbLimit}
+             /call notifyViaBCTell  ${ChatSender} "[${Time}] <Gimme_Event>: Cannot supply Molten or yet. Total Requests: ${OrbCount_needMore}, Needed Requests ${MoltenOrbLimit}"
           }
         
       }
@@ -2933,28 +2947,31 @@ SUB ItemDeleteSummoned(ItemString)
         /call ClearCursor
         /return
   } 
+  |if we cannot find the item exit
+  /if (!${Bool[${FindItem[=${ItemString}]}]}) {
+      /return
+  }
+  |if the item in question isn't no rent, exit 
+  /if (!${Bool[${FindItem[=${ItemString}].NoRent}]}) {
+      /return
+  } 
+  /echo Trying to Deleting ${ItemString}
+  /call ClearCursor
+  /echo [${Time}] Delaying up to 1 second(s) in ItemDeleteSummoned
+  /delay 1s
+  |Found the issue of char disconnect. If you try and do a leftmouse up on an item and your casting
+  |the server will disconnect you. So doing this out of bound of E3's event loop is dangerous
+  /while (${Window[CastingWindow].Open}) {
+    /echo [${Time}] Delaying up to 1 second(s) in ItemDeleteSummoned
+    /delay 1
+  }
+  /itemnotify "${ItemString}" leftmouseup
+  /echo [${Time}] Delaying up to 10 second(s) in ItemDeleteSummoned
+  /delay 10s ${Bool[${Cursor.ID}]}
+  /if (${Bool[${Cursor.ID}]} &&  ${Cursor.NoRent}) /destroy
+  /call ClearCursor
 
-   /if (${ItemString.Find[Summoned:]}) {
-    
-        /if (!${Bool[${FindItem[=${ItemString}]}]}) {
-            /return
-        } 
-        /echo Trying to Deleting ${ItemString}
-        /call ClearCursor
-        /echo [${Time}] Delaying up to 1 second(s) in ItemDeleteSummoned
-        /delay 1s
-        |Found the issue of char disconnect. If you try and do a leftmouse up on an item and your casting
-        |the server will disconnect you. So doing this out of bound of E3's event loop is dangerous
-        /while (${Window[CastingWindow].Open}) {
-          /echo [${Time}] Delaying up to 1 second(s) in ItemDeleteSummoned
-          /delay 1
-        }
-        /itemnotify "${ItemString}" leftmouseup
-        /echo [${Time}] Delaying up to 10 second(s) in ItemDeleteSummoned
-        /delay 10s ${Bool[${Cursor.ID}]}
-        /if (${Bool[${Cursor.ID}]} &&  ${Cursor.Name.Find[Summoned:]}) /destroy
-
-    } 
+     
 
 /RETURN
 
