@@ -2331,6 +2331,7 @@ sub notifyViaBCTell(targetToTell, messageToSend)
 |- Gimme=Focus|Azure Mind Crystal|300s
 |----------------------------------------------------------------------------|
 SUB check_Gimme
+ 
 	/if (${Debug}) /echo |- check_Gimme ==>
   /if (${Waiting4Rez}) /return
   /if (${Bool[${Me.Buff[Resurrection Sickness]}]}) /return
@@ -2355,6 +2356,7 @@ SUB check_Gimme
          |if we are not part of the group, don't ask
            |if not a group member requesting it, kick out
           /if (!${Bool[${Group.Member[${Group.Member[${gimmeCharacter}].Index}]}]}) {
+            	/if (${Debug}) /echo ${gimmeCharacter} skipping gimme
             /goto :skipgGimme
           }
          
@@ -2362,7 +2364,7 @@ SUB check_Gimme
 
 			| If it's my bot, check if the target bot is available to gimme
 			/varset IsTargetMyBot ${Bool[${Select[${gimmeCharacter}, ${NetBots.Client}]}]}			
-			/if (${DebugCheckGimme}) /echo ${gimmeCharacter} IsTargetMyBot=${IsTargetMyBot}
+			/if (${Debug}) /echo ${gimmeCharacter} IsTargetMyBot=${IsTargetMyBot}
 			/if (${IsTargetMyBot} && (!${Spawn[${gimmeCharacter}].LineOfSight} || ${Bool[${NetBots[${gimmeCharacter}].Casting}]} || ${NetBots[${gimmeCharacter}].Attacking} || ${NetBots[${gimmeCharacter}].Moving} || !${NetBots[${gimmeCharacter}].InZone})) {
 				/if (${DebugCheckGimme}) /echo ${gimmeCharacter} is busy
 				/if (${DebugCheckGimme}) /echo ${gimmeCharacter} Netbots = 	${NetBots[${gimmeCharacter}].PctHPs}
@@ -2390,7 +2392,7 @@ SUB check_Gimme
 
         }
 
-				/if (!${Bool[${FindItem[=${gimmeItem}]}]} && ${GimmeTimer${i}} == 0 && ${Bool[${Spawn[${gimmeCharacter}]}]} && ${DoINeedBags}) {
+				/if (!${Bool[${FindItem[=${gimmeItem}]}]} && ${GimmeTimer${i}} == 0 && ${Bool[${Spawn[${gimmeCharacter}]}]}) {
 					/if (${Bool[${Spawn[pc ${gimmeCharacter}]}]}) {
 						/echo ==> Gimme: Hey ${gimmeCharacter} Gimme a ${gimmeItem}
 						/delay 1
@@ -2404,6 +2406,7 @@ SUB check_Gimme
 		/next i
 	}
 	/if (${Debug}) /echo <== check_Gimme -|
+ 
 /RETURN
 
 |----------------------------------------------------------------------------|
