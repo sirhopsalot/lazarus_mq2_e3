@@ -1921,7 +1921,7 @@ SUB assist_SpellArrays
   /call IniToArrayV "${Character_Ini},Burn,Full Burn#"                  FULLBurns
   /call IniToArrayV "${Character_Ini},Off Assist Spells,${spellsToUse}#"            OffAssistSpells
 
-  /if (${Me.Class.ShortName.Equal[MAG]}) {
+/if (${Me.Class.ShortName.Equal[MAG]}) {
 	/if (!${Defined[summonMoltenOrb]}) /declare summonMoltenOrb bool outer FALSE
   /if (${Bool[${Me.AltAbility[Servant of Ro]}]})        /call BuildArray "swarmPets" "Servant of Ro"
   /if (${Bool[${Me.AltAbility[Host of the Elements]}]}) /call BuildArray "swarmPets" "Host of the Elements"
@@ -1939,27 +1939,38 @@ SUB assist_SpellArrays
     /if (${Bool[${FindItem[Graverobber's Icon]}]}) /call BuildArray "swarmPets" "Graverobber's Icon"
     /if (${Bool[${FindItem[Soulwhisper]}]}) /call BuildArray "swarmPets" "Soulwhisper"
     /if (${Bool[${FindItem[Deathwhisper]}]}) /call BuildArray "swarmPets" "Deathwhisper"
-    |Ewiclip: Removing Wake The Dead -- It is known to cause zone crashing
-    |/if (${Bool[${Me.AltAbility[Wake the Dead]}]})  /call BuildArray "swarmPets" "Wake the Dead"
+    /if (${Bool[${Me.AltAbility[Wake the Dead]}]})  /call BuildArray "swarmPets" "Wake the Dead"
+  
   } else /if (${Me.Class.ShortName.Equal[SHM]}) {
     /if (${Bool[${Me.AltAbility[Spirit Call]}]})    /call BuildArray "swarmPets" "Spirit Call"
     /if (${Bool[${FindItem[Shattered Gnoll Slayer]}]})    /call BuildArray "swarmPets" "Shattered Gnoll Slayer"
+  
   } else /if (${Me.Class.ShortName.Equal[WIZ]}) {
     /if (${Bool[${Me.AltAbility[Call of Xuzl]}]})   /call BuildArray "swarmPets" "Call of Xuzl"
+  
   } else /if (${Me.Class.ShortName.Equal[BRD]}) {
     /if (${Bool[${Me.AltAbility[Song of Stone]}]})   /call BuildArray "swarmPets" "Song of Stone"
+     /if (${Bool[${FindItem[Tarnished Skeleton Key]}]}) /call BuildArray "swarmPets" "Tarnished Skeleton Key"
+  
   } else /if (${Me.Class.ShortName.Equal[CLR]}) {
     /if (${Bool[${Me.AltAbility[Celestial Hammer]}]}) /call BuildArray "swarmPets" "Celestial Hammer"
     /if (${Bool[${FindItem[Graverobber's Icon]}]}) /call BuildArray "swarmPets" "Graverobber's Icon"
+  
+  } else /if (${Me.Class.ShortName.Equal[WAR]}) {
+    /if (${Bool[${FindItem[Battered Smuggler's Barrel]}]}) /call BuildArray "swarmPets" "Battered Smuggler's Barrel"
+ 
+  } else /if (${Me.Class.ShortName.Equal[BER]}) {
+    /if (${Bool[${FindItem[Battered Smuggler's Barrel]}]}) /call BuildArray "swarmPets" "Battered Smuggler's Barrel"
+ 
   } else /if (${Me.Class.ShortName.Equal[ENC]}) {
-    /if (${Bool[${Me.AltAbility[Doppelganger]}]}) {
-      |/call BuildArray "swarmPets" "Doppelganger"
-    }
-    /if (${Bool[${Me.AltAbility[Phantasmal Opponent]}]}) {
-      /call BuildArray "swarmPets" "Phantasmal Opponent"
-    }
+ 
+    /if (${Bool[${Me.AltAbility[Doppelganger]}]}) /call BuildArray "swarmPets" "Doppelganger"
+    /if (${Bool[${Me.AltAbility[Phantasmal Opponent]}]}) /call BuildArray "swarmPets" "Phantasmal Opponent"
+    /if (${Bool[${FindItem[Tarnished Skeleton Key]}]}) /call BuildArray "swarmPets" "Tarnished Skeleton Key"
+ 
   } else /if (${Me.Class.ShortName.Equal[PAL]}) {
-    |/if (${Bool[${Me.AltAbility[Projection of Piety]}]}) /call BuildArray "swarmPets" "Projection of Piety"
+    /if (${Bool[${Me.AltAbility[Projection of Piety]}]}) /call BuildArray "swarmPets" "Projection of Piety"
+  
   } else /if (${Me.Class.ShortName.Equal[DRU]}) {
     /if (${Bool[${Me.AltAbility[Spirits of Nature]}]}) /call BuildArray "swarmPets" "Spirits of Nature"
     /if (${Bool[${Me.AltAbility[Nature's Guardian]}]}) /call BuildArray "swarmPets" "Nature's Guardian"
