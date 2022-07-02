@@ -528,6 +528,8 @@ SUB check_Nukes
         /if (!${Nukes2D[${i},${iCastName}].Equal[${currentCastName}]}) {
           
           /call check_Ready "Nukes2D" ${i}
+          |needed for target checks on ifs
+          /if (${Target.ID} != ${AssistTarget}) /call TrueTarget ${AssistTarget}
           /if (${c_Ready} && ${Nukes2D[${i},${iIfs}]}) {
             /if (${Bool[${Nukes2D[${i},${iGiftOfMana}]}]}) {
               |its specified to use gift of mana, well do we have it?
