@@ -726,7 +726,7 @@ SUB check_Debuffs
 SUB check_DoTs
 /if (${Debug} || ${Debug_Assists}) /echo |- check_DoTs ==>
   /if (${Defined[Command_DoTs2D]} && ${use_CommandDots})  /call Dots_OnCommand
-	/if (${Assisting} && ${Defined[Assist_DoTs2D]} && ${use_AssistDots}) /call cast_longTermSpells "${AssistTarget}" "Assist_DoTs2D"
+	/if (${Assisting} && ${Defined[Assist_DoTs2D]} && ${use_AssistDots}) /call cast_damageOverTimeSpells "${AssistTarget}" "Assist_DoTs2D"
 /if (${Debug} || ${Debug_Assists}) /echo <== check_DoTs -|
 /RETURN
 
@@ -741,10 +741,20 @@ SUB cast_longTermSpells(int spellTarget, string ArrayName)
   /declare spellRecast int local 0
   /declare s int local
   /declare checkForName string local
-  /declare castIfName string local  
+  /declare castIfName string local 
+  /declare spellName string local 
+  /declare spellID int local 0
 
 	/for s 1 to ${${ArrayName}.Size[1]}
     /varset checkForName	${${ArrayName}[${s},${iCheckFor}]}
+
+     /varset spellName ${${ArrayName}[${s},${iCastName}]} 
+     /if (${Bool[${FindItem[=${spellName}]}]}) {
+        /varset spellID ${FindItem[${spellName}].Spell.ID}
+        /varset spellName ${FindItem[${spellName}].Spell}
+    } else {
+      /varset spellID ${Spell[${spellName}].ID}
+    }
 
 	  |this check lets you use OOW debuff BP in debuff section
 	  /if (${${ArrayName}[${s},${iSpellType}].Find[Beneficial]}) {
@@ -754,7 +764,7 @@ SUB cast_longTermSpells(int spellTarget, string ArrayName)
     } else {
       /varset spellTarg ${spellTarget}
     }
-		/varset spellTimer spellTimer_${spellTarg}_${ArrayName}_${s}
+		/varset spellTimer spellTimer_${spellTarg}_${spellID}
 		/varset resistCount resist_${spellTarg}_${ArrayName}_${s}
     |/echo stdef ${Defined[${spellTimer}]} st ${spellTarg}  tgt ${Target.ID}
 		/if (${Defined[${spellTimer}]}) {
@@ -793,7 +803,7 @@ SUB cast_longTermSpells(int spellTarget, string ArrayName)
     
     /varset castIfName	${${ArrayName}[${s},${iCastIf}]}
     /if (!${castIfName.Equal[-1]} ) {
-            |for using CastIfs in Nukes, retarget to the AssistTarget before checking CastIfs
+            |for using CastIfs in dots/debuffs, retarget to the AssistTarget before checking CastIfs
           /if (${Target.ID} != ${AssistTarget}) /call TrueTarget ${AssistTarget}
           /if (!${Bool[${Target.Buff[${castIfName}]}]}) {
             /echo \ag [${Time}] ${Target.CleanName} is not debuffed with [${castIfName}]  Skipping
@@ -872,7 +882,7 @@ SUB cast_longTermSpells(int spellTarget, string ArrayName)
         /varcalc spellRecast ${spellRecast}-${shortTermRecastTime}
       }
       /if (${Debug} || ${Debug_Assists}) /echo |- longTermSpells - [${ArrayName}] -| Creating timer [${spellTimer}] -- [${spellRecast}]
-      |/echo Creating timer [${spellTimer}] -- [${spellRecast}]
+      /echo Creating timer [${spellTimer}] -- [${spellRecast}]
       /call createTimer "${spellTimer}" "${spellRecast}s"
     }
   :skipCast
@@ -1138,7 +1148,11 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
 /declare i int local
 /declare iSpellSwap int local 0
 /declare spellTimer string local
+/declare spellID int local 0
+/declare triggerSpellID int local 0
 /declare timeleftOnSpell int local 0
+/declare spellName string local 
+
 |${${ArrayName}[${i},${iCastName}]}        --> strSpellName
 |${${ArrayName}[${i},${iAllowSpellSwap}]} --> 0/1 
 |${${ArrayName}[${i},${iNoEarlyRecast}]}  --> 0/1
@@ -1149,6 +1163,9 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
 |${${ArrayName}[${i},${iSpellGem}]}        --> int 
 
 /for i 1 to ${${ArrayName}.Size[1]}
+
+    /varset spellName ${${ArrayName}[${i},${iCastName}]} 
+    /echo SpellName is :${spellName}
 
     /doevents DoTsOff
     |make sure we have the right target    
@@ -1165,14 +1182,23 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
     /if (!${Bool[${Spawn[id ${TargetID}].Type.NotEqual[Corpse]}]}) {
       /return
     }
-
+    
+     /if (${Bool[${FindItem[=${spellName}]}]}) {
+        /varset spellID ${FindItem[${spellName}].Spell.ID}
+        /varset spellName ${FindItem[${spellName}].Spell}
+    } else {
+      
+      /varset spellID ${Spell[${spellName}].ID}
+      /echo SpellID is:${spellID}
+    }
     |setups for resist counters and spellRetry timers
-    /varset spellTimer spellTimer_${TargetID}_${ArrayName}_${i}
+    
+    /varset spellTimer spellTimer_${TargetID}_${spellID}
 		/varset resistCount resist_${TargetID}_${ArrayName}_${i}
     |Is there a spell timer configured for this spell and target? if so, skip this   
     /if (${Defined[${spellTimer}]}) {
 		  /if (${${spellTimer}}) {
-        |/echo skipping ${spellTimer}
+        |/echo skipping due to spellTimer_${TargetID}_${spellID} with time: ${${spellTimer}}
         /continue
       }
     }
@@ -1194,7 +1220,8 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
     }
     /varset timeleftOnSpell ${TimeLeftOnMySpell[${${ArrayName}[${i},${iCastName}]}]} 
     |Skip if this spell is already on the NPC from me and has more than 4 seconds left on it. (This is spell casts)
-    /if (${timeleftOnSpell} > 4 && !${Bool[${${ArrayName}[${i},${iTriggerSpell}]}]}) {
+    |and no trigger spell is specified
+    /if (${timeleftOnSpell} > 8 && !${Bool[${${ArrayName}[${i},${iTriggerSpell}]}]}) {
       /continue
     }
 
@@ -1263,7 +1290,18 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
            /varset ${resistCount} 0
         }
         /call createTimer "${spellTimer}" "5m"
+      } else {
+         /varset timeleftOnSpell ${TimeLeftOnMySpell[${${ArrayName}[${i},${iCastName}]}]} 
+         /if ( ${timeleftOnSpell}<7) {
+          /varcalc timeleftOnSpell ${${ArrayName}[${s},${iDuration}]}*6
+         } else {
+            /varcalc timeleftOnSpell ${timeleftOnSpell}-8
+         }
+         /echo Creating timer ${spellTimer} for ${timeleftOnSpell}s
+         /call createTimer "${spellTimer}" ${timeleftOnSpell}s
       }
+
+
       |Spell Swap Code Specifically for /AllowSpellSwap
       |These spells will De-Mem and Re-Mem a new spell immediately after cast. /Gem|# is ignored for these spells. 
       /if (${Bool[${Me.SpellInCooldown}]} && ${${ArrayName}[${i},${iAllowSpellSwap}]} && ${Bool[${Me.Book[${${ArrayName}[${i},${iCastName}]}]}]}) {
