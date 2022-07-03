@@ -882,7 +882,7 @@ SUB cast_longTermSpells(int spellTarget, string ArrayName)
         /varcalc spellRecast ${spellRecast}-${shortTermRecastTime}
       }
       /if (${Debug} || ${Debug_Assists}) /echo |- longTermSpells - [${ArrayName}] -| Creating timer [${spellTimer}] -- [${spellRecast}]
-      /echo Creating timer [${spellTimer}] -- [${spellRecast}]
+      |/echo Creating timer [${spellTimer}] -- [${spellRecast}]
       /call createTimer "${spellTimer}" "${spellRecast}s"
     }
   :skipCast
@@ -1165,7 +1165,7 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
 /for i 1 to ${${ArrayName}.Size[1]}
 
     /varset spellName ${${ArrayName}[${i},${iCastName}]} 
-    /echo SpellName is :${spellName}
+    |/echo SpellName is :${spellName}
 
     /doevents DoTsOff
     |make sure we have the right target    
@@ -1189,7 +1189,7 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
     } else {
       
       /varset spellID ${Spell[${spellName}].ID}
-      /echo SpellID is:${spellID}
+      |/echo SpellID is:${spellID}
     }
     |setups for resist counters and spellRetry timers
     
@@ -1297,7 +1297,7 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
          } else {
             /varcalc timeleftOnSpell ${timeleftOnSpell}-8
          }
-         /echo Creating timer ${spellTimer} for ${timeleftOnSpell}s
+         |/echo Creating timer ${spellTimer} for ${timeleftOnSpell}s
          /call createTimer "${spellTimer}" ${timeleftOnSpell}s
       }
 
