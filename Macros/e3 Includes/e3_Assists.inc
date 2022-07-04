@@ -667,7 +667,7 @@ SUB check_Nukes
 /RETURN
 
 |--------------------------------------------------------------------------------|
-| Author: Sirhopsalot
+| Author: Sirhopsalot, Modified Rekka
 | Casts spells on the non-assist target (but only while assist is active)
 | this is useful for casting dots / debuffs on the non-assist targets 
 | when you know the main assist target will be dead soon
@@ -683,17 +683,29 @@ SUB check_OffAssistSpells
   /declare mobId int local 0
   /declare i int local
   /for i 1 to 13
-    /if (${Bool[${Me.XTarget[${i}]}]} && ${Me.XTarget[${i}].TargetType.Equal[Auto Hater]} && ${Me.XTarget[${i}].Type.Equal[NPC]} && ${Me.XTarget[${i}].Aggressive} && ${Me.XTarget[${i}].ID} != ${AssistTarget} && ${Me.XTarget[${i}].PctHPs} >= ${minHp} && ${Me.XTarget[${i}].PctAggro} < ${pctAggro} && !${Bool[${Me.XTarget[${i}].Name.Find[Corpse]}]} && ${Me.XTarget[${i}].LineOfSight}) {
-      /if (${Me.XTarget[${i}].PctHPs} > ${highestHp}) {
-        /varset mobId ${Me.XTarget[${i}].ID}
-        /varset highestHp ${Me.XTarget[${i}].PctHPs}
+    /if (${Bool[${Me.XTarget[${i}]}]} && ${Me.XTarget[${i}].TargetType.Equal[Auto Hater]} && ${Me.XTarget[${i}].Type.Equal[NPC]} && !${Bool[${Me.XTarget[${i}].Name.Find[Corpse]}]}) {
+      /if (${Me.XTarget[${i}].Aggressive} && ${Me.XTarget[${i}].ID} != ${AssistTarget}) {
+        /if (${Me.XTarget[${i}].PctHPs} >= ${minHp} && ${Me.XTarget[${i}].PctAggro} < ${pctAggro}  && ${Me.XTarget[${i}].LineOfSight} && ${Me.XTarget[${i}].Distance} < 60) {
+            /varset mobId ${Me.XTarget[${i}].ID}
+            /if (${mobId}>0) {
+               /call cast_longTermSpells "${mobId}" "OffAssist_Spells2D"
+              /if (${ActionTaken}) {
+                /return
+              }
+            }
+           
+            |**/if (${Me.XTarget[${i}].PctHPs} > ${highestHp}) {
+              /varset mobId ${Me.XTarget[${i}].ID}
+              /varset highestHp ${Me.XTarget[${i}].PctHPs}
+            }**|
+        }
       }
     }
   /next i
-  /if (${Bool[${mobId}]}) {
+  |**/if (${Bool[${mobId}]}) {
     |/bc Casting offtarget spell on ${Spawn[id ${mobId}].Name}
     /call cast_longTermSpells "${mobId}" "OffAssist_Spells2D"
-  }
+  }**|
 /RETURN
 
 |----------------------------------------------------|
