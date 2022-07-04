@@ -335,7 +335,7 @@ SUB CombatAbilities
 
       |skips if contains or not contains
       /varset castIfName	${Abilities2D[${i},${iCastIf}]}
-      /if (!${castIfName.Equal[-1]} ) {
+      /if (${Bool[${castIfName}]} && !${castIfName.Equal[-1]} ) {
             /if (!${Bool[${Target.Buff[${castIfName}]}]}) {
               |/echo \ag [${Time}] ${Target.CleanName} is not debuffed with ${checkForDebuff} , skipping
               /goto :skipAbility
@@ -465,8 +465,6 @@ SUB check_Nukes
     }
 
    /for s 1 to ${Nukes2D.Size[1]}
-    
-   
     
     /varset typeOfCast  
     
@@ -609,7 +607,7 @@ SUB check_Nukes
      
 
       /varset castIfName	${Nukes2D[${s},${iCastIf}]}
-      /if (!${castIfName.Equal[-1]} ) {
+      /if (${Bool[${castIfName}]} && !${castIfName.Equal[-1]} ) {
              |for using CastIfs in Nukes, retarget to the AssistTarget before checking CastIfs
   	        /if (${Target.ID} != ${AssistTarget}) /call TrueTarget ${AssistTarget}
             /if (!${Bool[${Target.Buff[${castIfName}]}]}) {
@@ -693,7 +691,7 @@ SUB check_OffAssistSpells
     }
   /next i
   /if (${Bool[${mobId}]}) {
-    /docommand ${ChatToggle} Casting offtarget spell on ${Spawn[id ${mobId}].Name}
+    |/bc Casting offtarget spell on ${Spawn[id ${mobId}].Name}
     /call cast_longTermSpells "${mobId}" "OffAssist_Spells2D"
   }
 /RETURN
@@ -746,8 +744,8 @@ SUB cast_longTermSpells(int spellTarget, string ArrayName)
   /declare spellID int local 0
 
 	/for s 1 to ${${ArrayName}.Size[1]}
-    /varset checkForName	${${ArrayName}[${s},${iCheckFor}]}
 
+     /varset checkForName	${${ArrayName}[${s},${iCheckFor}]}
      /varset spellName ${${ArrayName}[${s},${iCastName}]} 
      /if (${Bool[${FindItem[=${spellName}]}]}) {
         /varset spellID ${FindItem[${spellName}].Spell.ID}
@@ -765,7 +763,7 @@ SUB cast_longTermSpells(int spellTarget, string ArrayName)
       /varset spellTarg ${spellTarget}
     }
 		/varset spellTimer spellTimer_${spellTarg}_${spellID}
-		/varset resistCount resist_${spellTarg}_${ArrayName}_${s}
+		/varset resistCount resist_${spellTarg}_${spellID}
     |/echo stdef ${Defined[${spellTimer}]} st ${spellTarg}  tgt ${Target.ID}
 		/if (${Defined[${spellTimer}]}) {
 		  /if (${${spellTimer}}) {
@@ -802,7 +800,7 @@ SUB cast_longTermSpells(int spellTarget, string ArrayName)
     }
     
     /varset castIfName	${${ArrayName}[${s},${iCastIf}]}
-    /if (!${castIfName.Equal[-1]} ) {
+    /if (${Bool[${castIfName}]}  && !${castIfName.Equal[-1]} ) {
             |for using CastIfs in dots/debuffs, retarget to the AssistTarget before checking CastIfs
           /if (${Target.ID} != ${AssistTarget}) /call TrueTarget ${AssistTarget}
           /if (!${Bool[${Target.Buff[${castIfName}]}]}) {
@@ -1194,7 +1192,7 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
     |setups for resist counters and spellRetry timers
     
     /varset spellTimer spellTimer_${TargetID}_${spellID}
-		/varset resistCount resist_${TargetID}_${ArrayName}_${i}
+		/varset resistCount resist_${TargetID}_${spellID}
     |Is there a spell timer configured for this spell and target? if so, skip this   
     /if (${Defined[${spellTimer}]}) {
 		  /if (${${spellTimer}}) {
@@ -1293,7 +1291,7 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
       } else {
          /varset timeleftOnSpell ${TimeLeftOnMySpell[${${ArrayName}[${i},${iCastName}]}]} 
          /if ( ${timeleftOnSpell}<7) {
-          /varcalc timeleftOnSpell ${${ArrayName}[${s},${iDuration}]}*6
+          /varcalc timeleftOnSpell ${${ArrayName}[${i},${iDuration}]}*6
          } else {
             /varcalc timeleftOnSpell ${timeleftOnSpell}-8
          }
