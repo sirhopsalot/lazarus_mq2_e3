@@ -696,7 +696,7 @@ Sub check_Ready(ArrayName, int ArrayIndex)
 	}
 	:recheckCooldown
 	/if ((${Bool[${Me.Gem[Focused Hail of Arrows]}]}  &&  ${Bool[${Me.Gem[Hail of Arrows]}]}) && (${${ArrayName}[${ArrayIndex},${iCastName}].Equal[Focused Hail of Arrows]} || ${${ArrayName}[${ArrayIndex},${iCastName}].Equal[Hail of Arrows]})) {
-		|spell hard coded as me.spelready returns true when one is on cooldown because of a timer of another.
+		|spell hard coded as ${Me.SpellReady} returns true when one is on cooldown because of a timer of another.
 		/varset c_Ready TRUE
 		/if (!${Me.SpellReady[Focused Hail of Arrows]}) /varset c_Ready FALSE
 		/if (!${Me.SpellReady[Hail of Arrows]}) /varset c_Ready FALSE
@@ -704,7 +704,7 @@ Sub check_Ready(ArrayName, int ArrayIndex)
 
 	}
 	/if ((${Bool[${Me.Gem[Mana Flare]}]}  &&  ${Bool[${Me.Gem[Mana Recursion]}]}) && (${${ArrayName}[${ArrayIndex},${iCastName}].Equal[Mana Flare]} || ${${ArrayName}[${ArrayIndex},${iCastName}].Equal[Mana Recursion]})) {
-		|spell hard coded as me.spelready returns true when one is on cooldown because of a timer of another.
+		|spell hard coded as ${Me.SpellReady} returns true when one is on cooldown because of a timer of another.
 		/varset c_Ready TRUE
 		/if (!${Me.SpellReady[Mana Flare]}) /varset c_Ready FALSE
 		/if (!${Me.SpellReady[Mana Recursion]}) /varset c_Ready FALSE
@@ -830,17 +830,22 @@ Sub memorize_spell(spellName,gemNum)
   /if (${Debug} || ${Debug_Casting}) /echo |- memorize_spell =>
   	/memorize "${spellName}" ${gemNum}
 
-	 /echo [${Time}] Delaying up to 5 seconds in memorize_spell
+	/echo [${Time}] Delaying up to 5 seconds in memorize_spell
 	/delay 5s ${Bool[${Me.Gem[${spellName}]}]}
 	
+	/if (!${Bool[${Me.Gem[${spellName}]}]}) {
+		/echo [${Time}] Error spell not memorized kicking out of memorize_spell for spell: ${spellName} in gem ${gemNum}
+		/return
+	}
+
 	|only wait for beneficial,self spells
 	|(${Me.Combat} || ${Me.CombatState.Equal[Combat]} ||  ${AssistTarget} >0)
 	/declare timeTowait int local ${Math.Calc[35+(${Spell[${spellName}].RecastTime}/100)]}
 	/declare waitForReady timer local ${timeTowait}
 	|/echo wfr ${waitForReady} rc ${Spell[${spellName}].RecastTime} math ${Math.Calc[25+(${Spell[${spellName}].RecastTime}/100)]}
+	/echo [${Time}] Delaying waiting for spell to memorize and to be ready in memorize_spell: ${spellName} in gem ${gemNum}
 	:checkTimer
-		
-	/echo [${Time}] Delaying waiting for spell to memorize and to be ready in memorize_spell: ${spellName}
+	
 	/if (${waitForReady}) {
 		/call check_HealCasting_DuringDetrimental
 		/if (!${c_SubToRun}) {
@@ -855,6 +860,7 @@ Sub memorize_spell(spellName,gemNum)
 
 		/if ((${Me.Combat} || ${Me.CombatState.Equal[Combat]} ||  ${AssistTarget} >0)) {
 			|kick out as we are now in combat
+			/echo [${Time}] ABORT: Combat mode: Delaying waiting for spell to memorize and to be ready in memorize_spell: ${spellName} in gem ${gemNum}
 			/return
 		}
 

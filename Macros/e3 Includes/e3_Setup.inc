@@ -428,7 +428,10 @@ SUB check_Plugins
 	}
 	|new mq2 version has performance issues with version 2.3 of the plugin
 	|when scanning new links. Diabled by default for now.
-	/link /scan off
+	|Note, Version 2.1 will crash the client if you issue this command, make sure its > than that.
+	/if (${Plugin[MQ2LinkDB].Name.Length} && ${Plugin[MQ2LinkDB].Version}>2.1) {
+				/link /scan off
+	}
   |Check MQ2ITurbo
   /if (!${Plugin[mq2turbo].Name.Length}) {
     /plugin MQ2Turbo
