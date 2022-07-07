@@ -1602,7 +1602,6 @@ Sub basics_Setup
 /return
 
 
-
 Sub basics_Background_Events
 	/doevents Follow
 	/doevents Stop

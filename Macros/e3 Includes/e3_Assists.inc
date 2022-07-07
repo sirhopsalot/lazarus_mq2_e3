@@ -199,6 +199,7 @@ SUB check_AssistStatus
 /if (${Debug} || ${Debug_Assists}) {
 	/echo |- check_AssistStatus ==> AssistTarget = [${AssistTarget}] || AllowControl = [${AllowControl}] || Distance check = [${Spawn[id ${AssistTarget}].Distance} < ${MaxAssistDistance}] || TargetType = [${Spawn[id ${AssistTarget}].Type}]
 }
+
   /if (!${Bool[${Spawn[id ${AssistTarget}].Type.NotEqual[Corpse]}]}) {
     /if (${Debug} || ${Debug_Assists}) /echo Target doesnt exist or is dead, AssistOff
     /call AssistOff
@@ -682,30 +683,32 @@ SUB check_OffAssistSpells
   /declare highestHp int local 0
   /declare mobId int local 0
   /declare i int local
+ 
   /for i 1 to 13
+    |check off assist exemptions
+    /varset mobId ${Me.XTarget[${i}].ID}
+    |Do normal checks
     /if (${Bool[${Me.XTarget[${i}]}]} && ${Me.XTarget[${i}].TargetType.Equal[Auto Hater]} && ${Me.XTarget[${i}].Type.Equal[NPC]} && !${Bool[${Me.XTarget[${i}].Name.Find[Corpse]}]}) {
+
+          |was this set to ignore?
+      /if (${Defined[offAssistIgnore_${mobId}]}) /continue
+    
       /if (${Me.XTarget[${i}].Aggressive} && ${Me.XTarget[${i}].ID} != ${AssistTarget}) {
+
         /if (${Me.XTarget[${i}].PctHPs} >= ${minHp} && ${Me.XTarget[${i}].PctAggro} < ${pctAggro}  && ${Me.XTarget[${i}].LineOfSight} && ${Me.XTarget[${i}].Distance} < 60) {
-            /varset mobId ${Me.XTarget[${i}].ID}
+     
             /if (${mobId}>0) {
                /call cast_longTermSpells "${mobId}" "OffAssist_Spells2D"
               /if (${ActionTaken}) {
                 /return
               }
             }
-           
-            |**/if (${Me.XTarget[${i}].PctHPs} > ${highestHp}) {
-              /varset mobId ${Me.XTarget[${i}].ID}
-              /varset highestHp ${Me.XTarget[${i}].PctHPs}
-            }**|
+        
         }
       }
     }
   /next i
-  |**/if (${Bool[${mobId}]}) {
-    |/bc Casting offtarget spell on ${Spawn[id ${mobId}].Name}
-    /call cast_longTermSpells "${mobId}" "OffAssist_Spells2D"
-  }**|
+
 /RETURN
 
 |----------------------------------------------------|
@@ -1878,6 +1881,7 @@ Sub assist_Setup
 	/declare revertRngToMelee bool outer FALSE
 	/declare pauseRanged bool outer FALSE
   /declare aeTarget int outer
+  /declare offAssistMaxAggro int outer 0
   /if (!${Defined[spellsToUse]})   /declare spellsToUse string global Main
 
 | ------------------------------------- Import Macro_Ini Settings.
@@ -2214,7 +2218,28 @@ Sub assist_Background_Events
   /doevents SetTank
   /doevents CombatMode
   /doevents debuffsOnAll
+  /doevents OffAssistIgnore
+  /doevents OffAssistIgnoreRemove
 /return
+
+#event OffAssistIgnore "[#1#(msg)] OffAssistIgnore #2#"
+sub event_OffAssistIgnore(line, ChatSender, IgnoreTarget)
+
+  /if (!${Defined[offAssistIgnore_${IgnoreTarget}]}) {
+    /echo Adding offAssistIgnore_${IgnoreTarget}
+    /declare offAssistIgnore_${IgnoreTarget} int outer ${IgnoreTarget}
+  }
+/return
+
+#event OffAssistIgnoreRemove "[#1#(msg)] OffAssistIgnoreRemove #2#"
+sub event_OffAssistIgnoreRemove(line, ChatSender, IgnoreTarget)
+
+  /if (${Defined[offAssistIgnore_${IgnoreTarget}]}) {
+    /echo Deleting offAssistIgnore_${IgnoreTarget}
+    /deletevar offAssistIgnore_${IgnoreTarget}
+  }
+/return
+
 
 #EVENT debuffsOnAll "<|${Me.Name}|> Debuff On All"
 SUB event_debuffsOnAll(line)

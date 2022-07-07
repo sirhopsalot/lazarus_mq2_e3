@@ -1,6 +1,41 @@
 |----------------------------------------------------------------------------|
 | Shaman Functions
 |----------------------------------------------------------------------------|
+
+SUB check_Totem
+
+  
+  |update our max agro on xtargets
+  /declare i int local 1
+  /declare tempMaxAggro int local 0
+  /declare mobId int local 0
+  |first we do a quick max agro check
+  /for i 1 to 13
+    |check off assist exemptions
+    /varset mobId ${Me.XTarget[${i}].ID}
+    |Do normal checks
+    /if (${Bool[${Me.XTarget[${i}]}]} && ${Me.XTarget[${i}].TargetType.Equal[Auto Hater]} && ${Me.XTarget[${i}].Type.Equal[NPC]} && !${Bool[${Me.XTarget[${i}].Name.Find[Corpse]}]}) {
+      /if (${Me.XTarget[${i}].Aggressive}) {
+        /if (${tempMaxAggro} <  ${Me.XTarget[${i}].PctAggro}) {
+          /varset tempMaxAggro ${Me.XTarget[${i}].PctAggro}
+        }
+      }
+    }
+  /next i
+  
+  /if (${tempMaxAggro} > 70) {
+    /bc [+g+] <check_Totem> agro is high, calling Inconspicuous Totem for ${Me.Name}
+    /call check_ReadySimple "Inconspicuous Totem"
+    /if (${c_Ready}) {
+        /call castSimpleSpell "Inconspicuous Totem" ${charmTarget}
+		/delay 4
+		/notify ShortDurationBuffWindow Buff${Math.Calc[${Me.Song[Totemic Form].ID}-1].Int} leftmouseup
+		/notify ShortDurationBuffWindow Buff${Math.Calc[${Me.Song[Inconspicuous Totem].ID}-1].Int} leftmouseup
+    }
+  }
+
+/return
+
 SUB check_Canni
 /if (${Debug}) /echo |- autoCanni ==>
 	/if (${AutoCanni}) {
