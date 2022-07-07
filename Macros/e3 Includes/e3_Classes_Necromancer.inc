@@ -1,6 +1,40 @@
 |----------------------------------------------------------------------------|
 | Necromancer Functions
 |----------------------------------------------------------------------------|
+
+
+SUB check_FD 
+
+  
+  |update our max agro on xtargets
+  /declare i int local 1
+  /declare tempMaxAggro int local 0
+  /declare mobId int local 0
+  |first we do a quick max agro check
+  /for i 1 to 13
+    |check off assist exemptions
+    /varset mobId ${Me.XTarget[${i}].ID}
+    |Do normal checks
+    /if (${Bool[${Me.XTarget[${i}]}]} && ${Me.XTarget[${i}].TargetType.Equal[Auto Hater]} && ${Me.XTarget[${i}].Type.Equal[NPC]} && !${Bool[${Me.XTarget[${i}].Name.Find[Corpse]}]}) {
+      /if (${Me.XTarget[${i}].Aggressive}) {
+        /if (${tempMaxAggro} <  ${Me.XTarget[${i}].PctAggro}) {
+          /varset tempMaxAggro ${Me.XTarget[${i}].PctAggro}
+        }
+      }
+    }
+  /next i
+  
+  /if (${tempMaxAggro} > 70) {
+    /bc [+g+] <check_FD> agro is high, calling Death Peace for ${Me.Name}
+    /call check_ReadySimple "Death Peace"
+    /if (${c_Ready}) {
+        /call castSimpleSpell "Death Peace" ${charmTarget}
+       /stand
+    }
+  }
+
+/return
+
 SUB check_Lich
   /if (${Debug}) /echo |- check_castLich ==>
   |/echo in checklich  ${lichSpell2D[1,${iMinHP}]}, ${Me.PctHPs} ${Me.Buff[${lichSpell2D[1,${iSpellName}]}]}
