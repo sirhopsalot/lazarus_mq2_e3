@@ -199,6 +199,7 @@ SUB check_AssistStatus
 /if (${Debug} || ${Debug_Assists}) {
 	/echo |- check_AssistStatus ==> AssistTarget = [${AssistTarget}] || AllowControl = [${AllowControl}] || Distance check = [${Spawn[id ${AssistTarget}].Distance} < ${MaxAssistDistance}] || TargetType = [${Spawn[id ${AssistTarget}].Type}]
 }
+
   /if (!${Bool[${Spawn[id ${AssistTarget}].Type.NotEqual[Corpse]}]}) {
     /if (${Debug} || ${Debug_Assists}) /echo Target doesnt exist or is dead, AssistOff
     /call AssistOff
@@ -335,7 +336,7 @@ SUB CombatAbilities
 
       |skips if contains or not contains
       /varset castIfName	${Abilities2D[${i},${iCastIf}]}
-      /if (!${castIfName.Equal[-1]} ) {
+      /if (${Bool[${castIfName}]} && !${castIfName.Equal[-1]} ) {
             /if (!${Bool[${Target.Buff[${castIfName}]}]}) {
               |/echo \ag [${Time}] ${Target.CleanName} is not debuffed with ${checkForDebuff} , skipping
               /goto :skipAbility
@@ -451,7 +452,6 @@ SUB check_Nukes
 
 /if (${Debug} || ${Debug_Assists}) /echo |- check_Nukes ==>
 	/if (${Defined[Nukes2D]} && ${Assisting} && ${use_Nukes}) {
-
    
     /declare castIfName string local  
 	  /declare castIndex int local
@@ -467,8 +467,6 @@ SUB check_Nukes
 
    /for s 1 to ${Nukes2D.Size[1]}
     
-   
-    
     /varset typeOfCast  
     
     /varset castIndex ${s}
@@ -477,7 +475,8 @@ SUB check_Nukes
     
 
     |allows use of druid/mage DS, etc, in nukes based on spellset. casts on assistTargets target
-    /if (${Nukes2D[${castIndex},${iSpellType}].Find[Beneficial]} && !${Nukes2D[${castIndex},${iCastName}].Find[ Magic]}) {
+    /if (${Select[${Me.Class.ShortName},DRU,MAG]} && ${Nukes2D[${castIndex},${iSpellType}].Find[Beneficial]} && !${Nukes2D[${castIndex},${iCastName}].Find[ Magic]}) {
+     
       /if (${Target.ID} != ${AssistTarget}) /call TrueTarget ${AssistTarget}
       /if (${Select[${Me.TargetOfTarget.Class.ShortName},WAR,PAL,SHD]}) {
         /if (${Spawn[pc ${Me.TargetOfTarget}].ID}) {
@@ -494,7 +493,7 @@ SUB check_Nukes
       }
     } else {
 
-     
+  
       | skip casting if a delay is defined and active
       /if (${Defined[castDelay]} && ${Bool[${Nukes2D[${castIndex},${iDelay}]}]}) {
         /if (${castDelay}) {
@@ -528,6 +527,8 @@ SUB check_Nukes
         /if (!${Nukes2D[${i},${iCastName}].Equal[${currentCastName}]}) {
           
           /call check_Ready "Nukes2D" ${i}
+          |needed for target checks on ifs
+          /if (${Target.ID} != ${AssistTarget}) /call TrueTarget ${AssistTarget}
           /if (${c_Ready} && ${Nukes2D[${i},${iIfs}]}) {
             /if (${Bool[${Nukes2D[${i},${iGiftOfMana}]}]}) {
               |its specified to use gift of mana, well do we have it?
@@ -579,7 +580,7 @@ SUB check_Nukes
           /if (${Debug} || ${Debug_Assists}) /echo skipping gift of mana spell ${Nukes2D[${castIndex},${iCastName}]}
           /goto :skipcast
       }
-
+       
       |if i have aggro and /noaggro is set, skip the spell
       /if (${Nukes2D[${castIndex},${iNoAggro}]}) {
         /if (${Me.TargetOfTarget.CleanName.Equal[${Me.CleanName}]}) {
@@ -604,15 +605,18 @@ SUB check_Nukes
         }
       }
 
-      | fix for using Ifs in Nukes, retarget to the AssistTarget before checking Ifs
-  	  /if (${Target.ID} != ${AssistTarget}) /call TrueTarget ${AssistTarget}
+     
+
       /varset castIfName	${Nukes2D[${s},${iCastIf}]}
-      /if (!${castIfName.Equal[-1]} ) {
+      /if (${Bool[${castIfName}]} && !${castIfName.Equal[-1]} ) {
+             |for using CastIfs in Nukes, retarget to the AssistTarget before checking CastIfs
+  	        /if (${Target.ID} != ${AssistTarget}) /call TrueTarget ${AssistTarget}
             /if (!${Bool[${Target.Buff[${castIfName}]}]}) {
-              |/echo \ag [${Time}] ${Target.CleanName} is not debuffed with ${castIfName} , skipping
+              /if (${Debug} || ${Debug_Assists}) /echo [+g+] [${Time}] ${Target.CleanName} is not debuffed with ${castIfName} , skipping
               /goto :skipCast
             }   
       }
+      /if (${Debug} || ${Debug_Assists}) /echo Doing a ready check
       /call check_Ready "Nukes2D" ${castIndex}
 	  
       /if (${Debug} || ${Debug_Assists}) {
@@ -624,23 +628,32 @@ SUB check_Nukes
       /echo Range ${Nukes2D[${s},${iMyRange}]}
       }
 	  
-      /if (${c_Ready} && ${Nukes2D[${castIndex},${iIfs}]}) {
+      /if (${c_Ready}) {
         /if (${check_Mana["Nukes2D",${castIndex}]}) {
           /if (${check_Distance[${AssistTarget},${Nukes2D[${s},${iMyRange}]}]}) {
-
              /if (${Select[${Me.Class.ShortName},CLR,DRU,SHM]}) {
-     
+              |before we even begin to cast, verify again if we need to heal, and kickout if so
+               /call check_HealCasting_DuringDetrimental
+               /if (!${c_SubToRun}) {
+                  /bc [${Time}] Before Nuke cast check for Heals, Heals needed, kicking out.
+                  /varset ActionTaken True
+                  /if (${Debug} || ${Debug_Assists}) /echo <== check_Nukes -|
+                  /return
+               }
+                |set the checks for during the cast for interrupts
                /varset Nukes2D[${castIndex},${iSubToRun}] check_HealCasting_DuringDetrimental
-           
             }
             /varset typeOfCast ${Nukes2D[${castIndex},${iCastType}]}
-            /call e3_Cast ${AssistTarget} "Nukes2D" "${castIndex}"
+            |for ifs check they may want to check the target buffs, so have to make sure we are targeting before we cast
+            /if (${Target.ID} != ${AssistTarget}) /call TrueTarget ${AssistTarget}
+            /if (${Nukes2D[${castIndex},${iIfs}]}) {
+                  /call e3_Cast ${AssistTarget} "Nukes2D" "${castIndex}"
+            }
+        
           }
         }
       }
       
-
-     
       |if the nuke was succesful, see if there is a delay defined and create a timer which locks out all nukes for the duration
       |mainly used for PBAOE stuns
       /if (${Bool[${Nukes2D[${castIndex},${iDelay}]}]} && ${Select[${castReturn},CAST_SUCCESS]}) {
@@ -655,7 +668,7 @@ SUB check_Nukes
 /RETURN
 
 |--------------------------------------------------------------------------------|
-| Author: Sirhopsalot
+| Author: Sirhopsalot, Modified Rekka
 | Casts spells on the non-assist target (but only while assist is active)
 | this is useful for casting dots / debuffs on the non-assist targets 
 | when you know the main assist target will be dead soon
@@ -670,18 +683,32 @@ SUB check_OffAssistSpells
   /declare highestHp int local 0
   /declare mobId int local 0
   /declare i int local
+ 
   /for i 1 to 13
-    /if (${Bool[${Me.XTarget[${i}]}]} && ${Me.XTarget[${i}].TargetType.Equal[Auto Hater]} && ${Me.XTarget[${i}].Type.Equal[NPC]} && ${Me.XTarget[${i}].Aggressive} && ${Me.XTarget[${i}].ID} != ${AssistTarget} && ${Me.XTarget[${i}].PctHPs} >= ${minHp} && ${Me.XTarget[${i}].PctAggro} < ${pctAggro} && !${Bool[${Me.XTarget[${i}].Name.Find[Corpse]}]} && ${Me.XTarget[${i}].LineOfSight}) {
-      /if (${Me.XTarget[${i}].PctHPs} > ${highestHp}) {
-        /varset mobId ${Me.XTarget[${i}].ID}
-        /varset highestHp ${Me.XTarget[${i}].PctHPs}
+    |check off assist exemptions
+    /varset mobId ${Me.XTarget[${i}].ID}
+    |Do normal checks
+    /if (${Bool[${Me.XTarget[${i}]}]} && ${Me.XTarget[${i}].TargetType.Equal[Auto Hater]} && ${Me.XTarget[${i}].Type.Equal[NPC]} && !${Bool[${Me.XTarget[${i}].Name.Find[Corpse]}]}) {
+
+          |was this set to ignore?
+      /if (${Defined[offAssistIgnore_${mobId}]}) /continue
+    
+      /if (${Me.XTarget[${i}].Aggressive} && ${Me.XTarget[${i}].ID} != ${AssistTarget}) {
+
+        /if (${Me.XTarget[${i}].PctHPs} >= ${minHp} && ${Me.XTarget[${i}].PctAggro} < ${pctAggro}  && ${Me.XTarget[${i}].LineOfSight} && ${Me.XTarget[${i}].Distance} < 60) {
+     
+            /if (${mobId}>0) {
+               /call cast_longTermSpells "${mobId}" "OffAssist_Spells2D"
+              /if (${ActionTaken}) {
+                /return
+              }
+            }
+        
+        }
       }
     }
   /next i
-  /if (${Bool[${mobId}]}) {
-    /docommand ${ChatToggle} Casting offtarget spell on ${Spawn[id ${mobId}].Name}
-    /call cast_longTermSpells "${mobId}" "OffAssist_Spells2D"
-  }
+
 /RETURN
 
 |----------------------------------------------------|
@@ -712,7 +739,7 @@ SUB check_Debuffs
 SUB check_DoTs
 /if (${Debug} || ${Debug_Assists}) /echo |- check_DoTs ==>
   /if (${Defined[Command_DoTs2D]} && ${use_CommandDots})  /call Dots_OnCommand
-	/if (${Assisting} && ${Defined[Assist_DoTs2D]} && ${use_AssistDots}) /call cast_longTermSpells "${AssistTarget}" "Assist_DoTs2D"
+	/if (${Assisting} && ${Defined[Assist_DoTs2D]} && ${use_AssistDots}) /call cast_damageOverTimeSpells "${AssistTarget}" "Assist_DoTs2D"
 /if (${Debug} || ${Debug_Assists}) /echo <== check_DoTs -|
 /RETURN
 
@@ -727,9 +754,20 @@ SUB cast_longTermSpells(int spellTarget, string ArrayName)
   /declare spellRecast int local 0
   /declare s int local
   /declare checkForName string local
+  /declare castIfName string local 
+  /declare spellName string local 
+  /declare spellID int local 0
 
 	/for s 1 to ${${ArrayName}.Size[1]}
-    /varset checkForName	${${ArrayName}[${s},${iCheckFor}]}
+
+     /varset checkForName	${${ArrayName}[${s},${iCheckFor}]}
+     /varset spellName ${${ArrayName}[${s},${iCastName}]} 
+     /if (${Bool[${FindItem[=${spellName}]}]}) {
+        /varset spellID ${FindItem[${spellName}].Spell.ID}
+        /varset spellName ${FindItem[${spellName}].Spell}
+    } else {
+      /varset spellID ${Spell[${spellName}].ID}
+    }
 
 	  |this check lets you use OOW debuff BP in debuff section
 	  /if (${${ArrayName}[${s},${iSpellType}].Find[Beneficial]}) {
@@ -739,8 +777,8 @@ SUB cast_longTermSpells(int spellTarget, string ArrayName)
     } else {
       /varset spellTarg ${spellTarget}
     }
-		/varset spellTimer spellTimer_${spellTarg}_${ArrayName}_${s}
-		/varset resistCount resist_${spellTarg}_${ArrayName}_${s}
+		/varset spellTimer spellTimer_${spellTarg}_${spellID}
+		/varset resistCount resist_${spellTarg}_${spellID}
     |/echo stdef ${Defined[${spellTimer}]} st ${spellTarg}  tgt ${Target.ID}
 		/if (${Defined[${spellTimer}]}) {
 		  /if (${${spellTimer}}) {
@@ -775,12 +813,30 @@ SUB cast_longTermSpells(int spellTarget, string ArrayName)
         /if (${Debug} || ${Debug_Assists}) /echo \gy Skipping ${${ArrayName}[${s},${iSpellName}]} due to Ifs on ${Target.CleanName}
         /goto :skipCast
     }
+    
+    /varset castIfName	${${ArrayName}[${s},${iCastIf}]}
+    /if (${Bool[${castIfName}]}  && !${castIfName.Equal[-1]} ) {
+            |for using CastIfs in dots/debuffs, retarget to the AssistTarget before checking CastIfs
+          /if (${Target.ID} != ${AssistTarget}) /call TrueTarget ${AssistTarget}
+          /if (!${Bool[${Target.Buff[${castIfName}]}]}) {
+            /echo \ag [${Time}] ${Target.CleanName} is not debuffed with [${castIfName}]  Skipping
+            /goto :skipCast
+          }   
+    }
     /call check_Ready "${ArrayName}" ${s}
     /if (${c_Ready}) {
       /if (${check_Mana[${ArrayName},${s}]}) {
         /if (${check_Distance[${spellTarg},${${ArrayName}[${s},${iMyRange}]}]}) {
     
             /if (${Select[${Me.Class.ShortName},CLR,DRU,SHM]}) {
+              |before we even begin to cast, verify again if we need to heal, and kickout if so
+               /call check_HealCasting_DuringDetrimental
+               /if (!${c_SubToRun}) {
+                  /bc [+g+] [${Time}] Before Nuke cast check for Heals, Heals needed, kicking out.
+                  /varset ActionTaken True
+                  /if (${Debug} || ${Debug_Assists}) /echo <== cast_longTermSpells -|
+                  /return
+               }
                /varset ${ArrayName}[${s},${iSubToRun}] check_HealCasting_DuringDetrimental
             }
           /call e3_Cast ${spellTarg} "${ArrayName}" "${s}"
@@ -1105,6 +1161,11 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
 /declare i int local
 /declare iSpellSwap int local 0
 /declare spellTimer string local
+/declare spellID int local 0
+/declare triggerSpellID int local 0
+/declare timeleftOnSpell int local 0
+/declare spellName string local 
+
 |${${ArrayName}[${i},${iCastName}]}        --> strSpellName
 |${${ArrayName}[${i},${iAllowSpellSwap}]} --> 0/1 
 |${${ArrayName}[${i},${iNoEarlyRecast}]}  --> 0/1
@@ -1115,6 +1176,10 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
 |${${ArrayName}[${i},${iSpellGem}]}        --> int 
 
 /for i 1 to ${${ArrayName}.Size[1]}
+
+    /varset spellName ${${ArrayName}[${i},${iCastName}]} 
+    |/echo SpellName is :${spellName}
+
     /doevents DoTsOff
     |make sure we have the right target    
     |make sure we don't need to do any healing
@@ -1130,14 +1195,23 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
     /if (!${Bool[${Spawn[id ${TargetID}].Type.NotEqual[Corpse]}]}) {
       /return
     }
-
+    
+     /if (${Bool[${FindItem[=${spellName}]}]}) {
+        /varset spellID ${FindItem[${spellName}].Spell.ID}
+        /varset spellName ${FindItem[${spellName}].Spell}
+    } else {
+      
+      /varset spellID ${Spell[${spellName}].ID}
+      |/echo SpellID is:${spellID}
+    }
     |setups for resist counters and spellRetry timers
-    /varset spellTimer spellTimer_${TargetID}_${ArrayName}_${i}
-		/varset resistCount resist_${TargetID}_${ArrayName}_${i}
+    
+    /varset spellTimer spellTimer_${TargetID}_${spellID}
+		/varset resistCount resist_${TargetID}_${spellID}
     |Is there a spell timer configured for this spell and target? if so, skip this   
     /if (${Defined[${spellTimer}]}) {
 		  /if (${${spellTimer}}) {
-        |/echo skipping ${spellTimer}
+        |/echo skipping due to spellTimer_${TargetID}_${spellID} with time: ${${spellTimer}}
         /continue
       }
     }
@@ -1150,18 +1224,34 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
     /if (!${${ArrayName}[${i},${iIfs}]}) {
       /continue
     }
-    |verify the spell we want to use is actulaly ready
-    /if (!(${Me.ItemReady[${${ArrayName}[${i},${iCastName}]}]} || ${Me.SpellReady[${${ArrayName}[${i},${iCastName}]}]} || ${Me.AltAbilityReady[${${ArrayName}[${i},${iCastName}]}]})) {
-       /continue
-    }
     |Change the target here, as we need the correct target if using TimeLeftOnMySpell
-    /if (${Bool[${Target.ID} != ${TargetID}]}) {
-      /if (${Debug} || ${Debug_Assists})  /echo changing target to ${TargetID}
+    /if (${Target.ID} != ${TargetID}) {
+      |/if (${Debug} || ${Debug_Assists})  /echo changing target to ${TargetID}
+      |/echo <cast_Dots> changing target to ${TargetID} from targetid: ${Target.ID}
       /target id ${TargetID}
       /delay 2
     }
+    /varset timeleftOnSpell ${TimeLeftOnMySpell[${${ArrayName}[${i},${iCastName}]}]} 
+    |Skip if this spell is already on the NPC from me and has more than 4 seconds left on it. (This is spell casts)
+    |and no trigger spell is specified
+    /if (${timeleftOnSpell} > 8 && !${Bool[${${ArrayName}[${i},${iTriggerSpell}]}]}) {
+      /continue
+    }
+
+    |verify the spell we want to use is actually ready
+    :recheckCooldown
+    /if (!(${Me.ItemReady[${${ArrayName}[${i},${iCastName}]}]} || ${Me.SpellReady[${${ArrayName}[${i},${iCastName}]}]} || ${Me.AltAbilityReady[${${ArrayName}[${i},${iCastName}]}]})) {
+
+       |we are here because our spells are on cooldown, 
+       /if (${Me.SpellInCooldown}) {
+          /delay 1
+          /goto :recheckCooldown
+       }
+
+       /continue
+    }
     |Skip if /NoEarlyRecast is set and the mob has this spell from me
-    /if (${TimeLeftOnMySpell[${${ArrayName}[${i},${iCastName}]}]} > 0 && ${${ArrayName}[${i},${iNoEarlyRecast}]}) {
+    /if (${timeleftOnSpell} > 0 && ${${ArrayName}[${i},${iNoEarlyRecast}]}) {
       /continue
     }
     |Skip if /NoStack is set and ANYONE (including myself) have already casted this on the NPC
@@ -1169,25 +1259,23 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
       /continue
     }
     |Skip if /TriggerSpell|SpellName is set and both the spell and TriggerSpell are already on the NPC from me
-    /if (${Bool[${${ArrayName}[${i},${iTriggerSpell}]}]} && ${TimeLeftOnMySpell[${${ArrayName}[${i},${iTriggerSpell}]}]} > 4 && ${TimeLeftOnMySpell[${${ArrayName}[${i},${iCastName}]}]} > 4) {
+    /if (${Bool[${${ArrayName}[${i},${iTriggerSpell}]}]} && ${TimeLeftOnMySpell[${${ArrayName}[${i},${iTriggerSpell}]}]} > 4 && ${timeleftOnSpell} > 4) {
       /continue
     }
     |Skip if this spell is already on the NPC from me and has more than 4 seconds left on it. (This is item casts)
     /if (${Bool[${FindItem[=${${ArrayName}[${i},${iCastName}]}]}]} && ${TimeLeftOnMySpell[${FindItem[=${${ArrayName}[${i},${iCastName}]}].Spell}]} > 4) {
       /continue
     }
-    |Skip if this spell is already on the NPC from me and has more than 4 seconds left on it. (This is spell casts)
-    /if (${TimeLeftOnMySpell[${${ArrayName}[${i},${iCastName}]}]} > 4 && !${Bool[${${ArrayName}[${i},${iTriggerSpell}]}]}) {
-      /continue
-    }
+    
  
 
-    /if (!${Bool[${Me.Casting}]}) {
+    /if (!${Window[CastingWindow].Open}) {
 
      
       |Cast the spell!
       /call e3_Cast ${TargetID} ${ArrayName} ${i}
       
+      |Resist checks
       /if (${Cast.Stored.Name.Equal[${${ArrayName}[${i},${iSpellName}]}]} && ${castReturn.Equal[CAST_RESIST]}) {
        
         /if (!${Defined[${resistCount}]}) {
@@ -1215,7 +1303,18 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
            /varset ${resistCount} 0
         }
         /call createTimer "${spellTimer}" "5m"
+      } else {
+         /varset timeleftOnSpell ${TimeLeftOnMySpell[${${ArrayName}[${i},${iCastName}]}]} 
+         /if ( ${timeleftOnSpell}<7) {
+          /varcalc timeleftOnSpell ${${ArrayName}[${i},${iDuration}]}*6
+         } else {
+            /varcalc timeleftOnSpell ${timeleftOnSpell}-8
+         }
+         |/echo Creating timer ${spellTimer} for ${timeleftOnSpell}s
+         /call createTimer "${spellTimer}" ${timeleftOnSpell}s
       }
+
+
       |Spell Swap Code Specifically for /AllowSpellSwap
       |These spells will De-Mem and Re-Mem a new spell immediately after cast. /Gem|# is ignored for these spells. 
       /if (${Bool[${Me.SpellInCooldown}]} && ${${ArrayName}[${i},${iAllowSpellSwap}]} && ${Bool[${Me.Book[${${ArrayName}[${i},${iCastName}]}]}]}) {
@@ -1265,6 +1364,8 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
       |End Spell Swap Code
 
       |These checks are the same as above--but for the NEXT spell in the DoT array. This is so we don't QuickCast a spell that wouldn't be casted already.
+
+      |verify that the next thing is an AA or Item, so we can ignore the GCD
       /if (${i} < ${${ArrayName}.Size[1]} && ${Bool[${Me.Book[${${ArrayName}[${i},${iCastName}]}]}]} && !${Bool[${Me.Book[${${ArrayName}[${Math.Calc[${i}+1]},${iCastName}]}]}]}) {
         
         |Incrementing loop up 1 so we can check the next spell in sequence. 
@@ -1305,6 +1406,7 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
         }
         /echo QuickCast:: ${${ArrayName}[${i},${iCastName}]}
         /call e3_Cast ${TargetID} ${ArrayName} ${i} True
+        
       } else {
         /return
       }
@@ -1779,6 +1881,7 @@ Sub assist_Setup
 	/declare revertRngToMelee bool outer FALSE
 	/declare pauseRanged bool outer FALSE
   /declare aeTarget int outer
+  /declare offAssistMaxAggro int outer 0
   /if (!${Defined[spellsToUse]})   /declare spellsToUse string global Main
 
 | ------------------------------------- Import Macro_Ini Settings.
@@ -2115,7 +2218,28 @@ Sub assist_Background_Events
   /doevents SetTank
   /doevents CombatMode
   /doevents debuffsOnAll
+  /doevents OffAssistIgnore
+  /doevents OffAssistIgnoreRemove
 /return
+
+#event OffAssistIgnore "[#1#(msg)] OffAssistIgnore #2#"
+sub event_OffAssistIgnore(line, ChatSender, IgnoreTarget)
+
+  /if (!${Defined[offAssistIgnore_${IgnoreTarget}]}) {
+    /echo Adding offAssistIgnore_${IgnoreTarget}
+    /declare offAssistIgnore_${IgnoreTarget} int outer ${IgnoreTarget}
+  }
+/return
+
+#event OffAssistIgnoreRemove "[#1#(msg)] OffAssistIgnoreRemove #2#"
+sub event_OffAssistIgnoreRemove(line, ChatSender, IgnoreTarget)
+
+  /if (${Defined[offAssistIgnore_${IgnoreTarget}]}) {
+    /echo Deleting offAssistIgnore_${IgnoreTarget}
+    /deletevar offAssistIgnore_${IgnoreTarget}
+  }
+/return
+
 
 #EVENT debuffsOnAll "<|${Me.Name}|> Debuff On All"
 SUB event_debuffsOnAll(line)
