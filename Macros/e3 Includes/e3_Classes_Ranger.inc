@@ -42,6 +42,43 @@ sub Event_AE_AOH(string line)
    } else /bc Auspice of the Hunter is not available...
   }
 /return
+
+SUB check_RangerAggro
+
+  /declare maxAggro int local 90
+  |update our max agro on xtargets
+  /declare i int local 1
+  /declare tempMaxAggro int local 0
+  /declare mobId int local 0
+  |first we do a quick max agro check
+  /for i 1 to 13
+    |check off assist exemptions
+    /varset mobId ${Me.XTarget[${i}].ID}
+    |Do normal checks
+    /if (${Bool[${Me.XTarget[${i}]}]} && ${Me.XTarget[${i}].TargetType.Equal[Auto Hater]} && ${Me.XTarget[${i}].Type.Equal[NPC]} && !${Bool[${Me.XTarget[${i}].Name.Find[Corpse]}]}) {
+      /if (${Me.XTarget[${i}].Aggressive}) {
+        /if (${tempMaxAggro} <  ${Me.XTarget[${i}].PctAggro}) {
+          /varset tempMaxAggro ${Me.XTarget[${i}].PctAggro}
+        }
+      }
+    }
+  /next i
+  
+  /if (${tempMaxAggro} >${maxAggro} && ${Assisting}) {
+    /bc [+g+] <check_RangerAggro> agro is high at ${maxAggro}%, canceling assist. Recall assist to reengage
+    /beep
+    /call AssistOff
+  }
+  /if (!${Asissting} &&  ${Bool[Target.ID]} && ${Target.Aggressive}) {
+    /call check_ReadySimple "Jolt"
+    /if (${c_Ready}) {
+        /call castSimpleSpell "Jolt" 0
+       /stand
+    }
+  }
+
+/return
+
 |----------------------------------------------------------------------------|
 Sub RNG_Background_Events
   /doevents AE_AOH

@@ -12,7 +12,7 @@
 SUB Main(modeSelect)
   
  
-  /declare macroVersion string outer 8.0
+  /declare macroVersion string outer 8.2
   /declare Debug bool outer false
   /declare IniMode string outer Ini
   /if (${Bool[${Plugin[MQ2IniExt]}]}) {

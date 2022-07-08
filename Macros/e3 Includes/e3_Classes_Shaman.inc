@@ -4,6 +4,13 @@
 
 SUB check_Totem
 
+
+  /if (${Bool[${Me.Song[Inconspicuous Totem]}]}) {
+
+     /notify ShortDurationBuffWindow Buff${Math.Calc[${Me.Song[Totemic Form].ID}-1].Int} leftmouseup
+		 /notify ShortDurationBuffWindow Buff${Math.Calc[${Me.Song[Inconspicuous Totem].ID}-1].Int} leftmouseup
+    
+  }
   
   |update our max agro on xtargets
   /declare i int local 1
@@ -28,10 +35,11 @@ SUB check_Totem
     /call check_ReadySimple "Inconspicuous Totem"
     /if (${c_Ready}) {
         /call castSimpleSpell "Inconspicuous Totem" ${charmTarget}
-		/delay 4
-		/notify ShortDurationBuffWindow Buff${Math.Calc[${Me.Song[Totemic Form].ID}-1].Int} leftmouseup
-		/notify ShortDurationBuffWindow Buff${Math.Calc[${Me.Song[Inconspicuous Totem].ID}-1].Int} leftmouseup
-    }
+        /delay 4
+        /notify ShortDurationBuffWindow Buff${Math.Calc[${Me.Song[Totemic Form].ID}-1].Int} leftmouseup
+		    /notify ShortDurationBuffWindow Buff${Math.Calc[${Me.Song[Inconspicuous Totem].ID}-1].Int} leftmouseup
+
+		}
   }
 
 /return

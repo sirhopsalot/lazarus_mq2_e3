@@ -760,7 +760,7 @@ SUB cast_longTermSpells(int spellTarget, string ArrayName)
 
 	/for s 1 to ${${ArrayName}.Size[1]}
 
-     /varset checkForName	${${ArrayName}[${s},${iCheckFor}]}
+    
      /varset spellName ${${ArrayName}[${s},${iCastName}]} 
      /if (${Bool[${FindItem[=${spellName}]}]}) {
         /varset spellID ${FindItem[${spellName}].Spell.ID}
@@ -769,6 +769,7 @@ SUB cast_longTermSpells(int spellTarget, string ArrayName)
       /varset spellID ${Spell[${spellName}].ID}
     }
 
+   
 	  |this check lets you use OOW debuff BP in debuff section
 	  /if (${${ArrayName}[${s},${iSpellType}].Find[Beneficial]}) {
 	    /varset spellTarg ${Me.ID}
@@ -791,6 +792,14 @@ SUB cast_longTermSpells(int spellTarget, string ArrayName)
       /call TrueTarget ${spellTarg}
       /delay 5 ${Target.BuffsPopulated}
     }
+    
+    /varset checkForName	${${ArrayName}[${s},${iCheckFor}]}
+    /if (!${checkForName.Equal[-1]} ) {
+          /if (${Bool[${Target.Buff[${checkForName}]}]}) {
+            |/echo \ag [${Time}] ${Target.CleanName} is not debuffed with ${checkForDebuff} , skipping
+            /goto :skipcast
+          }   
+    }
     /if (${Bool[${Select[${ArrayName},Command_Debuffs2D,Assist_Debuffs2D,All_Debuffs2D]}]}) {
       /if (${Target.BuffDuration[${${ArrayName}[${s},${iSpellName}]}]}/1000 > ${longTermRecastTime} && !${${ArrayName}[${s},${iSpellName}].Equal[${spammableSpell}]}) {
         /varcalc spellRecast ${Target.BuffDuration[${${ArrayName}[${s},${iSpellName}]}]}/1000 - ${longTermRecastTime}
@@ -799,12 +808,13 @@ SUB cast_longTermSpells(int spellTarget, string ArrayName)
         /goto :skipCast
       }
 
-      /if (${Target.BuffDuration[${checkForName}]}/1000 > ${longTermRecastTime}) {
+     
+      |**/if (${Target.BuffDuration[${checkForName}]}/1000 > ${longTermRecastTime}) {
         /varcalc spellRecast ${Target.BuffDuration[${checkForName}]}/1000 - 10
         /call createTimer ${spellTimer} ${spellRecast}s
         /echo \ag ${Target.CleanName} already debuffed ${checkForName} recast ${spellRecast}
         /goto :skipCast
-      }      
+      }**|      
     }
     :attemptCast
     /if (!${${ArrayName}[${s},${iIfs}]}) {
@@ -1164,7 +1174,8 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
 /declare spellID int local 0
 /declare triggerSpellID int local 0
 /declare timeleftOnSpell int local 0
-/declare spellName string local 
+/declare spellName string local
+/declare checkForName string local
 
 |${${ArrayName}[${i},${iCastName}]}        --> strSpellName
 |${${ArrayName}[${i},${iAllowSpellSwap}]} --> 0/1 
@@ -1228,9 +1239,17 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
     /if (${Target.ID} != ${TargetID}) {
       |/if (${Debug} || ${Debug_Assists})  /echo changing target to ${TargetID}
       |/echo <cast_Dots> changing target to ${TargetID} from targetid: ${Target.ID}
-      /target id ${TargetID}
-      /delay 2
+      /call TrueTarget ${TargetID}
+      /delay 5 ${Target.BuffsPopulated}
     }
+    
+    /varset checkForName	${${ArrayName}[${i},${iCheckFor}]}
+    /if (!${checkForName.Equal[-1]} ) {
+          /if (${Bool[${Target.Buff[${checkForName}]}]}) {
+            /continue
+          }   
+    }
+
     /varset timeleftOnSpell ${TimeLeftOnMySpell[${${ArrayName}[${i},${iCastName}]}]} 
     |Skip if this spell is already on the NPC from me and has more than 4 seconds left on it. (This is spell casts)
     |and no trigger spell is specified
