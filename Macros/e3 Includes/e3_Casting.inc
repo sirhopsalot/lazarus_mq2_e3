@@ -161,7 +161,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos, bool NoDela
       /if (${Debug} || ${Debug_Casting}) /echo [${Time}] SkipCast-NoHold ${pendingCast} on ${Spawn[id ${targetID}].Name} Waiting [${nht${targetID}-${pendingCastID}}]
       /goto :skipCast
     } else {
-      /echo [${Time}] Deleting nht${targetID}-${pendingCastID} ${nht${targetID}-${pendingCastID}}
+      |/echo [${Time}] Deleting nht${targetID}-${pendingCastID} ${nht${targetID}-${pendingCastID}}
       /deletevar nht${targetID}-${pendingCastID}
     }
   }
