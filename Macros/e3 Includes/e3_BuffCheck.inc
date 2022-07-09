@@ -57,7 +57,16 @@ sub buffBotsInstant(ArrayName)
   |/delay 2
   /if (${Select[${buffSpellID},8001,8002,8000,8003,19917]}) {
     
-    /call meleeCombatBuffs "${ArrayName}" ${s}
+    /if (!(${Bool[${Me.Buff[${${ArrayName}[${s},${iCastName}]}]}]}|| ${Bool[${Me.Song[${${ArrayName}[${s},${iCastName}]}]}]})) {
+      /if (${Me.PctEndurance} >= ${${ArrayName}[${s},${iMinEnd}]} && ${Spell[${${ArrayName}[${s},${iCastName}]}].EnduranceCost} <= ${Me.Endurance}) {
+              /call check_Ready "${ArrayName}" ${s}
+              /if (${c_Ready}) {
+                /if (!${Boo[${Target.ID}]}) /call TrueTarget ${buffTargetID}
+                /call castSimpleSpell "${${ArrayName}[${s},${iCastName}]}" 0
+              }
+          }
+    }
+    |/call meleeCombatBuffs "${ArrayName}" ${s}
     /goto :skipBuff
   }
 
@@ -128,7 +137,16 @@ SUB buffBots(ArrayName)
   } 
 
   /if (${Select[${buffSpellID},8001,8002,8000,8003,19917]}) {
-    /call meleeCombatBuffs "${ArrayName}" ${s}
+    /if (!(${Bool[${Me.Buff[${${ArrayName}[${s},${iCastName}]}]}]}|| ${Bool[${Me.Song[${${ArrayName}[${s},${iCastName}]}]}]})) {
+      /if (${Me.PctEndurance} >= ${${ArrayName}[${s},${iMinEnd}]} && ${Spell[${${ArrayName}[${s},${iCastName}]}].EnduranceCost} <= ${Me.Endurance}) {
+              /call check_Ready "${ArrayName}" ${s}
+              /if (${c_Ready}) {
+                /if (!${Boo[${Target.ID}]}) /call TrueTarget ${buffTargetID}
+                /call castSimpleSpell "${${ArrayName}[${s},${iCastName}]}" 0
+              }
+          }
+    }
+    |/call meleeCombatBuffs "${ArrayName}" ${s}
     /goto :skipBuff
   }
 
