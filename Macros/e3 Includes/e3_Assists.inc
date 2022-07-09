@@ -1942,7 +1942,7 @@ Sub assist_Setup
   /if (${FindItemCount[=Heartwood Blade]})                       /varset EpicName Heartwood Blade
   /if (${FindItemCount[=Heartwood Infused Bow]})                 /varset EpicName Heartwood Infused Bow
   /if (${FindItemCount[=Aurora, the Heartwood Blade]})           /varset EpicName Aurora, the Heartwood Blade
-  /if (${FindItemCount[=Aurora, the Heartwood Bow]})             /varset EpicName Aurora, the Heartwood Blade
+  /if (${FindItemCount[=Aurora, the Heartwood Bow]})             /varset EpicName Aurora, the Heartwood Bow
   /if (${FindItemCount[=Fatestealer]})                           /varset EpicName Fatestealer
   /if (${FindItemCount[=Nightshade, Blade of Entropy]})          /varset EpicName Nightshade, Blade of Entropy
   /if (${FindItemCount[=Innoruuk's Voice]})                      /varset EpicName Innoruuk's Voice
