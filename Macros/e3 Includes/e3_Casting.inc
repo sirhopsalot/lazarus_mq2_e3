@@ -744,7 +744,7 @@ Sub check_Ready(ArrayName, int ArrayIndex)
   } else /if (${${ArrayName}[${ArrayIndex},${iCastType}].Equal[AA]}) {
     /if (${Me.AltAbilityReady[${${ArrayName}[${ArrayIndex},${iCastName}]}]})  /varset c_Ready TRUE
   } else /if (${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Disc]}) {
-  			/echo spellid to check :${${ArrayName}[${ArrayIndex},${iSpellID}]}
+  			|/echo spellid to check :${${ArrayName}[${ArrayIndex},${iSpellID}]}
 		/if (${${ArrayName}[${ArrayIndex},${iSpellID}]}==8001) {
 			|bug with thiefs eyes, mark it as always true
 			/varset c_Ready true
