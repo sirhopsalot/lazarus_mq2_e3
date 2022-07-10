@@ -686,27 +686,40 @@ SUB check_OffAssistSpells
  
   /for i 1 to 13
     |check off assist exemptions
-    /varset mobId ${Me.XTarget[${i}].ID}
-    |Do normal checks
-    /if (${Bool[${Me.XTarget[${i}]}]} && ${Me.XTarget[${i}].TargetType.Equal[Auto Hater]} && ${Me.XTarget[${i}].Type.Equal[NPC]} && !${Bool[${Me.XTarget[${i}].Name.Find[Corpse]}]}) {
-
-          |was this set to ignore?
-      /if (${Defined[offAssistIgnore_${mobId}]}) /continue
+    /if (!${Me.XTarget[${i}].TargetType.Equal[Auto Hater]}) /continue
     
-      /if (${Me.XTarget[${i}].Aggressive} && ${Me.XTarget[${i}].ID} != ${AssistTarget}) {
+    /varset mobId ${Me.XTarget[${i}].ID}
+    
+    /if (!${Bool[${mobId}]}) /continue
+    /if (${mobId}<1) /continue
+    /if (${mobId}==${AssistTarget}) /continue
+      |should we ignore this mob type?
+    /if (${Defined[offAssistIgnore_${mobId}]}) /continue
+   
 
-        /if (${Me.XTarget[${i}].PctHPs} >= ${minHp} && ${Me.XTarget[${i}].PctAggro} < ${pctAggro}  && ${Me.XTarget[${i}].LineOfSight} && ${Me.XTarget[${i}].Distance} < 60) {
+    /if (!${Spawn[npc id ${mobId}].Aggressive}) /continue
+    /if (${Spawn[npc id ${mobId}].PctHPs}<=${minHp}) /continue
+    /if (!${Spawn[npc id ${mobId}].LineOfSight}) /continue
+    /if (${Spawn[npc id ${mobId}].Distance}>60) /continue
+    /if (${Spawn[npc id ${mobId}].Type.Equal[Corpse]}) /continue
      
-            /if (${mobId}>0) {
-               /call cast_longTermSpells "${mobId}" "OffAssist_Spells2D"
-              /if (${ActionTaken}) {
-                /return
-              }
-            }
-        
-        }
-      }
+
+    /call cast_longTermSpells "${mobId}" "OffAssist_Spells2D"
+    /if (${ActionTaken}) {
+      /return
     }
+    |**
+    |double check that this isn't a corpse  and thus removed from xtargetrs to try and avoid the xtargets bug
+    
+    |Do normal checks
+      /if (${Me.XTarget[${i}].PctAggro} < ${pctAggro}) {
+          /call cast_longTermSpells "${mobId}" "OffAssist_Spells2D"
+          /if (${ActionTaken}) {
+            /return
+          }
+      }
+    **|
+    
   /next i
 
 /RETURN

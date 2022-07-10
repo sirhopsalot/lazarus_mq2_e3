@@ -5,25 +5,26 @@
 
 SUB check_FD 
 
-  
+  /if (!${Assisting}) /return  
   |update our max agro on xtargets
   /declare i int local 1
   /declare tempMaxAggro int local 0
+  /declare currentAggro int local 0
   /declare mobId int local 0
   |first we do a quick max agro check
   /for i 1 to 13
-    |check off assist exemptions
+  /if (!${Me.XTarget[${i}].TargetType.Equal[Auto Hater]}) /continue
     /varset mobId ${Me.XTarget[${i}].ID}
-    |Do normal checks
-    /if (${Bool[${Me.XTarget[${i}]}]} && ${Me.XTarget[${i}].TargetType.Equal[Auto Hater]} && ${Me.XTarget[${i}].Type.Equal[NPC]} && !${Bool[${Me.XTarget[${i}].Name.Find[Corpse]}]}) {
-      /if (${Me.XTarget[${i}].Aggressive}) {
-        /if (${tempMaxAggro} <  ${Me.XTarget[${i}].PctAggro}) {
-          /varset tempMaxAggro ${Me.XTarget[${i}].PctAggro}
-        }
-      }
+    /if (!${Bool[${mobId}]}) /continue
+    /if (${mobId}<1) /continue
+    /if (!${Spawn[npc id ${mobId}].Aggressive}) /continue
+    |try and avoid xtarget bug by checking to make sure this isn't a corpse before we access the aggro
+    /if (${Spawn[npc id ${mobId}].Type.Equal[Corpse]}) /continue
+    /varset currentAggro ${Me.XTarget[${i}].PctAggro}
+    /if (${tempMaxAggro} <  ${currentAggro}) {
+      /varset tempMaxAggro ${currentAggro}
     }
   /next i
-  
   /if (${tempMaxAggro} > 70) {
     /bc [+g+] <check_FD> agro is high, calling Death Peace for ${Me.Name}
     /call check_ReadySimple "Death Peace"
