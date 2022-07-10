@@ -20,7 +20,7 @@ SUB check_Heals
 		/if (${Defined[lifeSupport2D]} && ${Me.PctHPs} < 99) /call check_lifeSupport
 		/varset ActionTaken False
 		/if (${healTanks}) 		/call heal_tanks
-		/if (${healXTargets}) 	/call heal_xtargets
+		/if (${healXTargets}) 	/call heal_xtargets2
 		/if (!${ActionTaken} && ${healImportant})   /call heal_importantBots
 		/if (!${ActionTaken} && ${do_GroupHeals}) 	/call groupHeals
 		/if (!${ActionTaken} && ${healAll}) 			/call heal_allbots
@@ -308,18 +308,78 @@ SUB heal_xtargets
 	/next xtargetIndex
 
 	/if (${Bool[${currentBot}]}) {
-		/call e3_Cast ${Me.XTarget[${currentBot}].ID} "xtargetHeals2D" ${currentSpellIndx}	
-		/if (${UseNecroHealOrbs} && ${Target.PctHPs} < 90) {
+		/if (${UseNecroHealOrbs} && ${Target.PctHPs} < 60) {
 			/if (${Me.ItemReady[Orb of Shadows]}) {
 				/call castSimpleSpell "Orb of Shadows" ${NetBots[${currentBot}].ID}
 			} else /if (${Me.ItemReady[Orb of Souls]}) {
 				/call castSimpleSpell "Orb of Souls" ${NetBots[${currentBot}].ID}
 			}
 		}
+		/call e3_Cast ${Me.XTarget[${currentBot}].ID} "xtargetHeals2D" ${currentSpellIndx}	
+		
 	}
 /if (${Debug} || ${Debug_Heals}) /echo <== heal_xtargets -|
 /RETURN
 
+SUB heal_xtargets2
+/if (${Debug} || ${Debug_Heals}) /echo |- heal_xtargets ==>
+	/declare currentBot int local 0
+	/declare currentLowestHps int local 100
+	/declare xtargetIndex int local 1
+	/declare s int local 1
+	/declare numXTargets int local 13
+	
+
+	|find the lowest hp xtarget
+
+	/for xtargetIndex 1 to ${numXTargets}
+		|if this is a PC
+		
+		/if (!${Me.XTarget[${xtargetIndex}].TargetType.Equal[Specific PC]}) /continue
+		| and within a 200 unit range
+		/if (${check_Distance[${Me.XTarget[${xtargetIndex}].ID},200]}) {
+			|are their HP lower than the current lowest, without being dead
+			/if (${Me.XTarget[${xtargetIndex}].PctHPs} < ${currentLowestHps} && ${Me.XTarget[${xtargetIndex}].PctHPs} >0 ) {
+				|set them as the ID to be currently used
+				/varset currentBot ${Me.XTarget[${xtargetIndex}].ID}
+				/varset currentLowestHps ${Me.XTarget[${xtargetIndex}].PctHPs}					
+			}
+		}
+
+	/next xtargetIndex
+
+	/if (${currentBot} >0 && ${currentLowestHps} < 95) {
+		
+		/for s 1 to ${xtargetHeals2D.Size[1]}
+			/if (${currentLowestHps} < ${xtargetHeals2D[${s},${iHealPct}]}) {
+				
+				/if (${xtargetHeals2D[${s},${iIfs}]}) {
+					/echo [${Time}] <XTarget_Heals> found target to heal ${currentBot} at ${currentLowestHps}%
+					/if (${check_Distance[${currentBot},${xtargetHeals2D[${s},${iMyRange}]}]}) {
+						/if (${check_Mana["xtargetHeals2D",${s}]}) {
+							/call check_Ready "xtargetHeals2D" ${s}
+							/if (${c_Ready}) {
+
+								/if (${UseNecroHealOrbs} && ${Target.PctHPs} < 60) {
+									/if (${Me.ItemReady[Orb of Shadows]}) {
+										/call castSimpleSpell "Orb of Shadows"  ${currentBot}
+									} else /if (${Me.ItemReady[Orb of Souls]}) {
+										/call castSimpleSpell "Orb of Souls"  ${currentBot}
+									}
+								}
+								/call e3_Cast ${currentBot} "xtargetHeals2D" ${s}	
+								/if (${ActionTaken}) /goto :endxtargets
+							} 
+				
+						}
+					}
+				} 
+			}
+		/next s
+	}
+	:endxtargets
+/if (${Debug} || ${Debug_Heals}) /echo <== heal_xtargets -|
+/RETURN
 |------------------------------------------------|
 |- Find the lowest hp Pet to heal				-|
 |------------------------------------------------|

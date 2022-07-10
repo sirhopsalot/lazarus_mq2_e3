@@ -31,6 +31,12 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos, bool NoDela
 |StopEchos = Skips the /echo on successful cast if a value other than 0 is passed with the /call e3_Cast
 /if (${Debug} || ${Debug_Casting}) /echo |- e3_Cast ==>
 
+	|if we are casting, lets clean up our cursor
+	 /if (${Cursor.ID}) {	
+		/echo [${Time}] <E3_Cast> Issuing auto inventory on ${Cursor}
+		/autoinventory
+	 }
+
 	/varset castReturn  
 	/varset pendingCast	${${ArrayName}[${ArrayIndex},${iCastName}]}
 	/varset pendingCastID ${${ArrayName}[${ArrayIndex},${iCastID}]}
@@ -748,7 +754,9 @@ Sub check_Ready(ArrayName, int ArrayIndex)
 		/if (${${ArrayName}[${ArrayIndex},${iSpellID}]}==8001) {
 			|bug with thiefs eyes, mark it as always true
 			/varset c_Ready true
-		} else /if (${Me.CombatAbilityReady[${${ArrayName}[${ArrayIndex},${iCastName}]}]}) /varset c_Ready TRUE
+		} else /if (${Me.CombatAbilityReady[${${ArrayName}[${ArrayIndex},${iCastName}]}]}) {
+			/varset c_Ready TRUE
+		} 
   } else /if (${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Ability]}) {
     /if (${Me.AbilityReady[${${ArrayName}[${ArrayIndex},${iCastName}]}]}) /varset c_Ready TRUE
   }

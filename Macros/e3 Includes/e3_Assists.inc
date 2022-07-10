@@ -668,7 +668,7 @@ SUB check_Nukes
 /RETURN
 
 |--------------------------------------------------------------------------------|
-| Author: Sirhopsalot, Modified Rekka
+| Author: Rekka, original idea SirHops
 | Casts spells on the non-assist target (but only while assist is active)
 | this is useful for casting dots / debuffs on the non-assist targets 
 | when you know the main assist target will be dead soon
@@ -696,7 +696,7 @@ SUB check_OffAssistSpells
       |should we ignore this mob type?
     /if (${Defined[offAssistIgnore_${mobId}]}) /continue
    
-
+    |using spawn to limit access to xtarget object to try and avoid xtarget bug (unknown if it will help)
     /if (!${Spawn[npc id ${mobId}].Aggressive}) /continue
     /if (${Spawn[npc id ${mobId}].PctHPs}<=${minHp}) /continue
     /if (!${Spawn[npc id ${mobId}].LineOfSight}) /continue
@@ -708,18 +708,7 @@ SUB check_OffAssistSpells
     /if (${ActionTaken}) {
       /return
     }
-    |**
-    |double check that this isn't a corpse  and thus removed from xtargetrs to try and avoid the xtargets bug
-    
-    |Do normal checks
-      /if (${Me.XTarget[${i}].PctAggro} < ${pctAggro}) {
-          /call cast_longTermSpells "${mobId}" "OffAssist_Spells2D"
-          /if (${ActionTaken}) {
-            /return
-          }
-      }
-    **|
-    
+       
   /next i
 
 /RETURN
