@@ -132,31 +132,28 @@ SUB check_Active
 	| Check Cursor
 	  
     /if (${Cursor.ID}) {	
-		| Destroy badItems.
-		/if (${Defined[badItems]}) {
-			/if (${Select[${Cursor},${badItems}]} || ${Select[${Cursor.ID},${badItems}]}) {
-				/echo Destroying ${Cursor}...
-				/destroy
-			}
-		}
-    |this would prevent casting if something was on the cursor, which in many cases is undesireable.
-    |tho this also impacts the auto inv feature....
-    |**
-		| Check to see if I'm waiting to drop this item, or if I've picked up something new
-		/if (${Old_cursorID} != ${Cursor.ID}) {
-			/varset cursorTimer ${Math.Calc[${inventoryTimer} * 10].Int}
-			/varset Old_cursorID ${Cursor.ID}
-		} else {
-			/if (!${cursorTimer}) /call ClearCursor
-		}		
-		/varset activeTimer 5
-	  } else {
-		/if (${Old_cursorID}) {
-			/varset cursorTimer 0
-			/varset Old_cursorID 0
-		}
-    **|
-	}
+        | Destroy badItems.
+        /if (${Defined[badItems]}) {
+          /if (${Select[${Cursor},${badItems}]} || ${Select[${Cursor.ID},${badItems}]}) {
+            /echo [${Time}] Destroying ${Cursor}...
+            /destroy
+          }
+        }
+    
+        |this is the 30 sec timer. If you have something on your cursor for 30 seconds, it will kick it off.
+        /if (${Old_cursorID} != ${Cursor.ID}) {
+          /varset cursorTimer ${Math.Calc[${inventoryTimer} * 10].Int}
+          /varset Old_cursorID ${Cursor.ID}
+        } else {
+          /if (!${cursorTimer}) /call ClearCursor
+        }		
+        
+    } else {
+      /if (${Old_cursorID}) {
+        /varset cursorTimer 0
+        /varset Old_cursorID 0
+      }
+    }
   
   |prevent guys from getting stuck trying to buff while moving
 	/if (${Me.Moving} && !${Me.Class.ShortName.Equal[BRD]}) {

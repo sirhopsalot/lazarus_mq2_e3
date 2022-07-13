@@ -1376,7 +1376,7 @@ SUB MoveToTarget(timeToWait,arrivalDist)
 		/return
 		
 	} else {
-		/echo <MoveToTarget> using /moveto to target...
+		/echo <MoveToTarget> using /moveto to target using /moveto loc ${yLoc} ${xLoc} dist ${arrivalDist}
 		/if (${Me.Casting.ID} && ${Me.Class.ShortName.NotEqual[BRD]}) /call interrupt
 		:retryMove
 		/squelch /moveto loc ${yLoc} ${xLoc} dist ${arrivalDist}

@@ -141,6 +141,9 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos, bool NoDela
 	|CatchAll Function for potentially locked up spell gems.
   	/call check_SpellGemLockup
 
+	|need to have a target so events/spells can have access to the target
+	
+	/call TrueTarget ${targetID}
 	/declare beforeEvent string local ${${ArrayName}[${ArrayIndex},${iBeforeEvent}]}
 	/if (${beforeEvent.Length}>1) {
 		/echo BeforeEvent configured, calling "${beforeEvent}"
@@ -152,9 +155,6 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos, bool NoDela
 		/call CastAfterBeforeSpell "${beforeSpell}"
 	}
 
-	
-	
-	
 
   |/varset Debug_Casting TRUE
  

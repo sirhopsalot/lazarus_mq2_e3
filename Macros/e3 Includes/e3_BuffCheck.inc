@@ -61,7 +61,7 @@ sub buffBotsInstant(ArrayName)
       /if (${Me.PctEndurance} >= ${${ArrayName}[${s},${iMinEnd}]} && ${Spell[${${ArrayName}[${s},${iCastName}]}].EnduranceCost} <= ${Me.Endurance}) {
               /call check_Ready "${ArrayName}" ${s}
               /if (${c_Ready}) {
-                /if (!${Boo[${Target.ID}]}) /call TrueTarget ${buffTargetID}
+                /if (!${Bool[${Target.ID}]}) /call TrueTarget ${buffTargetID}
                 /call castSimpleSpell "${${ArrayName}[${s},${iCastName}]}" 0
               }
           }
@@ -141,7 +141,7 @@ SUB buffBots(ArrayName)
       /if (${Me.PctEndurance} >= ${${ArrayName}[${s},${iMinEnd}]} && ${Spell[${${ArrayName}[${s},${iCastName}]}].EnduranceCost} <= ${Me.Endurance}) {
               /call check_Ready "${ArrayName}" ${s}
               /if (${c_Ready}) {
-                /if (!${Boo[${Target.ID}]}) /call TrueTarget ${buffTargetID}
+                /if (!${Bool[${Target.ID}]}) /call TrueTarget ${buffTargetID}
                 /call castSimpleSpell "${${ArrayName}[${s},${iCastName}]}" 0
               }
           }
