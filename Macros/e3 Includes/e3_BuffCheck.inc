@@ -81,7 +81,7 @@ sub buffBotsInstant(ArrayName)
         /call check_Ready "${ArrayName}" ${s}
         /if (${c_Ready} && ${${ArrayName}[${s},${iIfs}]}) {
           /if (${check_Mana["${ArrayName}",${s}]}) {
-            /echo CAST TYPE ${${ArrayName}[${s},${iTargetType}]}
+            |/echo CAST TYPE ${${ArrayName}[${s},${iTargetType}]}
             /call e3_Cast ${buffTargetID} "${ArrayName}" ${s}
           }
         } 
