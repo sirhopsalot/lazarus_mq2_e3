@@ -45,6 +45,10 @@ sub buffBotsInstant(ArrayName)
   /varset buffTargetID ${Me.ID}
   /varset buffTarget ${Me.Name}
 
+  /if (${${ArrayName}[${s},${iTargetType}].Equal[Self]}) {
+    /varset buffTargetID 0
+  }
+
 	/varset buffSpellName		${${ArrayName}[${s},${iSpellName}]}
 	/varset buffSpellID			${${ArrayName}[${s},${iSpellID}]}
 	/varset buffCheckForName	${${ArrayName}[${s},${iCheckFor}]}
@@ -77,6 +81,7 @@ sub buffBotsInstant(ArrayName)
         /call check_Ready "${ArrayName}" ${s}
         /if (${c_Ready} && ${${ArrayName}[${s},${iIfs}]}) {
           /if (${check_Mana["${ArrayName}",${s}]}) {
+            /echo CAST TYPE ${${ArrayName}[${s},${iTargetType}]}
             /call e3_Cast ${buffTargetID} "${ArrayName}" ${s}
           }
         } 
