@@ -26,7 +26,7 @@ SUB check_FD
     }
   /next i
   /if (${tempMaxAggro} > 70) {
-    /bc [+g+] <check_FD> agro is high, calling Death Peace for ${Me.Name}
+    /bc [+g+] [${Time}]  <check_FD> agro is high, calling Death Peace for ${Me.Name}
     /call check_ReadySimple "Death Peace"
     /if (${c_Ready}) {
         /call castSimpleSpell "Death Peace" ${charmTarget}

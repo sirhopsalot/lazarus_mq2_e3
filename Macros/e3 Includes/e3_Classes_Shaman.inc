@@ -33,7 +33,7 @@ SUB check_Totem
     }
   /next i
   /if (${tempMaxAggro} > 70) {
-    /bc [+g+] <check_Totem> agro is high, calling Inconspicuous Totem for ${Me.Name}
+    /bc [+g+] [${Time}] <check_Totem> agro is high, calling Inconspicuous Totem for ${Me.Name}
     /call check_ReadySimple "Inconspicuous Totem"
     /if (${c_Ready}) {
         /call castSimpleSpell "Inconspicuous Totem" ${charmTarget}

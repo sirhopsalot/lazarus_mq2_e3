@@ -851,8 +851,13 @@ SUB cast_longTermSpells(int spellTarget, string ArrayName)
                }
                /varset ${ArrayName}[${s},${iSubToRun}] check_HealCasting_DuringDetrimental
             }
-          /call e3_Cast ${spellTarg} "${ArrayName}" "${s}"
-       
+            |Cast the spell
+            /call e3_Cast ${spellTarg} "${ArrayName}" "${s}"
+            /if (${castReturn.Equal[CAST_INTERRUPTED]} && ${ActionTaken}) {
+                |spell was interrupted due to a heal check kickout
+                /return
+            }
+      
         } else {
           /if (${Debug} || ${Debug_Assists}) /echo ${spellTarg} out of range for ${${ArrayName}[${s},${iMyRange}]} ${${ArrayName}[${s},${iCastName}]}
           /goto :skipCast
@@ -1293,8 +1298,16 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
     /if (!${Window[CastingWindow].Open}) {
 
      
+      |set the checks for during the cast for interrupts if a healer type
+      /if (${mainLoop_IsHealer}) {
+        /varset ${ArrayName}[${i},${iSubToRun}] check_HealCasting_DuringDetrimental
+      }
       |Cast the spell!
       /call e3_Cast ${TargetID} ${ArrayName} ${i}
+      /if (${castReturn.Equal[CAST_INTERRUPTED]} && ${ActionTaken}) {
+           |spell was interrupted due to a heal check kickout
+           /return
+      }
       
       |Resist checks
       /if (${Cast.Stored.Name.Equal[${${ArrayName}[${i},${iSpellName}]}]} && ${castReturn.Equal[CAST_RESIST]}) {
