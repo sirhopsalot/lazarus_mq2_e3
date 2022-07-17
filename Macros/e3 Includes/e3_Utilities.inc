@@ -1151,6 +1151,8 @@ SUB RemoveArrayElements(ArrayName, ArrayIndexes)
 |- @param TargetID: The ID of the spawn you wish to target.	-|
 |------------------------------------------------------------|
 SUB TrueTarget(TargetID)
+	/if (${Target.ID}==${TargetID}) /return
+	
 	| Check if the target is in zone.
 	/if (${SpawnCount[id ${TargetID}]}) {
 			/squelch /target id ${TargetID}
