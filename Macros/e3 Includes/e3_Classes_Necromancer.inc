@@ -3,11 +3,17 @@
 |----------------------------------------------------------------------------|
 
 
-SUB check_FD 
+SUB check_NecroAggro
 
+  /if (${Me.Feigning}) /return
   /if (!${Assisting}) /return  
+  /if (${Bool[${Me.Song[Harm Shield]}]}) /return
+  /if (${Bool[${Me.Song[Embalmer's Carapace]}]}) /return
+ 
+
   |update our max agro on xtargets
   /declare i int local 1
+  /declare aggroCap int local 90
   /declare tempMaxAggro int local 0
   /declare currentAggro int local 0
   /declare mobId int local 0
@@ -25,13 +31,33 @@ SUB check_FD
       /varset tempMaxAggro ${currentAggro}
     }
   /next i
-  /if (${tempMaxAggro} > 70) {
+  /if (${tempMaxAggro} > ${aggroCap} && !${Bool[${Me.Song[Gathering Dusk]}]}) {
     /bc [+g+] [${Time}]  <check_FD> agro is high, calling Death Peace for ${Me.Name}
+    /call check_ReadySimple "Improved Death Peace"
+    /if (${c_Ready}) {
+        /call castSimpleSpell "Improved Death Peace" 0
+        /stand
+        /return
+    }
     /call check_ReadySimple "Death Peace"
     /if (${c_Ready}) {
-        /call castSimpleSpell "Death Peace" ${charmTarget}
-       /stand
+        /call castSimpleSpell "Death Peace" 0
+        /stand
+        /return
     }
+  }
+  /if (${tempMaxAggro} > ${aggroCap}) {
+
+      /call check_ReadySimple "Harmshield"
+      /if (${c_Ready}) {
+        /call castSimpleSpell "Harmshield" 0
+        /return
+       }
+      /call check_ReadySimple "Embalmer's Carapace"
+      /if (${c_Ready}) {
+        /call castSimpleSpell "Embalmer's Carapace" 0
+        /return
+       }
   }
 
 /return

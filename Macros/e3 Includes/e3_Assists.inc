@@ -1410,7 +1410,7 @@ SUB cast_damageOverTimeSpells(int TargetID, string ArrayName)
         }
 
         |Skip if defiend IF isn't met
-        /if (!${Bool[${${ArrayName}[${i},${iIfs}]}]}) {
+        /if (!${${ArrayName}[${i},${iIfs}]}) {
           /return
         } 
 
@@ -1977,6 +1977,7 @@ Sub assist_Setup
   /if (${FindItemCount[=Savagesoul Jerkin of the Wilds]})                     /varset AnguishChest Savagesoul Jerkin of the Wilds
   /if (${FindItemCount[=Glyphwielder's Tunic of the Summoner]})               /varset AnguishChest Glyphwielder's Tunic of the Summoner
   /if (${FindItemCount[=Whispering Tunic of Shadows]})                        /varset AnguishChest Whispering Tunic of Shadows
+  /if (${FindItemCount[=Ritualchanter's Tunic of the Ancestors]})             /varset AnguishChest Ritualchanter's Tunic of the Ancestors
   /if (${AnguishChest.Length}) /call BuildArray EPICBurns "${AnguishChest}"
 
   |/echo ---------Assist calling spellarrays ----------

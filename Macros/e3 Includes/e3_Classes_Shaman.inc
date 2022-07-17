@@ -36,7 +36,7 @@ SUB check_Totem
     /bc [+g+] [${Time}] <check_Totem> agro is high, calling Inconspicuous Totem for ${Me.Name}
     /call check_ReadySimple "Inconspicuous Totem"
     /if (${c_Ready}) {
-        /call castSimpleSpell "Inconspicuous Totem" ${charmTarget}
+        /call castSimpleSpell "Inconspicuous Totem" 0
         /delay 4
         /notify ShortDurationBuffWindow Buff${Math.Calc[${Me.Song[Totemic Form].ID}-1].Int} leftmouseup
 		    /notify ShortDurationBuffWindow Buff${Math.Calc[${Me.Song[Inconspicuous Totem].ID}-1].Int} leftmouseup
