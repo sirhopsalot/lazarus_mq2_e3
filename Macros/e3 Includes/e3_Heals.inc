@@ -71,7 +71,8 @@ SUB check_lifeSupport
 
 										/varset previousTarget ${Target.ID}
 										/call e3_Cast ${Me.ID} "lifeSupport2D" ${s}
-										/target id ${previousTarget}
+										/call TrueTarget ${previousTarget}
+										
 									}
 									
 							}
