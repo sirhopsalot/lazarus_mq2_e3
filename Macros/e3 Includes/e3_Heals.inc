@@ -47,7 +47,7 @@ SUB check_lifeSupport
 /if (${Debug} || ${Debug_Heals}) /echo |- check_lifeSupport ==>
 	/declare s int local
 	/declare previousTarget int local 0
-	/declare castName string local ${lifeSupport2D[${s},${iCastName}]
+	/declare castName string local ${lifeSupport2D[${s},${iCastName}]}
 	|no need to do queries if are are full life
 	/if (${Me.PctHPs}<99) {
 		| only use life support when near mobs and it is agressive to us or we are in combat and there are npcs in 200 radius
