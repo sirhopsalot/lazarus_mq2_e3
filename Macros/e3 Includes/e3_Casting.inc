@@ -27,7 +27,6 @@
 | CAST_COMPONENTS| Missing Component													                                |
 |---------------------------------------------------------------------------------------------|
 Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos, bool NoDelay)
-
 |StopEchos = Skips the /echo on successful cast if a value other than 0 is passed with the /call e3_Cast
 /if (${Debug} || ${Debug_Casting}) /echo |- e3_Cast ==>
 
@@ -141,20 +140,6 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos, bool NoDela
 	|CatchAll Function for potentially locked up spell gems.
   	/call check_SpellGemLockup
 
-	|need to have a target so events/spells can have access to the target
-	
-	/call TrueTarget ${targetID}
-	/declare beforeEvent string local ${${ArrayName}[${ArrayIndex},${iBeforeEvent}]}
-	/if (${beforeEvent.Length}>1) {
-		/echo BeforeEvent configured, calling "${beforeEvent}"
-		/docommand ${beforeEvent}
-	}
-	/declare beforeSpell string local ${${ArrayName}[${ArrayIndex},${iBeforeSpell}]}
-	/if (${beforeSpell.Length}>1) {
-		/echo BeforeCast configured, calling "${beforeSpell}"
-		/call CastAfterBeforeSpell "${beforeSpell}"
-	}
-
 
   |/varset Debug_Casting TRUE
  
@@ -209,7 +194,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos, bool NoDela
 :wait_for_misc
   /if (${${ArrayName}[${ArrayIndex},${iTargetType}].Find[pet]}) {
     /if (!${Bool[${Me.Pet.ID}]} || ${Me.Pet.Distance} > ${${ArrayName}[${ArrayIndex},${iMyRange}]}) {
-      /call CreateTimer "nht${targetID}-${pendingCastID}" "${noHoldPetDelay}"
+	  /call CreateTimer "nht${targetID}-${pendingCastID}" "${noHoldPetDelay}"
       /echo [${Time}] SkipCast-PetRange ${pendingCast} ${pendingCastID} ${Spawn[id ${targetID}].Name} ${targetID}
       /goto :skipCast
     }
@@ -244,6 +229,28 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos, bool NoDela
 	}
   }
 
+
+	|need to have a target so events/spells can have access to the target
+	
+	/call TrueTarget ${targetID}
+	/declare beforeEvent string local ${${ArrayName}[${ArrayIndex},${iBeforeEvent}]}
+	/if (${beforeEvent.Length}>1) {
+		/echo BeforeEvent configured, calling "${beforeEvent}" before ${pendingCast}
+		/docommand ${beforeEvent}
+	}
+	/declare beforeSpell string local ${${ArrayName}[${ArrayIndex},${iBeforeSpell}]}
+	/if (${beforeSpell.Length}>1) {
+		/echo [${Time}] BeforeCast configured, calling "${beforeSpell}" before ${pendingCast}
+		/call CastAfterBeforeSpell "${beforeSpell}"
+		|reset global variables that will be cobbered by this call
+		/varset castReturn  
+		/varset pendingCast	${${ArrayName}[${ArrayIndex},${iCastName}]}
+		/varset pendingCastID ${${ArrayName}[${ArrayIndex},${iCastID}]}
+		/varset castEndTime	0
+		/varset castReturn 0
+		/varset interruptFlag FALSE
+		
+	}
 	
 
 	/declare startingLoc ${Me.Loc.Replace[ ,]}
@@ -366,7 +373,6 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos, bool NoDela
 			}
 			}
 		}
-		
 		/if (${${ArrayName}[${ArrayIndex},${iTargetType}].Equal[Self]}) {
 			
 			|bards songs don't work with /casting, have to do it ourselves
@@ -635,13 +641,14 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos, bool NoDela
 	}
 
 	/if (${afterSpell.Length}>1) {
+		/echo [${Time}] AfterSpell configured, calling "${afterSpell}" for ${pendingCast}
 		/call CastAfterBeforeSpell "${afterSpell}"
 	}
 	/declare afterEvent string local ${${ArrayName}[${ArrayIndex},${iAfterEvent}]}
 	/if (${afterEvent.Length}>1) {
 		|give time for buffs to land, in case they want toi remove one.
 		/delay 5
-		/echo [${Time}] AfterEvent configured, calling "${afterEvent}"
+		/echo [${Time}] AfterEvent configured, calling "${afterEvent}" for ${pendingCast}
 		/docommand ${afterEvent}
 	}
 

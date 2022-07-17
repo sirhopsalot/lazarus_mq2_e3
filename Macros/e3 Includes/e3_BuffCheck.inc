@@ -199,8 +199,11 @@ SUB buffBots(ArrayName)
             /if (${check_Distance[${buffTargetID},${${ArrayName}[${s},${iMyRange}]}]}) {
               /if (${check_Mana["${ArrayName}",${s}]}) {
                 /call e3_Cast ${buffTargetID} "${ArrayName}" ${s}
-                /delay 3 ${Target.BuffsPopulated}
-                /if (${castReturn.Equal[CAST_SUCCESS]} && !${Bool[${NetBots[${buffTarget}].Buff.Find[${buffSpellID} ]}]}	&& !${Bool[${NetBots[${buffTarget}].ShortBuff.Find[${buffSpellID} ]}]}) {
+                |setting a flat delay 3, as target buffs may already be populated as you pretargeted before cast. 
+                |a delay 3 seems sufficent for netbots to see the buff.
+                /delay 3
+                /if (${castReturn.Equal[CAST_SUCCESS]} && !${Bool[${NetBots[${buffTarget}].Buff.Find[${buffSpellID}]}]}	&& !${Bool[${NetBots[${buffTarget}].ShortBuff.Find[${buffSpellID}]}]}) {
+                  /echo [${Time}] Can't find buff ${buffSpellName} on my target, issuing no hold timer for ${noHoldDelay}
                   /call CreateTimer "nht${Target.ID}-${buffSpellID}" "${noHoldDelay}"
                 }
               }
