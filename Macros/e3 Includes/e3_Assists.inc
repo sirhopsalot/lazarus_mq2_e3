@@ -49,6 +49,7 @@ SUB event_Assist(line, ChatSender, int MobID)
         /varset AllowControl TRUE
         |/docommand ${ChatToggle} Attacking - ${AssistTarget} - ${Spawn[${AssistTarget}].CleanName}
         /if (${Target.ID} != ${AssistTarget} && (!${Bool[${Me.Casting}]} || ${Me.Class.ShortName.Equal[BRD]}) && (${AssistType.Equal[melee]} || ${AssistType.Equal[ranged]})) /call TrueTarget ${AssistTarget}
+        /squelch /face fast id ${AssistTarget}
         /if (${Me.Pet.ID}) {
           /if (${Debug} || ${Debug_Assists}) /echo Pet Check: Sending pet in
           /pet attack ${AssistTarget}

@@ -32,8 +32,8 @@ SUB check_Totem
       /varset tempMaxAggro  ${currentAggro}
     }
   /next i
-  /if (${tempMaxAggro} > 70) {
-    /bc [+g+] [${Time}] <check_Totem> agro is high, calling Inconspicuous Totem for ${Me.Name}
+  /if (${tempMaxAggro} > 90) {
+    /bc [+g+] [${Time}] <check_Totem> agro is high at ${tempMaxAggro}%, calling Inconspicuous Totem for ${Me.Name}
     /call check_ReadySimple "Inconspicuous Totem"
     /if (${c_Ready}) {
         /call castSimpleSpell "Inconspicuous Totem" 0

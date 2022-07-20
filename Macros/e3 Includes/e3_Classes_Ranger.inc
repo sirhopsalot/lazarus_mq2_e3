@@ -48,7 +48,7 @@ SUB check_RangerAggro
   /if (${Assisting}) {
       
       /if (${Target.PctAggro} >95) {
-        /bc [+g+] <check_RangerAggro> agro is high at ${Target.PctAggro}%, canceling assist. Recall assist to reengage
+        /bc [+g+] <check_RangerAggro> I have stolen aggro again (${Target.PctAggro}%), canceling assist and casting jolt. Recall assist to reengage
         /beep
         /call AssistOff
       }
