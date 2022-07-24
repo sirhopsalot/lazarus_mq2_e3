@@ -142,6 +142,7 @@ SUB AssistOff
   /if (${use_LONGBurns})           /varset use_LONGBurns FALSE
   /if (${use_QUICKBurns})          /varset use_QUICKBurns FALSE
 	/if (${use_EPICBurns})           /varset use_EPICBurns FALSE
+  /if (${use_Swarms})              /varset use_Swarms FALSE
 
   /if (${Defined[${resistCount}]}) /deletevar ${resistCount}
   /call check_ResistCounters
@@ -1585,9 +1586,18 @@ SUB swapToRangedSet(bool toggleRanged)
 #event SwarmPets "<#1#> Swarm Pets on #2#"
 SUB event_SwarmPets(line, ChatSender, int swarmTarget)
 /if (${Debug} || ${Debug_Assists}) /echo |- event_SwarmPets ==>
-  /if (${Defined[swarmPets2D]}) {
-    /if (!${checkEventArgs[${ChatSender},${line},UZR,${swarmTarget}]}) /return
-    /varset swarmTarget ${c_eventArgData}
+  /if (!${checkEventArgs[${ChatSender},${line},UZR,${swarmTarget}]}) /return
+    /if (${Defined[swarmPets2D]}) {
+    /varset use_Swarms TRUE
+   }
+/if (${Debug} || ${Debug_Assists}) /echo <== event_SwarmPets -|
+/RETURN
+Sub useSwarms
+    
+    /if (${Defined[swarmPets2D]}) {
+    /if (!${Assisting}) /return
+    /declare swarmTarget int Local
+    /varset swarmTarget ${AssistTarget}
 		/if (${SpawnCount[id ${swarmTarget}]} && ${Spawn[${swarmTarget}].Type.NotEqual[Corpse]} && ${Select[${Spawn[${swarmTarget}].Type},${AcceptableTargetTypes}]}) {
 			/declare i int local
 			/for i 1 to ${swarmPets2D.Size[1]}
@@ -1601,9 +1611,8 @@ SUB event_SwarmPets(line, ChatSender, int swarmTarget)
 			/next i
 		}
 	}
-/if (${Debug} || ${Debug_Assists}) /echo <== event_SwarmPets -|
-/RETURN
 
+/Return
 |----------------------------------------------------|
 SUB check_Burns
   /if (${Assisting}) {
@@ -1611,6 +1620,7 @@ SUB check_Burns
     /if (${use_LONGBurns})  /call useBurns "LONGBurns2D"
     /if (${use_QUICKBurns}) /call useBurns "QUICKBurns2D"
     /if (${use_EPICBurns})  /call useBurns "EPICBurns2D"
+    /if (${use_Swarms}) /call useSwarms
   }
 /RETURN
 
@@ -1624,10 +1634,10 @@ SUB event_Burns(line, ChatSender, burnType)
   /if (${line.Find[,]}) /varset line ${line.Left[${Math.Calc[${line.Find[,]}-1]}]} ${line.Right[-${line.Find[,]}]}
   /if (!${checkEventArgs[${ChatSender},${line},UZR,${burnType}]}) /return
   /varset burnType ${c_eventArgData.Upper}
-  /if (!${Assisting}) {
-    /echo You must be attacking something to ${burnType} burn.
-    /return
-  }
+  |/if (!${Assisting}) {
+   | /echo You must be attacking something to ${burnType} burn.
+    |/return
+  |}
   /if (!${Defined[${burnType}Burns2D]}) {
     /return
   } else {
@@ -1910,6 +1920,7 @@ Sub assist_Setup
   /declare use_LONGBurns bool outer FALSE
   /declare use_QUICKBurns bool outer FALSE
   /declare use_EPICBurns bool outer FALSE
+  /declare use_Swarms bool outer FALSE
 
   /declare resistCount string outer
 	/declare isEnraged bool outer FALSE
