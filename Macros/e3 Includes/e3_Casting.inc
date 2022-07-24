@@ -701,7 +701,15 @@ Sub check_Ready(ArrayName, int ArrayIndex)
   /if (${Debug} || ${Debug_Casting}) /echo |- check_Ready =>
   /varset c_Ready FALSE
   | Memorize the spell if it is not memorized
-    
+
+  |if we are a bard, we need to check if we are already casting 
+  |if we are , let the song finish before we check on the ready state of their spells
+  |else they will basically never be
+  /if (!${Twist.Twisting} && ${Me.Class.ShortName.Equal[BRD]}) {
+	/while (${Window[CastingWindow].Open}) {
+		/delay 1
+	}
+  }
   /if (${${ArrayName}[${ArrayIndex},${iCastType}].Equal[Spell]}) {
  
     /if (!${Bool[${Me.Gem[${${ArrayName}[${ArrayIndex},${iCastName}]}]}]}) {
@@ -779,6 +787,14 @@ Sub check_Ready(ArrayName, int ArrayIndex)
 Sub check_ReadySimple(spellName, gemToUse)
   /if (${Debug} || ${Debug_Casting}) /echo |- check_ReadySimple =>
   /varset c_Ready FALSE
+  |if we are a bard, we need to check if we are already casting 
+  |if we are , let the song finish before we check on the ready state of their spells
+  |else they will basically never be
+  /if (!${Twist.Twisting} && ${Me.Class.ShortName.Equal[BRD]}) {
+	/while (${Window[CastingWindow].Open}) {
+		/delay 1
+	}
+  }
   | Memorize the spell if it is not memorized
   
 	/declare spellType string local 
