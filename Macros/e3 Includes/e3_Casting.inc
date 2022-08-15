@@ -231,8 +231,9 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos, bool NoDela
 
 
 	|need to have a target so events/spells can have access to the target
-	
-	/call TrueTarget ${targetID}
+	/if (!${Select[${${ArrayName}[${ArrayIndex},${iTargetType}]},PB AE,Self]}) {
+		/call TrueTarget ${targetID}
+	}
 	/declare beforeEvent string local ${${ArrayName}[${ArrayIndex},${iBeforeEvent}]}
 	/if (${beforeEvent.Length}>1) {
 		/echo BeforeEvent configured, calling "${beforeEvent}" before ${pendingCast}
