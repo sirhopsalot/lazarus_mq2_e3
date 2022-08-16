@@ -230,7 +230,7 @@ SUB buffBots(ArrayName)
 SUB meleeCombatBuffs(ArrayName, int s)
 |/echo mcb ${s} ${NetBots[${${ArrayName}[${s},${iCastTarget}]}].Name} ${${ArrayName}[${s},${iCastName}]}
 /if (${Debug} || ${Debug_BuffCheck}) /echo |- meleeCombatBuffs ${ArrayName} ${s} ==>
-  /if (${Me.CombatState.Equal[COMBAT]}||${Me.Combat}|| true) {
+  /if (${Me.CombatState.Equal[COMBAT]}||${Me.Combat}) {
     /declare buffTargetID	int local ${NetBots[${${ArrayName}[${s},${iCastTarget}]}].ID}
     /if (${buffTargetID}==0) {
       /varset buffTargetID ${Me.ID}
