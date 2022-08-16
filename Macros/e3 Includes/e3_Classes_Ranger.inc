@@ -42,6 +42,27 @@ sub Event_AE_AOH(string line)
    } else /bc Auspice of the Hunter is not available...
   }
 /return
+
+SUB check_RangerAggro
+
+  /if (${Assisting}) {
+      
+      /if (${Target.PctAggro} >95) {
+        /bc [+g+] <check_RangerAggro> I have stolen aggro again (${Target.PctAggro}%), canceling assist and casting jolt. Recall assist to reengage
+        /beep
+        /call AssistOff
+      }
+  } else /if (${Bool[Target.ID]} && !${Bool[${Target.Name.Find[Corpse]}]} && ${Target.Aggressive}) {
+    /call check_ReadySimple "Jolt"
+    /if (${c_Ready}) {
+        /call castSimpleSpell "Jolt" 0
+       /stand
+    }
+  }
+
+
+/return
+
 |----------------------------------------------------------------------------|
 Sub RNG_Background_Events
   /doevents AE_AOH

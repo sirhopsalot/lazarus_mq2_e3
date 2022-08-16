@@ -135,7 +135,10 @@ SUB event_nextTarget(line, ChatSender)
       /if (!${Me.XTarget[${i}].LineOfSight} || ${Me.XTarget[${i}].Distance} > 30) {
         /continue
       }
-      /if (${Bool[${Me.XTarget[${i}].Name.Find[Corpse]}]} || ${Bool[${Me.XTarget[${i}].Name.Find[wooden box]}]}) {
+      /if (${Bool[${Me.XTarget[${i}].Type.Equal[Corpse]}]} || ${Bool[${Me.XTarget[${i}].Name.Find[wooden box]}]}) {
+        /continue
+      }
+      /if (${Bool[${Me.XTarget[${i}].Name.Find['s pet']}]}) {
         /continue
       }
       /if (${Bool[${Me.XTarget[${i}].Name.Find[Chest]}]} || ${Bool[${Me.XTarget[${i}].Name.Find[a barrel]}]}  ) {

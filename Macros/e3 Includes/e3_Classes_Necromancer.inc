@@ -1,6 +1,67 @@
 |----------------------------------------------------------------------------|
 | Necromancer Functions
 |----------------------------------------------------------------------------|
+
+
+SUB check_NecroAggro
+
+  /if (${Me.Feigning}) /return
+  /if (!${Assisting}) /return  
+  /if (${Bool[${Me.Song[Harm Shield]}]}) /return
+  /if (${Bool[${Me.Song[Embalmer's Carapace]}]}) /return
+ 
+
+  |update our max agro on xtargets
+  /declare i int local 1
+  /declare aggroCap int local 90
+  /declare tempMaxAggro int local 0
+  /declare currentAggro int local 0
+  /declare mobId int local 0
+  |first we do a quick max agro check
+  /for i 1 to 13
+  /if (!${Me.XTarget[${i}].TargetType.Equal[Auto Hater]}) /continue
+    /varset mobId ${Me.XTarget[${i}].ID}
+    /if (!${Bool[${mobId}]}) /continue
+    /if (${mobId}<1) /continue
+    /if (!${Spawn[npc id ${mobId}].Aggressive}) /continue
+    |try and avoid xtarget bug by checking to make sure this isn't a corpse before we access the aggro
+    /if (${Spawn[npc id ${mobId}].Type.Equal[Corpse]}) /continue
+    /varset currentAggro ${Me.XTarget[${i}].PctAggro}
+    /if (${tempMaxAggro} <  ${currentAggro}) {
+      /varset tempMaxAggro ${currentAggro}
+    }
+  /next i
+  /if (${tempMaxAggro} > ${aggroCap} && !${Bool[${Me.Song[Gathering Dusk]}]}) {
+    /bc [+g+] [${Time}]  <check_FD> agro is high, calling Death Peace for ${Me.Name}
+    /call check_ReadySimple "Improved Death Peace"
+    /if (${c_Ready}) {
+        /call castSimpleSpell "Improved Death Peace" 0
+        /stand
+        /return
+    }
+    /call check_ReadySimple "Death Peace"
+    /if (${c_Ready}) {
+        /call castSimpleSpell "Death Peace" 0
+        /stand
+        /return
+    }
+  }
+  /if (${tempMaxAggro} > ${aggroCap}) {
+
+      /call check_ReadySimple "Harmshield"
+      /if (${c_Ready}) {
+        /call castSimpleSpell "Harmshield" 0
+        /return
+       }
+      /call check_ReadySimple "Embalmer's Carapace"
+      /if (${c_Ready}) {
+        /call castSimpleSpell "Embalmer's Carapace" 0
+        /return
+       }
+  }
+
+/return
+
 SUB check_Lich
   /if (${Debug}) /echo |- check_castLich ==>
   |/echo in checklich  ${lichSpell2D[1,${iMinHP}]}, ${Me.PctHPs} ${Me.Buff[${lichSpell2D[1,${iSpellName}]}]}

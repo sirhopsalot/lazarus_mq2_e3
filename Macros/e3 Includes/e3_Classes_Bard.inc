@@ -116,7 +116,7 @@ Sub BardClass_CircularQueue_ToString
 
 sub check_BardSongs
 
-  /if (!${songPlayer.Equal["Twist"]} || ${Me.Invis} || ${Me.Stunned}) {
+  /if (!${songPlayer.Equal["Twist"]} || ${Me.Invis} || ${Me.Stunned} ||${Window[BigBankWnd].Open} || ${Window[MerchantWnd].Open} || ${Window[TradeWnd].Open} || ${Window[GuildBankWnd].Open}) {
       /return
   }
 
@@ -132,8 +132,13 @@ sub check_BardSongs
   }
  
   
+  /if (!${playingMelody} && ${Bool[${AssistTarget}]}) {
 
-  |don't do songs when looting
+    /varset playingMelody TRUE
+
+  } 
+
+      |don't do songs when looting
   /if (${Target.CleanName.Equal[${Me}'s corpse]}) { 
       /return 
   } 
@@ -145,6 +150,9 @@ sub check_BardSongs
     } 
     /return
   } 
+
+  
+  
 
  
 
@@ -177,16 +185,24 @@ sub check_BardSongs
     /call BardClass_CircularQueue_Pop
     /varset songGemValue ${Macro.Return}
     /call BardClass_CircularQueue_Insert "${songGemValue}"
-
+    /declare bardSongArrayQueueCount_temp int local 0
     /while (!${songGemValue.Equal[${bardImportantSong}]}) {
 
       /call BardClass_CircularQueue_Pop
       /varset songGemValue ${Macro.Return}
       /call BardClass_CircularQueue_Insert "${songGemValue}"
+      /varcalc bardSongArrayQueueCount_temp ${bardSongArrayQueueCount_temp} +1
+      /echo bardSongArrayQueueCount_temp: ${bardSongArrayQueueCount_temp}
+      /if (${bardSongArrayQueueCount_temp} > ${bardSongArrayQueueCount}) {
+
+        /bc <BardPlayer> : Cannot rewind to ${bardImportantSong}. Error.
+        /goto :normalSongSelection
+      }
     }
 
   } else {
-  
+
+    :normalSongSelection
     /call BardClass_CircularQueue_Pop
     /varset songGemValue ${Macro.Return}
     /call BardClass_CircularQueue_Insert "${songGemValue}"
@@ -255,10 +271,7 @@ sub check_BardSongs
   
     |is ths song ready? if not, kick out and loop back in
     /if (${songGemValue.Equal[Verse of Vesagran]}) { 
-       /while (!${Me.SpellReady[${songGemValue}]}) {
-            |This is one of those *special* spells. Lets wait on its stupid cooldown
-            /delay 1
-         } 
+      /delay 1s ${Me.SpellReady[${songGemValue}]}
     }
     |a delay check, for sync 
     /if (!${Me.SpellReady[${songGemValue}]}) {

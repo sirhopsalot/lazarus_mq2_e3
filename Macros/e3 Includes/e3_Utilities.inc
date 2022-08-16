@@ -561,9 +561,11 @@ SUB BuildSpellArrayBase(ArrayName, NewArrayName, SkipParams)
 	/declare printMin bool local False
 	|first loop through array to ensure i can identify all listed spells
 	/declare tmp_castname string local
+	/declare tmp_foundItem bool local false
 	|check to see if the spell/aa/etc actually exists.
 	/for i 1 to ${${ArrayName}.Size}
-		
+		/varset tmp_foundItem False
+
 		/varset tmp_castname ${${ArrayName}[${i}].Arg[1,/]}
 		|First check for super common items to ignore this
 		/if (!(${tmp_castname.Equal[Molten Orb]} || ${tmp_castname.Equal[Orb of Shadows]}|| ${tmp_castname.Equal[Orb of Souls]})) {
@@ -571,7 +573,14 @@ SUB BuildSpellArrayBase(ArrayName, NewArrayName, SkipParams)
 			/if (!(${Me.Book[${tmp_castname}]}||${Me.AltAbility[${tmp_castname}]}||${Me.CombatAbility[${tmp_castname}]}||${Me.Ability[${tmp_castname}]})) {
 				
 				|default to item - no way to validate an item thats on my corpse
-				/if (!${FindItem[${tmp_castname}].ID}) {
+
+				|we are doing it this way in case the 'item' is an itemID instead
+				/if (${Int[${tmp_castname}]}>0) {
+					/varset tmp_foundItem ${Bool[${FindItem[${tmp_castname}].ID}]}
+				} else {
+					/varset tmp_foundItem ${Bool[${FindItem[=${tmp_castname}].ID}]}
+				}
+				/if (!${tmp_foundItem}) {
 
 					/if (!${Bool[${Me.Inventory[Chest]}]} && !${Me.Platinum}) {
 						/varset reloadOnLoot TRUE
@@ -581,7 +590,7 @@ SUB BuildSpellArrayBase(ArrayName, NewArrayName, SkipParams)
 						/varset reloadOnLoot TRUE
 						/varset missingSpellItem ${tmp_castname}
 						/bc [${${ArrayName}[${i}]}] : ${tmp_castname} i do not have this spell|aa|ability|disc|item accessible
-						/beep
+						|/beep
 						/call RemoveArrayElement "${ArrayName}" "${ArrayName}[${i}]"
 					}
 				}
@@ -851,8 +860,20 @@ SUB BuildSpellArrayBase(ArrayName, NewArrayName, SkipParams)
 			|Instead of calling FindItem 12 times, we call it twice and get a direct reference to the item in question
 
 			| ${Me.Inventory[23].Item[7].Spell.TargetType}
-			/varset invSlot ${FindItem[${${NewArrayName}[${i},${iCastName}]}].ItemSlot}
-			/varset bagSlot ${FindItem[${${NewArrayName}[${i},${iCastName}]}].ItemSlot2}
+
+			|check to see if its an itemID, and thus we need to do a non exact query
+			/if (${Int[${${NewArrayName}[${i},${iCastName}]}]}>0) {
+				
+				/varset invSlot ${FindItem[${${NewArrayName}[${i},${iCastName}]}].ItemSlot}
+				/varset bagSlot ${FindItem[${${NewArrayName}[${i},${iCastName}]}].ItemSlot2}
+
+			} else {
+				
+				/varset invSlot ${FindItem[=${${NewArrayName}[${i},${iCastName}]}].ItemSlot}
+				/varset bagSlot ${FindItem[=${${NewArrayName}[${i},${iCastName}]}].ItemSlot2}
+
+			}
+		
 			|/echo ${${NewArrayName}[${i},${iCastName}]} inv slot: ${invSlot} bag slot: ${bagSlot}
 			/if (${bagSlot}==-1) {
 				|/echo root item: id:${invSlot} :${${ArrayName}[${i}].Arg[1,/]}
@@ -1130,6 +1151,8 @@ SUB RemoveArrayElements(ArrayName, ArrayIndexes)
 |- @param TargetID: The ID of the spawn you wish to target.	-|
 |------------------------------------------------------------|
 SUB TrueTarget(TargetID)
+	/if (${Target.ID}==${TargetID}) /return
+	
 	| Check if the target is in zone.
 	/if (${SpawnCount[id ${TargetID}]}) {
 			/squelch /target id ${TargetID}
@@ -1149,13 +1172,41 @@ SUB TrueTarget(TargetID)
 SUB createTimer(timerName, timerSetting)
 /if (${Debug}) /echo |- createTimer ==>
   /if (${timerName.Length} == 0) /return
-  /if (${Defined[${timerName}]}) {
-	|/echo Setting value of Timer: ${timerName} : ${timerSetting}
+
+   /if (${Defined[${timerName}]}) {
+	|/echo <createTimer>  Setting value of Timer: ${timerName} : ${timerSetting}
     /varset ${timerName} ${timerSetting}
   } else {
     /declare ${timerName} timer outer ${timerSetting}
-	|/echo Creating value of Timer: ${timerName} : ${timerSetting}
+	|/echo <createTimer> Creating value of Timer: ${timerName} : ${timerSetting}
     /call BuildArray timerArray ${timerName}
+  }
+/if (${Debug}) /echo <== createTimer -| created ${timerName} [${${timerName}}]
+/RETURN
+
+SUB createTimerPerm(timerName, timerSetting)
+/if (${Debug}) /echo |- createTimer ==>
+  /if (${timerName.Length} == 0) /return
+
+   /if (${Defined[${timerName}]}) {
+	|/echo <createTimer>  Setting value of Timer: ${timerName} : ${timerSetting}
+    /varset ${timerName} ${timerSetting}
+  } else {
+    /declare ${timerName} timer outer ${timerSetting}
+	|/echo <createTimer> Creating value of Timer: ${timerName} : ${timerSetting}
+    /call BuildArray timerArrayPerm ${timerName}
+  }
+/if (${Debug}) /echo <== createTimer -| created ${timerName} [${${timerName}}]
+/RETURN
+
+
+SUB createTimerGlobal(timerName, timerSetting)
+/if (${Debug}) /echo |- createTimer ==>
+  /if (${timerName.Length} == 0) /return
+   /if (${Defined[${timerName}]}) {
+	/varset ${timerName} ${timerSetting}
+  } else {
+    /declare ${timerName} timer global ${timerSetting}
   }
 /if (${Debug}) /echo <== createTimer -| created ${timerName} [${${timerName}}]
 /RETURN
@@ -1303,6 +1354,44 @@ SUB MoveToLoc(yLoc,xLoc,timeToWait,arrivalDist)
   } else /if (${moveTimer}) {
   	/goto :retryMove
 	} else /moveto off
+/return
+|-------------------------------------------------------------|
+|- Use MQ2MoveUtils /moveto function, to move to destination.	||
+SUB MoveToTarget(timeToWait,arrivalDist)
+  
+  
+  	/if (!${Bool[${arrivalDist}]}) /varset arrivalDist 10
+	/if (!${Bool[${timeToWait}]}) /varset timeToWait 30
+	/declare moveTimer timer local ${timeToWait}
+	|/echo MoveToLoc ${yLoc},${xLoc},${timeToWait},${arrivalDist}
+	/if (${Math.Distance[${yLoc},${xLoc}]}<=${arrivalDist}) /return
+	/if (${Bool[${Navigation.MeshLoaded}]}) {
+		/echo <MoveToTarget> Naving to target...
+		/if (${Me.Casting.ID} && ${Me.Class.ShortName.NotEqual[BRD]}) /call interrupt
+		/nav target
+		/delay 1
+		/if (!${Navigation.Active}) {
+			/goto :retryMove
+		}
+		/delay 2
+		/delay ${timeToWait} !${Navigation.Active}
+		/return
+		
+	} else {
+		/echo <MoveToTarget> using /moveto to target using /moveto loc ${yLoc} ${xLoc} dist ${arrivalDist}
+		/if (${Me.Casting.ID} && ${Me.Class.ShortName.NotEqual[BRD]}) /call interrupt
+		:retryMove
+		/squelch /moveto loc ${yLoc} ${xLoc} dist ${arrivalDist}
+		/call Background_Events
+		/delay ${Math.Calc[${timeToWait}/5]} ${Math.Distance[${yLoc},${xLoc}]} <=${arrivalDist}
+		/if (${Math.Distance[${yLoc},${xLoc}]}<=${arrivalDist}) {
+			/moveto off
+			/return
+		} else /if (${moveTimer}) {
+			/goto :retryMove
+			} else /moveto off
+	}
+    
 /return
 |--------------------------------------------------------------------------|
 |- Type Stuff

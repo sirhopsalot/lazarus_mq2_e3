@@ -1,6 +1,52 @@
 |----------------------------------------------------------------------------|
 | Shaman Functions
 |----------------------------------------------------------------------------|
+
+SUB check_Totem
+
+
+  /if (${Bool[${Me.Song[Inconspicuous Totem]}]}) {
+
+     /notify ShortDurationBuffWindow Buff${Math.Calc[${Me.Song[Totemic Form].ID}-1].Int} leftmouseup
+		 /notify ShortDurationBuffWindow Buff${Math.Calc[${Me.Song[Inconspicuous Totem].ID}-1].Int} leftmouseup
+    
+  }
+  
+  /if (!${Assisting}) /return  
+  |update our max agro on xtargets
+  /declare i int local 1
+  /declare tempMaxAggro int local 0
+  /declare currentAggro int local 0
+  /declare mobId int local 0
+  |first we do a quick max agro check
+  /for i 1 to 13
+    /if (!${Me.XTarget[${i}].TargetType.Equal[Auto Hater]}) /continue
+    /varset mobId ${Me.XTarget[${i}].ID}
+    /if (!${Bool[${mobId}]}) /continue
+    /if (${mobId}<1) /continue
+    /if (!${Spawn[npc id ${mobId}].Aggressive}) /continue
+    |try and avoid xtarget bug by checking to make sure this isn't a corpse before we access the aggro
+    /if (${Spawn[npc id ${mobId}].Type.Equal[Corpse]}) /continue
+    /varset currentAggro ${Me.XTarget[${i}].PctAggro}
+    /if (${tempMaxAggro} < ${currentAggro} ) {
+      /varset tempMaxAggro  ${currentAggro}
+    }
+  /next i
+  /if (${tempMaxAggro} > 90) {
+    /bc [+g+] [${Time}] <check_Totem> agro is high at ${tempMaxAggro}%, calling Inconspicuous Totem for ${Me.Name}
+    /call check_ReadySimple "Inconspicuous Totem"
+    /if (${c_Ready}) {
+        /call castSimpleSpell "Inconspicuous Totem" 0
+        /delay 4
+        /notify ShortDurationBuffWindow Buff${Math.Calc[${Me.Song[Totemic Form].ID}-1].Int} leftmouseup
+		    /notify ShortDurationBuffWindow Buff${Math.Calc[${Me.Song[Inconspicuous Totem].ID}-1].Int} leftmouseup
+
+		}
+  }
+ 
+
+/return
+
 SUB check_Canni
 /if (${Debug}) /echo |- autoCanni ==>
 	/if (${AutoCanni}) {
@@ -12,7 +58,7 @@ SUB check_Canni
           /call check_Ready "canniSpells2D" ${s}
           /if (${c_Ready}) {
             /if (${check_Mana["canniSpells2D",${s}]}) {
-            	/if (!${canniSpells2D[${s},${iCastName}].Equal[Cannibalization]} || ${Me.CurrentHPs} > 2000) {
+            	/if (!${canniSpells2D[${s},${iCastName}].Equal[Cannibalization]} || ${Me.CurrentHPs} > 5600) {
 								/if (${canniSpells2D[${s},${iMinHP}]} <= ${Me.PctHPs}) {
               		/call e3_Cast ${Me.ID} "canniSpells2D" ${s}
                 }

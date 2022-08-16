@@ -119,8 +119,8 @@ SUB castNowSpells
         /varset spellTargetID ${spellArgs.Arg[2,,]}
 
         /if (${DebugNowCast}) /echo spellName:${spellName}
-        /if (${spellTargetID}==0) {
-            /echo nowCast targetID is 0, Target was not supplied correctly
+        /if (${spellTargetID}==0 || ${SpawnCount[id ${spellTargetID}]}==0) {
+            /bc <nowCast> targetID is invalid: ${spellTargetID}
             /return
         }
         /if (${DebugNowCast}) /echo nowCast targetID: ${spellTargetID} 	
@@ -149,12 +149,12 @@ SUB castNowSpells
                     /delay 1
                 }
         }   
-        /if (${Me.SpellReady[${spellName}]} || ${Me.AltAbilityReady[${spellName}]} || ${Me.ItemReady[${spellName}]}) {
+        /if (${Me.SpellReady[${spellName}]} || ${Me.AltAbilityReady[${spellName}]} || ${Me.ItemReady[=${spellName}]}|| ${Me.CombatAbilityReady[${spellName}]}) {
             /varset castReturn
              /bc <NowCast>: Casting ${spellName}  on ${spellTargetID}  
             /call castNowSpell "${spellName}" ${spellTargetID}
             /if (!(${ActionTaken} && ${castReturn.Equal[CAST_SUCCESS]})) {
-                /bc <NowCast>: Failed to cast ${spellName} due to ${castReturn}
+                /bc [${Time}] <NowCast>: Failed to cast ${spellName} due to ${castReturn}
             } else /if (${nowSpellArrayQueueCount}>0 ) {
                 |give times global cooldown if this is not an item
                 /if (!${Bool[${FindItemCount[=${spellName}]}]}) {
@@ -163,7 +163,7 @@ SUB castNowSpells
                 
             }
         } else {
-            /bc <NowCast>: Failed to cast ${spellName}, Spell/Ability/Item not ready or not found
+            /bc [${Time}] <NowCast>: Failed to cast ${spellName}, Spell/Ability/Item not ready or not found
         } 
     }
 /RETURN
@@ -171,11 +171,11 @@ SUB castNowSpells
 SUB castNowSpell(spellName, targetID)
 
 	/declare whatToCast string local
-	/if (${Bool[${Me.Book[${spellName}]}]} || ${Bool[${Me.AltAbility[${spellName}]}]}) {
+	/if (${Bool[${Me.Book[${spellName}]}]} || ${Bool[${Me.AltAbility[${spellName}]}]} || ${Me.CombatAbilityReady[${spellName}]}) {
 		/varset whatToCast ${spellName}
 	} else /if (${Bool[${FindItemCount[=${spellName}]}]}) {
 		/varset whatToCast ${FindItem[=${spellName}]}
-	}	
+	} 	
 	/if (${Bool[${whatToCast}]}) {
         /varset g_CastNowSpellCasting TRUE
         /call castSimpleSpell "${whatToCast}" ${targetID}
@@ -188,8 +188,14 @@ SUB castNowSpell(spellName, targetID)
 #event nowCast "<#1#> nowCast #3#"
 #event nowCast "[#1#(msg)]#2# nowCast #3#"
 SUB event_nowCast(line, ChatSender, Caster, spellName)
-    /echo <NowCast> called with Caster: ${Caster}
+    |/echo <NowCast> called with Caster: ${Caster}
     /if (${Bool[${Caster}]} &&!${Me.Name.Equal[${Caster}]}) /return
+     
+    /if (!(${NetBots[${ChatSender}].ID} || ${Bool[${Raid.Member[${ChatSender}]}]})) {
+        |Not one of my toons or part of my raid, ignore
+        /bc <NowCast> ${ChatSender} outside of your group/raid tried to issue a nowcast for spell:${spellName}
+        /return
+    }
 
     /declare nowTargetID int local ${Me.ID}
     /declare spellIndexStart int local 0

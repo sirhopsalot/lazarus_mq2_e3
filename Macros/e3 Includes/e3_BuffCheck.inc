@@ -2,6 +2,8 @@
 |- Calls buff functions, returning to the mainloop whenever a spell is cast.		-|
 |--------------------------------------------------------------------------------|
 SUB check_Buffs
+
+  /if (${Me.Invis}) /return
 	/if (${Debug} || ${Debug_BuffCheck}) /echo |- buffCheck ==>
   	
     /if (${Defined[InstantBuffs2D]})		/call buffBotsInstant "InstantBuffs2D"
@@ -43,27 +45,43 @@ sub buffBotsInstant(ArrayName)
   /varset buffTargetID ${Me.ID}
   /varset buffTarget ${Me.Name}
 
+  /if (${${ArrayName}[${s},${iTargetType}].Equal[Self]}) {
+    /varset buffTargetID 0
+  }
+
 	/varset buffSpellName		${${ArrayName}[${s},${iSpellName}]}
-	/varset buffSpellID			${${ArrayName}[${s},${iSpellID}]}]
+	/varset buffSpellID			${${ArrayName}[${s},${iSpellID}]}
 	/varset buffCheckForName	${${ArrayName}[${s},${iCheckFor}]}
 	/varset buffCheckForID		${${ArrayName}[${s},${iCheckForID}]}
 		
   /if (!${Bool[${NetBots[${buffTarget}].ID}]}) {
      /goto :skipBuff
   } 
-
-  /if (${Select[${buffSpellID},8001,8002,8000,8003]}) {
-    /call meleeCombatBuffs "${ArrayName}" ${s}
+  |/echo Buff cehck for ${buffSpellName} spellid: ${buffSpellID}
+  |/delay 2
+  /if (${Select[${buffSpellID},8001,8002,8000,8003,19917]}) {
+    
+    /if (!(${Bool[${Me.Buff[${${ArrayName}[${s},${iCastName}]}]}]}|| ${Bool[${Me.Song[${${ArrayName}[${s},${iCastName}]}]}]})) {
+      /if (${Me.PctEndurance} >= ${${ArrayName}[${s},${iMinEnd}]} && ${Spell[${${ArrayName}[${s},${iCastName}]}].EnduranceCost} <= ${Me.Endurance}) {
+              /call check_Ready "${ArrayName}" ${s}
+              /if (${c_Ready}) {
+                /if (!${Bool[${Target.ID}]}) /call TrueTarget ${buffTargetID}
+                /call castSimpleSpell "${${ArrayName}[${s},${iCastName}]}" 0
+              }
+          }
+    }
+    |/call meleeCombatBuffs "${ArrayName}" ${s}
     /goto :skipBuff
   }
 
   |------- Self ------|
     /if (!${Bool[${Me.Buff[${buffSpellName}]}]} || (${Bool[${Me.Buff[${buffSpellName}]}]} && ${Me.Buff[${buffSpellName}].Duration.TotalSeconds} <= ${buffRecastTime})) {
     /if (!${Bool[${Me.Song[${buffSpellName}]}]} && !${Bool[${Me.Song[${buffCheckForName}]}]}) {
-      /if (${Spell[${buffSpellID}].NewStacks} && !${Bool[${Me.Buff[${buffCheckForName}]}]}) {
+      /if ((${Spell[${buffSpellID}].NewStacks}) && !${Bool[${Me.Buff[${buffCheckForName}]}]}) {
         /call check_Ready "${ArrayName}" ${s}
         /if (${c_Ready} && ${${ArrayName}[${s},${iIfs}]}) {
           /if (${check_Mana["${ArrayName}",${s}]}) {
+            |/echo CAST TYPE ${${ArrayName}[${s},${iTargetType}]}
             /call e3_Cast ${buffTargetID} "${ArrayName}" ${s}
           }
         } 
@@ -123,8 +141,17 @@ SUB buffBots(ArrayName)
      /goto :skipBuff
   } 
 
-  /if (${Select[${buffSpellID},8001,8002,8000,8003]}) {
-    /call meleeCombatBuffs "${ArrayName}" ${s}
+  /if (${Select[${buffSpellID},8001,8002,8000,8003,19917]}) {
+    /if (!(${Bool[${Me.Buff[${${ArrayName}[${s},${iCastName}]}]}]}|| ${Bool[${Me.Song[${${ArrayName}[${s},${iCastName}]}]}]})) {
+      /if (${Me.PctEndurance} >= ${${ArrayName}[${s},${iMinEnd}]} && ${Spell[${${ArrayName}[${s},${iCastName}]}].EnduranceCost} <= ${Me.Endurance}) {
+              /call check_Ready "${ArrayName}" ${s}
+              /if (${c_Ready}) {
+                /if (!${Bool[${Target.ID}]}) /call TrueTarget ${buffTargetID}
+                /call castSimpleSpell "${${ArrayName}[${s},${iCastName}]}" 0
+              }
+          }
+    }
+    |/call meleeCombatBuffs "${ArrayName}" ${s}
     /goto :skipBuff
   }
 
@@ -172,8 +199,11 @@ SUB buffBots(ArrayName)
             /if (${check_Distance[${buffTargetID},${${ArrayName}[${s},${iMyRange}]}]}) {
               /if (${check_Mana["${ArrayName}",${s}]}) {
                 /call e3_Cast ${buffTargetID} "${ArrayName}" ${s}
-                /delay 3 ${Target.BuffsPopulated}
-                /if (${castReturn.Equal[CAST_SUCCESS]} && !${Bool[${NetBots[${buffTarget}].Buff.Find[${buffSpellID} ]}]}	&& !${Bool[${NetBots[${buffTarget}].ShortBuff.Find[${buffSpellID} ]}]}) {
+                |setting a flat delay 3, as target buffs may already be populated as you pretargeted before cast. 
+                |a delay 3 seems sufficent for netbots to see the buff.
+                /delay 3
+                /if (${castReturn.Equal[CAST_SUCCESS]} && !${Bool[${NetBots[${buffTarget}].Buff.Find[${buffSpellID}]}]}	&& !${Bool[${NetBots[${buffTarget}].ShortBuff.Find[${buffSpellID}]}]}) {
+                  /echo [${Time}] Can't find buff ${buffSpellName} on my target, issuing no hold timer for ${noHoldDelay}
                   /call CreateTimer "nht${Target.ID}-${buffSpellID}" "${noHoldDelay}"
                 }
               }
@@ -202,10 +232,16 @@ SUB meleeCombatBuffs(ArrayName, int s)
 /if (${Debug} || ${Debug_BuffCheck}) /echo |- meleeCombatBuffs ${ArrayName} ${s} ==>
   /if (${Me.CombatState.Equal[COMBAT]}||${Me.Combat}) {
     /declare buffTargetID	int local ${NetBots[${${ArrayName}[${s},${iCastTarget}]}].ID}
+    /if (${buffTargetID}==0) {
+      /varset buffTargetID ${Me.ID}
+    }
     /if (!${Bool[${NetBots[${${ArrayName}[${s},${iCastTarget}]}].ShortBuff.Find[${${ArrayName}[${s},${iCastID}]} ]}]}) {
+     
       | if the target is me, ensure my group leader does not have the buff (cleaving anger + cry havoc)
       /if (!${Bool[${Select[${buffTargetID},${NetBots[${Me}].ID}]}]} || (${Bool[${Select[${buffTargetID},${NetBots[${Me}].ID}]}]} && !${Bool[${NetBots[${Group.Leader}].ShortBuff.Find[${${ArrayName}[${s},${iCastID}]} ]}]})) {
+        
         /if (${check_Distance[${buffTargetID},${${ArrayName}[${s},${iMyRange}]}]}) {
+          |   /echo [${Time}] meleeCombatBuffs ${${ArrayName}[${s},${iSpellName}]} targetid: ${buffTargetID}
           /if (${Me.PctEndurance} >= ${${ArrayName}[${s},${iMinEnd}]} && ${Spell[${${ArrayName}[${s},${iCastName}]}].EnduranceCost} <= ${Me.Endurance}) {
               /call check_Ready "${ArrayName}" ${s}
               /if (${c_Ready}) {
