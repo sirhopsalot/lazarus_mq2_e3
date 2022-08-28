@@ -341,7 +341,7 @@ SUB sellItems
 
 										| If the item is still in my inventory
 										/if (${Bool[${Me.Inventory[pack${i}].Item[${e}]}]} && ${retryTimer}) {
-											/goto :SellItem
+											/goto :SellItem_Pack
 										} else /if (${Bool[${Me.Inventory[pack${i}].Item[${e}]}]}) {
 											/echo ERROR: Failed to sell [${Me.Inventory[pack${i}].Item[${e}]}], skipping.
 										}
