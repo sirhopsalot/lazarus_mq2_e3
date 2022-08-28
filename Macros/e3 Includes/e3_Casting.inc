@@ -30,11 +30,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos, bool NoDela
 |StopEchos = Skips the /echo on successful cast if a value other than 0 is passed with the /call e3_Cast
 /if (${Debug} || ${Debug_Casting}) /echo |- e3_Cast ==>
 
-	|if we are casting, lets clean up our cursor
-	 /if (${Cursor.ID}) {	
-		/echo [${Time}] <E3_Cast> Issuing auto inventory on ${Cursor}
-		/autoinventory
-	 }
+	
 
 	/varset castReturn  
 	/varset pendingCast	${${ArrayName}[${ArrayIndex},${iCastName}]}
@@ -51,6 +47,7 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos, bool NoDela
 	/declare castTargetName string local ${Spawn[id ${targetID}].CleanName}
 	/declare e3_CastNoInterrupt bool local ${${ArrayName}[${ArrayIndex},${iNoInterrupt}]}
 	/declare itemRecastToUseInSeconds int 60
+
 
 
 	|this needs to be set to true every run, as its checked for interrupt method calls. Technically they set it to true every time they run, but best to 
@@ -252,7 +249,12 @@ Sub e3_Cast(int targetID, ArrayName, int ArrayIndex, bool StopEchos, bool NoDela
 		/varset interruptFlag FALSE
 		
 	}
-	
+	|if we are casting, lets clean up our cursor
+	 /if (${Cursor.ID}) {	
+		/echo [${Time}] <E3_Cast> Issuing auto inventory on ${Cursor} for spell: ${pendingCast}
+		/autoinventory
+	 }
+
 
 	/declare startingLoc ${Me.Loc.Replace[ ,]}
 |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

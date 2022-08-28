@@ -94,5 +94,5 @@ Sub ROG_Aliases
 /return
 |----------------------------------------------------------------------------|
 Sub ROG_Background_Events
-	/if (${AutoHide} && !${Me.Invis} && !${Me.Moving} && ${Me.CombatState.NotEqual[COMBAT]}) /call AutoHide
+	/if (${AutoHide} && !${Me.Invis} && !${Me.Moving} && ${Me.CombatState.NotEqual[COMBAT]} && !${Select[${Zone.ID},202,151,386,152]}) /call AutoHide
 /return
