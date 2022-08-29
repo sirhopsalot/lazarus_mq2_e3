@@ -16,10 +16,19 @@ SUB check_Heals
 	/varset ActionTaken True
 	/declare AtLeastOneActionTaken bool local False
 	/while (${ActionTaken}) {
-
+		|don't continue if nowcast has something to do
+		/if (${nowSpellArrayQueueCount}>0) {
+			/varset ActionTaken True
+			/return
+		} 
 		/if (${Defined[lifeSupport2D]} && ${Me.PctHPs} < 99) /call check_lifeSupport
 		/varset ActionTaken False
 		/if (${healTanks}) 		/call heal_tanks
+		|don't continue if nowcast has something to do
+		/if (${nowSpellArrayQueueCount}>0) {
+			/varset ActionTaken True
+			/return
+		} 
 		/if (${healXTargets}) 	/call heal_xtargets2
 		/if (!${ActionTaken} && ${healImportant})   /call heal_importantBots
 		/if (!${ActionTaken} && ${do_GroupHeals}) 	/call groupHeals

@@ -215,7 +215,7 @@ SUB lootCorpse
     } else /if (${LootOnlyStackableEnabled}) {
 
       |Stackable check code      
-      /if (${Corpse.Item[${i}].Stackable}) {
+      /if (${Corpse.Item[${i}].Stackable} && !${Corpse.Item[${i}].NoDrop}) {
 
         /echo [${Time}]: Loot Only Stackable: value of item=${Corpse.Item[${i}].Value} vs setting=${LootOnlyStackableValueGreater}
         
