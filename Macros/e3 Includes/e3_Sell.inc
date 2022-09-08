@@ -299,9 +299,6 @@ SUB EVENT_keepThisItem(line)
 #EVENT itemSold "[#*#]You receive #*# from #*# for the #1#(s)."
 SUB EVENT_itemsold(line,soldItem)
 /if (${Debug} || ${Debug_Sell}) /echo |- EVENT_itemSold==>
-	/echo autoFlagSoldItems=${autoFlagSoldItems}
-	/echo line=${line}
-	/echo soldItem=${soldItem}
 	/if ( ${autoFlagSoldItems} ) {
 		/declare soldItemIniKey string local
 		/call getIniKey "${soldItem}"
