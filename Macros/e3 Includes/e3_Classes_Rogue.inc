@@ -19,12 +19,12 @@ Sub check_rogStrike
 sub AutoHide
 /if (${Debug}) /echo |- AutoHide ==>
 	| Engage sneak.
-	/if (!${Me.Sneaking} && ${Me.AbilityReady[Sneak]} && !${Select[${Zone.ID},${AutoHideSuppress}]}) {
+	/if (!${Me.Sneaking} && ${Me.AbilityReady[Sneak]}) {
 		/doability Sneak
 		/delay 1s ${Me.Sneaking}
 	}
 	| Engage hide.
-	/if (${Me.Sneaking} && ${Me.AbilityReady[Hide]} && !${Select[${Zone.ID},${AutoHideSuppress}]}) {
+	/if (${Me.Sneaking} && ${Me.AbilityReady[Hide]}) {
 		/doability Hide
 		/delay 1s ${Me.Invis}
 	}
@@ -49,12 +49,11 @@ Sub ROG_Setup
 /if (${Debug}) /echo |- ROG_Setup ==>
 	/call iniToVarV "${Character_Ini},Rogue,Auto-Hide (On/Off)" AutoHide bool outer
 	/call iniToVarV "${Character_Ini},Rogue,Auto-Evade (On/Off)" AutoEvade bool outer
-	/call iniToVarV "${Character_Ini},Rogue,Auto-Hide Suppress" AutoHideSuppress string outer
-	/call iniToVarV "${Character_Ini},Rogue,Evade PctAggro" evadePctAggro int outer
-	/call iniToVarV "${Character_Ini},Rogue,Evade PctAggro" evadePctAggro int outer
-	/call iniToVarV "${Character_Ini},Rogue,PoisonPR" poisonPR string outer
-	/call iniToVarV "${Character_Ini},Rogue,PoisonFR" poisonFR string outer
-	/call iniToVarV "${Character_Ini},Rogue,PoisonCR" poisonCR string outer
+	/call iniToVarV "${Character_Ini},Rogue,Auto-Hide Suppress(Zone ID)" AutoHideSuppress string outer
+  /call iniToVarV "${Character_Ini},Rogue,Evade PctAggro" evadePctAggro int outer
+  /call iniToVarV "${Character_Ini},Rogue,PoisonPR" poisonPR string outer
+  /call iniToVarV "${Character_Ini},Rogue,PoisonFR" poisonFR string outer
+  /call iniToVarV "${Character_Ini},Rogue,PoisonCR" poisonCR string outer
 	| Assassin Strikes
 	/call iniToVarV "${Character_Ini},Rogue,Sneak Attack Discipline" strikeDiscStr string outer
 	/if (${Defined[strikeDiscStr]}) {
@@ -83,7 +82,7 @@ SUB ROG_MacroSettings
 SUB ROG_CharacterSettings
 	/if (${Debug}) /echo |- ROG_CharacterSettings ==>
 	/call WriteToIni "${Character_Ini},${Me.Class},Auto-Hide (On/Off)" Off
-	/call WriteToIni "${Character_Ini},${Me.Class},Auto-Hide Suppress" 202,151,386,152
+	/call WriteToIni "${Character_Ini},${Me.Class},Auto-Hide Suppress(Zone ID)" 202,151,386,152,35
 	/call WriteToIni "${Character_Ini},${Me.Class},Auto-Evade (On/Off)" On
 	/call WriteToIni "${Character_Ini},${Me.Class},Evade PctAggro" 75
 	/call WriteToIni "${Character_Ini},${Me.Class},Sneak Attack Discipline"
@@ -97,5 +96,5 @@ Sub ROG_Aliases
 /return
 |----------------------------------------------------------------------------|
 Sub ROG_Background_Events
-	/if (${AutoHide} && !${Me.Invis} && !${Me.Moving} && ${Me.CombatState.NotEqual[COMBAT]}) /call AutoHide
+	/if (${AutoHide} && !${Me.Invis} && !${Me.Moving} && ${Me.CombatState.NotEqual[COMBAT]}  && !${Select[${Zone.ID},${AutoHideSuppress}]}) /call AutoHide
 /return
