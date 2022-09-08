@@ -82,7 +82,7 @@ SUB ROG_MacroSettings
 SUB ROG_CharacterSettings
 	/if (${Debug}) /echo |- ROG_CharacterSettings ==>
 	/call WriteToIni "${Character_Ini},${Me.Class},Auto-Hide (On/Off)" Off
-	/call WriteToIni "${Character_Ini},${Me.Class},Auto-Hide Suppress(Zone ID)" 202,151,386,152,35
+	/call WriteToIni "${Character_Ini},${Me.Class},Auto-Hide Suppress(Zone ID)" 202,151,386,152
 	/call WriteToIni "${Character_Ini},${Me.Class},Auto-Evade (On/Off)" On
 	/call WriteToIni "${Character_Ini},${Me.Class},Evade PctAggro" 75
 	/call WriteToIni "${Character_Ini},${Me.Class},Sneak Attack Discipline"
