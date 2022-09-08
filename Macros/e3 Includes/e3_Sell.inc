@@ -24,7 +24,7 @@
 |-  /flagautosell <true/false> - this will toggle the autosell feature  -|
 |-         on or off if you pass an argument.  If no argument is passed -|
 |-         this will toggle the current state.  This is mainly for use  -|
-|-         when the INI file                                            -|
+|-         when the INI fil Flag Manually Sold Items is Off             -|
 |- INI Settings                                                         -|
 |-  Flag Manually Sold Items(On/Off)                                    -|
 |-    If this setting is On, anytime you sell an item to the vendor, it -|
@@ -152,13 +152,14 @@ SUB EVENT_sellItems
 #EVENT showAutosellWarning "#*#Have you seen the#*#I just got in?"
 #EVENT showAutosellWarning "#*#Hello there#*#How about a nice#*#"
 #EVENT showAutosellWarning "#*#Greetings#*#You look like you could use a#*#"
-#EVENT showAutosellWarning "#*#Hi there #*#just browsing#*#Have you seen the#*#"
+#EVENT showAutosellWarning "#*#Hi there#*#just browsing#*#Have you seen the#*#"
 |--------------------------------------------------------------|
 |- Trigger a warning message if autosell is toggled on 
 |--------------------------------------------------------------|
 SUB EVENT_showAutosellWarning(line)
 	/if (${autoFlagSoldItems} && ${warnOnSell} ) {
-		/popcustom 5 5 "WARNING!  You've entered a shop and your autosell toggle is enabled.  Any items you sell will be flagged to 'Sell' going forward.  To disable this command run '/flagautosell False'
+		/popcustom 5 5 "WARNING!  You've entered a shop and your autosell toggle is enabled.  Any items you sell will be flagged to 'Sell' going forward.  To disable this command run '/flagautosell False'"
+		/echo WARNING! You've entered a shop and your autosell toggle is enabled.  Any items you sell will be flagged to 'Sell' going forward.  To disable this command run '/flagautosell False'
 	}
 /RETURN
 
