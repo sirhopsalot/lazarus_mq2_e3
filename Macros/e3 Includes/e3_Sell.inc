@@ -17,10 +17,6 @@
 |- 	/destroythisitem - updates the Loot Settings value for the item on  -|
 |-        the cursor to Destroy so that these items will be destroyed   -|
 |-        when /autosell is invoked in the future.                      -|
-|-  /flagautosell <true/false> - this will toggle the autosell feature  -|
-|-         on or off if you pass an argument.  If no argument is passed -|
-|-         this will toggle the current state.  This is mainly for use  -|
-|-         when the INI file                                            -|
 |------------------------------------------------------------------------|
 
 |----------------------------------------------------|
