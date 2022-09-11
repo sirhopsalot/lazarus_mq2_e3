@@ -4,11 +4,7 @@
 |------------------------------------------------------------------------|
 |- Companion file for e3_Macro_Loot.inc.								-|
 |- Sells items flagged with [/Sell] in your Loot_Ini.					-|
-|------------------------------------------------------------------------|
-|- flagautosell functionality implemented by CerveloFellow              -|
-|- flagautosell will update your Loot Settings.ini file automatically   -|
-|-  to Keep,Sell anytime you sell an item to the vendor and the         -|
-|-  feature is toggled on                                               -|
+|------------------------------------------------------------------------|                                              -|
 |- Several helper functions are available for individual items on your  -|
 |- 	/printitemstatus - prints the Loot Settings value for the item on   -|
 |-        the cursor.                                                   -|
@@ -24,27 +20,7 @@
 |-  /flagautosell <true/false> - this will toggle the autosell feature  -|
 |-         on or off if you pass an argument.  If no argument is passed -|
 |-         this will toggle the current state.  This is mainly for use  -|
-|-         when the INI fil Flag Manually Sold Items is Off             -|
-|- INI Settings                                                         -|
-|-  Flag Manually Sold Items(On/Off)                                    -|
-|-    If this setting is On, anytime you sell an item to the vendor, it -|
-|-    will get flagged as Keep,Sell in the Loot Settings.ini file. I    -|
-|-    reccomend toggling this Off and enabling this feature only when   -|
-|-    you want to flag items for autosell.                              -|
-|-  Flag Timer(seconds)                                                 -|
-|-    When 'Flag Manually Sold Items(On/Off)' is set to off and you     -|
-|-    toggle on flagautosell with /flagautosell <True/False>, a timer   -|
-|-    starts that will automatically disable this setting afer n        -|
-|-    seconds so that you don't acidentally flag stuff for autosell in  -|
-|-    the future when selling to a vendor                               -|
-|-  Warn on Sell(On/Off)                                                -|
-|-     If this setting is On, we attempt to put up a warning anytime you-|
-|-     open a merchant window with a vendor and flagautosell is on.     -|
-|-    *** This was only tested with a select few merchants in POK and   -|
-|-    *** some merchants will not speak when opening a merchant window  -|
-|-    *** so the alert popup does not always come up.                   -|
-|-     Toggle this to Off if you do not want the warning message to     -|
-|-     appear                                                           -|
+|-         when the INI file                                            -|
 |------------------------------------------------------------------------|
 
 |----------------------------------------------------|
@@ -87,7 +63,6 @@ SUB EVENT_syncInventory
 		}
 	
 	/next i
-	
 /if (${Debug} || ${Debug_Sell}) /echo <== event_inventoryItems -|
 /RETURN
 
@@ -107,9 +82,6 @@ SUB EVENT_sellItems
 	
 	| Get current autoFlagSoldItems value so we can disable and revert if needed.
 	/declare currentAutoFlagSoldItems bool local ${autoFlagSoldItems}
-	
-	| Set autoFlagSoldItems to false during autosell.  We don't want to flag items during autosell.
-	/varset autoFlagSoldItems false
 	
 	| Record starting location.
 	/declare startingLoc string local ${Me.Loc.Replace[ ,]}
@@ -142,55 +114,7 @@ SUB EVENT_sellItems
 		
 		/echo I have finished selling with autosell.
 	}
-	
-	| Revert back the autoFlagSoldItems value to what it was before autosell
-	/varset autoFlagSoldItems ${currentAutoFlagSoldItems}
 /if (${Debug} || ${Debug_Sell}) /echo <== EVENT_sellItems -|
-/RETURN
-
-#EVENT showAutosellWarning "#*#Welcome to my shop#*#"
-#EVENT showAutosellWarning "#*#Have you seen the#*#I just got in?"
-#EVENT showAutosellWarning "#*#Hello there#*#How about a nice#*#"
-#EVENT showAutosellWarning "#*#Greetings#*#You look like you could use a#*#"
-#EVENT showAutosellWarning "#*#Hi there#*#just browsing#*#Have you seen the#*#"
-|--------------------------------------------------------------|
-|- Trigger a warning message if autosell is toggled on 
-|--------------------------------------------------------------|
-SUB EVENT_showAutosellWarning(line)
-	/if (${autoFlagSoldItems} && ${warnOnSell} ) {
-		/popcustom 5 5 "WARNING!  You've entered a shop and your autosell toggle is enabled.  Any items you sell will be flagged to 'Sell' going forward.  To disable this command run '/flagautosell False'"
-		/echo WARNING! You've entered a shop and your autosell toggle is enabled.  Any items you sell will be flagged to 'Sell' going forward.  To disable this command run '/flagautosell False'
-	}
-/RETURN
-
-|----------------------------------------------------|
-|- flagautosell <true/false>
-|----------------------------------------------------|
-|- toggles flag auto sell to on if you have the INI entry set to Off
-|- also starts the timer countdown so flagautosell shuts off after the timer expires
-|----------------------------------------------------|
-#EVENT flagautosell "/bc flagautosell #1#"
-#EVENT flagautosell "<#*#> flagautosell #1#"
-#EVENT flagautosell "/bc flagautosell"
-#EVENT flagautosell "<#*#> flagautosell"
-SUB EVENT_flagautosell(line, toggle)
-/if (${Debug} || ${Debug_Sell}) /echo |- EVENT_flagautosell ==>
-	/declare newToggleState bool local
-	
-	/if (${Defined[toggle]}) {
-		/varset newToggleState ${toggle}
-	} else {
-		/if (${autoFlagSoldItems}) {
-			/varset newToggleState false
-		} else {
-			/varset newToggleState true
-		}
-	}
-	
-	/echo Flag Auto Sell set to ${newToggleState} and will change to ${autoFlagDefaultIniEntry} in ${autoFlagSoldItemsTimer}s
-	/varset autoFlagSoldItems ${newToggleState}
-	/varset autoFlagTimer ${autoFlagSoldItemsTimer}s
-/if (${Debug} || ${Debug_Sell}) /echo <== EVENT_flagautosell-|
 /RETURN
 
 |----------------------------------------------------|
@@ -288,28 +212,6 @@ SUB EVENT_keepThisItem(line)
 /if (${Debug}) /echo <== EVENT_keepThisItem-|
 /RETURN
 
-|----------------------------------------------------|
-|- itemSold						
-|----------------------------------------------------|
-|- When an item is sold if we'll flag it in the 
-|- Loot Settings.ini for Keep,Sell if the toggle is on
-|----------------------------------------------------|
-#EVENT itemSold "You receive #*# from #*# for the #1#(s)."
-#EVENT itemSold "#*#You receive #*# from #*# for the #1#(s)."
-#EVENT itemSold "[#*#] You receive #*# from #*# for the #1#(s)."
-#EVENT itemSold "[#*#]You receive #*# from #*# for the #1#(s)."
-SUB EVENT_itemsold(line,soldItem)
-/if (${Debug} || ${Debug_Sell}) /echo |- EVENT_itemSold==>
-	/if ( ${autoFlagSoldItems} ) {
-		/declare soldItemIniKey string local
-		/call getIniKey "${soldItem}"
-		/varset soldItemIniKey ${Macro.Return}
-		/echo Item Sold: Flagging ${soldItem} in Loot Settings.ini for Keep,Sell
-		/call WriteToIni "${Loot_Ini},${soldItemIniKey}" "Keep,Sell" TRUE
-	}
-/if (${Debug} || ${Debug_Sell}) /echo <== EVENT_itemSold-|
-/RETURN
-
 |----------------------------------------|
 |- Opens all containers in inventory.	-|
 |----------------------------------------|
@@ -346,7 +248,6 @@ SUB openBags
 		}
 	
 	/next i
-	
 /if (${Debug} || ${Debug_Sell}) /echo <== openBags -|
 /RETURN
 
@@ -722,34 +623,19 @@ SUB destroyItems
 /if (${Debug} || ${Debug_Sell}) /echo <== destroyItem -|
 /RETURN
 
-|- Flag Manually Sold Items -|
-|- If On, any items sold to the vendor manually(not with /autosell) will get flagged to Keep,Sell in the Loot Settings.ini -|
-|- If Off you will have to manually set the autoFlagSoldItems to Off -|
-|- If Flag Manually Sold Items(On/Off) is set to Off, the Flag Timer setting will be used to set the autoFlagSoldItems back to Off after the defined time has elapsed. -|
-|-    This is a safety measure so you don't flag everything that you sell to the vendor accidentally if you forget to turn autoFlagSoldItems Off -|
 SUB sell_Setup
 	/call iniToVarV "${advSettings_Ini},Debug,Debug Sell (On/Off)" Debug_Sell bool outer
 	/if (${Debug} || ${Debug_Sell}) /echo |- sell_Setup ==>
 	
 	|- These outer variables are defined because offer and sold events happen independently of each other.  
 	|- The offer message stores the autoFlagSoldItemEntry and when the sold event triggers, the last offer for an item by the vendor is used to identify the item.
-	/declare autoFlagTimer timer outer
-	/declare autoFlagDefaultIniEntry bool outer
 	
 	/call WriteToIni "${advSettings_Ini},Debug,Debug Sell (On/Off)" "Off" False
 	/call WriteToIni "${genSettings_Ini},Sell,Destroy Unsold Items(On/Off)" "Off" False
-	/call WriteToIni "${genSettings_Ini},Sell,Flag Manually Sold Items(On/Off)" "On" False
-	/call WriteToIni "${genSettings_Ini},Sell,Flag Timer(seconds)" "180" False
 	/call WriteToIni "${genSettings_Ini},Sell,Warn on Sell(On/Off)" "On" False
 	
 	/call iniToVarV "${genSettings_Ini},Sell,Destroy Unsold Items(On/Off)" destroyUnsold bool outer
-	/call iniToVarV "${genSettings_Ini},Sell,Flag Manually Sold Items(On/Off)" autoFlagSoldItems bool outer
-	/call iniToVarV "${genSettings_Ini},Sell,Flag Timer(seconds)" autoFlagSoldItemsTimer int outer
 	/call iniToVarV "${genSettings_Ini},Sell,Warn on Sell(On/Off)" warnOnSell bool outer
-	
-	| Need to keep the default setting in the INI as we'll use the other bool for toggling on/off
-	/varset autoFlagDefaultIniEntry ${autoFlagSoldItems}
-	/varset autoFlagTimer ${autoFlagSoldItemsTimer}s
 	
 	/call sell_Aliases
 	/if (${Debug} || ${Debug_Sell}) /echo <== sell_Setup -|
@@ -759,23 +645,16 @@ Sub sell_Background_Events
 	/doevents syncInventory
 	/doevents sellItems
 	/doevents Combine
-	/doevents itemsold
-	/doevents showAutosellWarning
 	/doevents printItemStatus
 	/doevents keepthisitem
 	/doevents sellthisitem
 	/doevents destroythisitem
-	/doevents flagautosell
-	/if (!${autoFlagTimer} && !${autoFlagDefaultIniEntry}) {
-		/varset autoFlagSoldItems False
-	}
 /return
 
 Sub sell_Aliases
 /if (${Debug || ${Debug_Sell}}) /echo |- _Aliases ==>
 	/squelch /alias /syncInventory /bc Sync Inventory
 	/squelch /alias /autosell /echo Auto Sell
-	/squelch /alias /flagautosell /bc flagautosell
 	/squelch /alias /printitemstatus /bc printitemstatus
 	/squelch /alias /sellthisitem /bc sellthisitem
 	/squelch /alias /keepthisitem /bc keepthisitem
