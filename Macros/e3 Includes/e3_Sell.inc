@@ -658,6 +658,9 @@ Sub sell_Aliases
 /if (${Debug || ${Debug_Sell}}) /echo <== _Aliases -|
 /return
 
+SUB sell_CharacterSettings
+/RETURN
+
 |- Gets the Loot Setting value for the item name passed in.
 SUB getIniKey(originalName)
 /if (${Debug || ${Debug_Sell}}) /echo |- getIniKey ${originalName}==>
