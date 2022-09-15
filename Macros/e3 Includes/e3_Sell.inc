@@ -4,9 +4,20 @@
 |------------------------------------------------------------------------|
 |- Companion file for e3_Macro_Loot.inc.								-|
 |- Sells items flagged with [/Sell] in your Loot_Ini.					-|
+|------------------------------------------------------------------------|                                              -|
+|- Several helper functions are available for individual items on your  -|
+|- 	/printitemstatus - prints the Loot Settings value for the item on   -|
+|-        the cursor.                                                   -|
+|- 	/sellthisitem - updates the Loot Settings value for the item on     -|
+|-        the cursor to Keep,Sell so that when you invoke /autosell in  -|
+|-        future, the item will get sold to the vendor.                 -|
+|- 	/keepthisitem - updates the Loot Setings value for the item on      -|
+|-        the cursor to Keep so that when /autosell is invoked in       -|
+|-        the future, the item will NOT be sold                         -|
+|- 	/destroythisitem - updates the Loot Settings value for the item on  -|
+|-        the cursor to Destroy so that these items will be destroyed   -|
+|-        when /autosell is invoked in the future.                      -|
 |------------------------------------------------------------------------|
-
-
 
 |----------------------------------------------------|
 |- syncInventory									-|
@@ -48,11 +59,8 @@ SUB EVENT_syncInventory
 		}
 	
 	/next i
-	
 /if (${Debug} || ${Debug_Sell}) /echo <== event_inventoryItems -|
 /RETURN
-
-
 
 |------------------------------------------------------------------------------------------------------------------------------------|
 |- EVENT_sellItems																													-|
@@ -67,6 +75,9 @@ SUB EVENT_syncInventory
 #EVENT sellItems "<#*#> Auto Sell"
 SUB EVENT_sellItems
 /if (${Debug} || ${Debug_Sell}) /echo |- EVENT_sellItems ==>
+	
+	| Get current autoFlagSoldItems value so we can disable and revert if needed.
+	/declare currentAutoFlagSoldItems bool local ${autoFlagSoldItems}
 	
 	| Record starting location.
 	/declare startingLoc string local ${Me.Loc.Replace[ ,]}
@@ -97,13 +108,105 @@ SUB EVENT_sellItems
 		| Close bags.
 		/keypress CLOSE_INV_BAGS
 		
-		/echo I have finished selling.
+		/echo I have finished selling with autosell.
 	}
-	
 /if (${Debug} || ${Debug_Sell}) /echo <== EVENT_sellItems -|
 /RETURN
 
+|----------------------------------------------------|
+|- printitemstatus
+|----------------------------------------------------|
+|- echo the Loot Setting value for the item on the cursor
+|----------------------------------------------------|
+#EVENT printItemStatus "/bc printitemstatus"
+#EVENT printItemStatus "<#*#> printitemstatus"
+SUB EVENT_printItemStatus(line)
+/if (${Debug} || ${Debug_Sell}) /echo |- EVENT_printeItemStatus ==>
+	/declare cursorItem string local
+	/declare cursorIniEntry string local
+	/declare cursorIniName string local
+	
+	/if (${Cursor.ID}) {
+		/call getIniKey "${Cursor.Name}"
+		/varset cursorIniEntry ${Macro.Return}
+		/echo cursorIniEntry = ${cursorIniEntry}
+		/varset cursorIniName ${Ini[${Loot_Ini},${cursorIniEntry}]}
+		/if (${Defined[cursorIniName]}) {
+			/echo ${Cursor.Name} - ${cursorIniName}
+		} else {
+			/echo No entry found for ${Cursor.Name}
+		}
+	}
+/if (${Debug} || ${Debug_Sell}) /echo <== EVENT_printeItemStatus-|
+/RETURN
 
+|----------------------------------------------------|
+|- sellThisItem
+|----------------------------------------------------|
+|- When an item is on the cursor and you call this
+|- function it will set the Loot Settings.ini to Keep,Sell
+|----------------------------------------------------|
+#EVENT sellThisItem "/bc sellthisitem"
+#EVENT sellThisItem "<#*#> sellthisitem"
+SUB EVENT_sellThisItem(line)
+/if (${Debug}) /echo |- EVENT_sellThisItem ==>
+	/declare cursorItem string local
+	/declare cursorIniEntry string local
+	
+	/if (${Cursor.ID}) {
+		/call getIniKey "${Cursor.Name}"
+		/varset cursorIniEntry ${Macro.Return}
+		/echo Flagging ${Cursor.Name} in Loot Settings.ini for Keep,Sell
+		/call WriteToIni "${Loot_Ini},${cursorIniEntry}" "Keep,Sell" TRUE
+	}
+/if (${Debug}) /echo <== EVENT_sellThisItem-|
+/RETURN
+
+|----------------------------------------------------|
+|- destroyThisItem
+|----------------------------------------------------|
+|- When an item is on the cursor and you call this
+|- function it will set the Loot Settings.ini to Destroy
+|----------------------------------------------------|
+#EVENT destroyThisItem "/bc destroythisitem"
+#EVENT destroyThisItem "<#*#> destroythisitem"
+SUB EVENT_destroyThisItem(line)
+/if (${Debug}) /echo |- EVENT_destroyThisItem ==>
+	/declare cursorItem string local
+	/declare cursorIniEntry string local
+	
+	/if (${Cursor.ID}) {
+		/call getIniKey "${Cursor.Name}"
+		/varset cursorIniEntry ${Macro.Return}
+		/echo Flagging ${Cursor.Name} in Loot Settings.ini for Destroy
+		/call WriteToIni "${Loot_Ini},${cursorIniEntry}" "Destroy" TRUE
+		/destroy
+	}
+/if (${Debug}) /echo <== EVENT_destroyThisItem-|
+/RETURN
+
+|----------------------------------------------------|
+|- keepThisItem
+|----------------------------------------------------|
+|- When an item is on the cursor and you call this
+|- function it will set the Loot Settings.ini to Keep
+|----------------------------------------------------|
+#EVENT keepThisItem "/bc keepthisitem"
+#EVENT keepThisItem "<#*#> keepthisitem"
+SUB EVENT_keepThisItem(line)
+/if (${Debug}) /echo |- EVENT_keepThisItem ==>
+	/declare cursorItem string local
+	/declare cursorIniEntry string local
+	
+	/if (${Cursor.ID}) {
+		/call getIniKey "${Cursor.Name}"
+		/varset cursorIniEntry ${Macro.Return}
+		/echo Flagging ${Cursor.Name} in Loot Settings.ini for Keep
+		/echo ${cursorIniEntry}
+		/call WriteToIni "${Loot_Ini},${cursorIniEntry}" "Keep" TRUE
+	}
+/if (${Debug}) /echo <== EVENT_keepThisItem-|
+/RETURN
 
 |----------------------------------------|
 |- Opens all containers in inventory.	-|
@@ -141,11 +244,8 @@ SUB openBags
 		}
 	
 	/next i
-	
 /if (${Debug} || ${Debug_Sell}) /echo <== openBags -|
 /RETURN
-
-
 
 |----------------------------------------|
 |- Closes all containers in inventory.	-|
@@ -173,13 +273,11 @@ SUB closeBags
 				/if (${Window[pack${i}].Open} && ${miscTimer}) /goto :closeBag
 			}
 		}
-	
+
 	/next i
 	
 /if (${Debug} || ${Debug_Sell}) /echo <== closeBags -|
 /RETURN
-
-
 
 |--------------------------------------------|
 |- Opens trade with the nearest merchant.	-|
@@ -233,8 +331,6 @@ SUB openMerchant(int providedID)
 /if (${Debug} || ${Debug_Sell}) /echo <== openMerchant -|
 /RETURN
 
-
-
 |--------------------|
 |- closeMerchant	-|
 |--------------------|
@@ -252,8 +348,6 @@ SUB closeMerchant
 	
 /if (${Debug} || ${Debug_Sell}) /echo <== closeMerchant -|
 /RETURN
-
-
 
 |----------------------------------------------------------------------------------------|
 |- Sells items in your inventory that have been flagged as [/Sell] in your Loot_Ini.	-|
@@ -341,7 +435,7 @@ SUB sellItems
 
 										| If the item is still in my inventory
 										/if (${Bool[${Me.Inventory[pack${i}].Item[${e}]}]} && ${retryTimer}) {
-											/goto :SellItem_Pack
+											/goto :SellItem
 										} else /if (${Bool[${Me.Inventory[pack${i}].Item[${e}]}]}) {
 											/echo ERROR: Failed to sell [${Me.Inventory[pack${i}].Item[${e}]}], skipping.
 										}
@@ -440,8 +534,6 @@ SUB sellItems
 /if (${Debug} || ${Debug_Sell}) /echo <== sellItems -|
 /RETURN
 
-
-
 SUB destroyItems
 /if (${Debug} || ${Debug_Sell}) /echo |- destroyItem ==>
 	
@@ -527,44 +619,70 @@ SUB destroyItems
 /if (${Debug} || ${Debug_Sell}) /echo <== destroyItem -|
 /RETURN
 
-
-
 SUB sell_Setup
-/call iniToVarV "${advSettings_Ini},Debug,Debug Sell (On/Off)" Debug_Sell bool outer
-/if (${Debug} || ${Debug_Sell}) /echo |- sell_Setup ==>
-
+	/call iniToVarV "${advSettings_Ini},Debug,Debug Sell (On/Off)" Debug_Sell bool outer
+	/if (${Debug} || ${Debug_Sell}) /echo |- sell_Setup ==>
+	
+	|- These outer variables are defined because offer and sold events happen independently of each other.  
+	|- The offer message stores the autoFlagSoldItemEntry and when the sold event triggers, the last offer for an item by the vendor is used to identify the item.
+	
+	/call WriteToIni "${advSettings_Ini},Debug,Debug Sell (On/Off)" "Off" False
+	/call WriteToIni "${genSettings_Ini},Sell,Destroy Unsold Items(On/Off)" "Off" False
+	
 	/call iniToVarV "${genSettings_Ini},Sell,Destroy Unsold Items(On/Off)" destroyUnsold bool outer
-
-/if (${Debug} || ${Debug_Sell}) /echo <== sell_Setup -|
+	
+	/call sell_Aliases
+	/if (${Debug} || ${Debug_Sell}) /echo <== sell_Setup -|
 /RETURN
 
-
- 
 Sub sell_Background_Events
 	/doevents syncInventory
 	/doevents sellItems
-  /doevents Combine
+	/doevents Combine
+	/doevents printItemStatus
+	/doevents keepthisitem
+	/doevents sellthisitem
+	/doevents destroythisitem
 /return
 
-
-
-SUB sell_MacroSettings
-/if (${Debug}) /echo |- _MacroSettings ==>
-	/call WriteToIni "${advSettings_Ini},Debug,Debug Sell (On/Off)" Off
-	/call WriteToIni "${genSettings_Ini},Sell,Destroy Unsold Items(On/Off)" Off
-/if (${Debug}) /echo <== _MacroSettings -|
-/RETURN
-
-
+Sub sell_Aliases
+/if (${Debug || ${Debug_Sell}}) /echo |- _Aliases ==>
+	/squelch /alias /syncInventory /bc Sync Inventory
+	/squelch /alias /autosell /echo Auto Sell
+	/squelch /alias /printitemstatus /bc printitemstatus
+	/squelch /alias /sellthisitem /bc sellthisitem
+	/squelch /alias /keepthisitem /bc keepthisitem
+	/squelch /alias /destroythisitem /bc destroythisitem
+/if (${Debug || ${Debug_Sell}}) /echo <== _Aliases -|
+/return
 
 SUB sell_CharacterSettings
 /RETURN
 
+|- Gets the Loot Setting value for the item name passed in.
+SUB getIniKey(originalName)
+/if (${Debug || ${Debug_Sell}}) /echo |- getIniKey ${originalName}==>
+	/declare itemName string local
+	/declare itemValue string local
+  	/declare itemRawValue int local
+	/declare iniEntryVariables string local
 
+	/varset itemName ${originalName}
 
-Sub sell_Aliases
-/if (${Debug}) /echo |- _Aliases ==>
-	/squelch /alias /syncInventory /bc Sync Inventory
-	/squelch /alias /autosell /echo Auto Sell
-/if (${Debug}) /echo <== _Aliases -|
-/return
+	/if (${itemName.Find[:]}) /varset itemName ${itemName.Replace[:,;]}
+    /if (${itemName.Find[,]}) {
+      	/call RemoveComma "${itemName}"
+      	/varset itemName ${Macro.Return}
+    }
+	
+	| Set item value
+	/varset itemValue ${FindItem[${originalName}].Value}
+    /varset itemRawValue ${FindItem[${originalName}].Value}
+    /varset itemValue ${If[${Bool[${itemValue.Left[${Math.Calc[${itemValue.Length} - 3].Int}]}]},${itemValue.Left[${Math.Calc[${itemValue.Length} - 3].Int}]}p,]}${If[${Bool[${itemValue.Mid[${Math.Calc[${itemValue.Length} - 2].Int}]}]},${itemValue.Mid[${Math.Calc[${itemValue.Length} - 2].Int}]}g,]}${If[${Bool[${itemValue.Mid[${Math.Calc[${itemValue.Length} - 1].Int}]}]},${itemValue.Mid[${Math.Calc[${itemValue.Length} - 1].Int}]}s,]}${If[${Bool[${itemValue.Right[1]}]},${itemValue.Right[1]}c,]}
+		
+	| Set ini variables like stack size, (C), (ND) etc.
+	/varset iniEntryVariables ${If[${FindItem[${originalName}].Stackable},(${FindItem[${originalName}].StackSize}),]}${If[${FindItem[${originalName}].NoDrop},(ND),]}${If[${FindItem[${originalName}].Lore},(L),]}${If[${FindItem[${originalName}].Container},(C),]}
+
+	/return ${itemName.Left[1]},${itemName} ${itemValue}${iniEntryVariables}
+/if (${Debug || ${Debug_Sell}}) /echo <== getIniKey -|
+/RETURN
