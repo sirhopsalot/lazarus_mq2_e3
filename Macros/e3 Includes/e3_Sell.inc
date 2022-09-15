@@ -628,10 +628,8 @@ SUB sell_Setup
 	
 	/call WriteToIni "${advSettings_Ini},Debug,Debug Sell (On/Off)" "Off" False
 	/call WriteToIni "${genSettings_Ini},Sell,Destroy Unsold Items(On/Off)" "Off" False
-	/call WriteToIni "${genSettings_Ini},Sell,Warn on Sell(On/Off)" "On" False
 	
 	/call iniToVarV "${genSettings_Ini},Sell,Destroy Unsold Items(On/Off)" destroyUnsold bool outer
-	/call iniToVarV "${genSettings_Ini},Sell,Warn on Sell(On/Off)" warnOnSell bool outer
 	
 	/call sell_Aliases
 	/if (${Debug} || ${Debug_Sell}) /echo <== sell_Setup -|
