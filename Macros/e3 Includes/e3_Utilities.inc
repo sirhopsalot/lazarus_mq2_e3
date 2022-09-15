@@ -1362,6 +1362,8 @@ SUB MoveToTarget(timeToWait,arrivalDist)
   
   	/if (!${Bool[${arrivalDist}]}) /varset arrivalDist 10
 	/if (!${Bool[${timeToWait}]}) /varset timeToWait 30
+	/declare yLoc int Local  ${Target.Y}
+	/declare xLoc int local  ${Target.X}
 	/declare moveTimer timer local ${timeToWait}
 	|/echo MoveToLoc ${yLoc},${xLoc},${timeToWait},${arrivalDist}
 	/if (${Math.Distance[${yLoc},${xLoc}]}<=${arrivalDist}) /return
@@ -1383,7 +1385,8 @@ SUB MoveToTarget(timeToWait,arrivalDist)
 		:retryMove
 		/squelch /moveto loc ${yLoc} ${xLoc} dist ${arrivalDist}
 		/call Background_Events
-		/delay ${Math.Calc[${timeToWait}/5]} ${Math.Distance[${yLoc},${xLoc}]} <=${arrivalDist}
+		/delay 2
+		/delay ${timeToWait} !${Me.Moving}
 		/if (${Math.Distance[${yLoc},${xLoc}]}<=${arrivalDist}) {
 			/moveto off
 			/return

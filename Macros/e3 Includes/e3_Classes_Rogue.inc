@@ -98,3 +98,4 @@ Sub ROG_Aliases
 Sub ROG_Background_Events
 	/if (${AutoHide} && !${Me.Invis} && !${Me.Moving} && ${Me.CombatState.NotEqual[COMBAT]}  && !${Select[${Zone.ID},${AutoHideSuppress}]}) /call AutoHide
 /return
+
