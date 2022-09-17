@@ -659,6 +659,19 @@ Sub sell_Aliases
 SUB sell_CharacterSettings
 /RETURN
 
+SUB sell_MacroSettings
+    /squelch /alias /syncInventory /bc Sync Inventory
+/if (${Debug}) /echo |- _MacroSettings ==>
+    /call WriteToIni "${advSettings_Ini},Debug,Debug Sell (On/Off)" Off
+    /call WriteToIni "${genSettings_Ini},Sell,Destroy Unsold Items(On/Off)" Off
+    /squelch /alias /sellthisitem /bc sellthisitem
+    /squelch /alias /keepthisitem /bc keepthisitem
+    /squelch /alias /printitemstatus /bc printitemstatus
+    /squelch /alias /destroythisitem /bc destroythisitem
+    /squelch /alias /autosell /echo Auto Sell
+/if (${Debug}) /echo <== _MacroSettings -|
+/RETURN
+
 |- Gets the Loot Setting value for the item name passed in.
 SUB getIniKey(originalName)
 /if (${Debug || ${Debug_Sell}}) /echo |- getIniKey ${originalName}==>
