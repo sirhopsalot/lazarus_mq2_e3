@@ -1,3 +1,33 @@
+Skip to content
+Search or jump to…
+Pull requests
+Issues
+Marketplace
+Explore
+ 
+@CerveloFellow 
+Ewiclip
+/
+lazarus_mq2_e3
+Public
+forked from sirhopsalot/lazarus_mq2_e3
+Code
+Pull requests
+Actions
+Projects
+Wiki
+Security
+Insights
+lazarus_mq2_e3/Macros/e3 Includes/e3_Basics.inc
+@livermana
+livermana Rekka: Updates to allow nec/shaman to remove agro if their agro gets …
+…
+Latest commit 7fecfd7 on Jul 7
+ History
+ 8 contributors
+@livermana@sirhopsalot@Ewiclip@Cometnest@Trilkin@istivaan@samadcit@shuggin
+3106 lines (2839 sloc)  137 KB
+
 |------------------------------
 |- Only bots in the same zone will engage follow.
 |- Bots will wait to engage follow until, they can see the FollowTarget, and it is within the MaxResponseDist.
@@ -47,7 +77,6 @@ SUB EVENT_Follow(line, ChatSender, eventParams)
   }
 /if (${Debug} || ${Debug_Basics}) /echo <== EVENT_Follow -|
 /RETURN
-
 |----------------------------------------------------------------------------------------------------|
 |- Engages follow plugins on specified follow targets.												-|
 |----------------------------------------------------------------------------------------------------|
@@ -59,7 +88,6 @@ SUB AcquireFollow
 			/if (${FollowTarget.NotEqual[${Me.CleanName}]}) {
 				/if (${Stick.Active}) /squelch /stick off
 				/if (${NetAdvPath.Following}) /squelch /netfollow off
-
 				/declare followTargetID int local
 				/if (${SpawnCount[pc =${FollowTarget}]}) {
 					/varset followTargetID ${Spawn[pc =${FollowTarget}].ID}
@@ -1014,7 +1042,6 @@ SUB EVENT_Swap_Items(line, IniEntry)
 	}
 /if (${Debug} || ${Debug_Basics}) /echo <== Swap_Items -|
 /RETURN
-
 |----------------------------------------------------|
 |- Ends the macro before a bot finishes camping.	  -|
 |----------------------------------------------------|
@@ -1023,7 +1050,6 @@ SUB EVENT_EndMacro
 	/echo User is camping, ending macro.
 	/endmacro
 /RETURN
-
 |------------------------------------------------|
 |- Engages MedBreak mode, on bots who can cast.	-|
 |------------------------------------------------|
@@ -1034,7 +1060,6 @@ SUB EVENT_medOn(line, ChatSender)
   /varset medBreak TRUE
 /if (${Debug} || ${Debug_Basics}) /echo <== EVENT_medOn -|
 /RETURN
-
 |----------------------------------------------------|
 |- disengages MedBreak mode, on bots who can cast.	-|
 |----------------------------------------------------|
@@ -1051,7 +1076,6 @@ SUB EVENT_medOff(line, ChatSender)
   }
 /if (${Debug} || ${Debug_Basics}) /echo <== EVENT_medOff -|
 /RETURN
-
 |--------------------------------------------------------------------------------|
 |- Automatically disengages and re-engages MedBreak when conditions are met.	-|
 |- Ends MedBreak mode at 99% mana, unless, 'MedBreak hold command is given.		-|
@@ -1350,7 +1374,6 @@ SUB EVENT_saveGroup(line, ChatSender, eventParams)
   }
 /if (${Debug}) /echo <== EVENT_saveGroup -|
 /RETURN
-
 |---------------------------------------------------------|
 |- Lists all saved group setups, on your current server. -|
 |---------------------------------------------------------|
@@ -2074,7 +2097,8 @@ sub event_gimme(line, ChatSender, RequestedItem)
 		/notify InventoryWindow IW_Subwindows tabselect 5
      /echo [${Time}] Delaying up to 1 second(s) in event_gimme
 		/delay 1s
-		/notify InventoryWindow AltCurr_PointList listselect 8
+		/declare diamondCoinIndex int local ${Window[InventoryWindow].Child[AltCurr_PointList].List[=Diamond Coins,2]}
+		/notify InventoryWindow AltCurr_PointList listselect ${diamondCoinIndex}
     /echo [${Time}] Delaying up to 1 second(s) in event_gimme
 		/delay 1s
 		/notify InventoryWindow IW_AltCurr_ReclaimButton leftmouseup
@@ -2373,7 +2397,6 @@ SUB check_Gimme
 				/if (${DebugCheckGimme}) /echo ${gimmeCharacter} PctHPs ${NetBots[${gimmeCharacter}].PctHPs}
 			} else {
 				/if (!${Defined[GimmeTimer${i}]}) /declare GimmeTimer${i} timer outer 0
-
         /if (${gimmeItem.Equal[Pet Weapons]}) {
             /declare HeirloomBag string local Folded Pack of Enibik's Heirlooms
             /declare ArmorBag string local Folded Pack of Spectral Plate
@@ -2877,15 +2900,12 @@ SUB check_StoneOn
   /if (!${Defined[stoneOn]}) {
     /declare stoneOn bool outer FALSE
   }
-
   /if (!${Defined[HasManastone]}) {
     /declare HasManastone bool outer ${Bool[${FindItem[=Manastone]}]}
   }
-
   /if (!${Defined[HasCorruptedManastone]}) {
     /declare HasCorruptedManastone bool outer ${Bool[${FindItem[=Corrupted Manastone]}]}
   }
-
   /if (!${Defined[corruptedManastoneTimer]}) {
     /declare corruptedManastoneTimer timer outer 0
   }
@@ -2904,13 +2924,11 @@ SUB check_StoneOn
       /itemnotify manastone rightmouseup
     }
   /next i
-
   /if (${stoneOn} && ${Me.PctMana} >= 100) {
     /varset stoneOn FALSE
     /docommand ${ChatToggle} Manastone off, mana 100%
   }
 /RETURN
-
 |-----------------------------------------------------------|
 |- Eat and Drink items in order to keep your hunger/thirst -|
 |- level below a certain level and not eat stat food       -|
@@ -2954,7 +2972,6 @@ SUB check_Food
   }
 /if (${Debug}) /echo <== check_Food -|
 /RETURN
-
 |-----------------------------------------------------------|
 |- Uses Forage whenever nothing else is going on           -|
 |- Install Instructions:                                   -|
@@ -2984,7 +3001,6 @@ SUB check_Forage
 	}
 /if (${Debug}) /echo <== check_Forage -|
 /RETURN
-
 |** Warn you when a bot is out of food/drink **|
 #event outOfSomething "You are out of #1#."
 SUB event_outOfSomething(line, Something)
@@ -3003,7 +3019,6 @@ SUB event_outOfSomething(line, Something)
 SUB event_ItemDeleteSummoned(line, ChatSender, MyName, ItemString)
 
   /call ItemDeleteSummoned "${ItemString}"
-
 /return
 SUB ItemDeleteSummoned(ItemString)
   |didn't want to make ClearCusors its own event so shoved it in here for now.
@@ -3034,11 +3049,8 @@ SUB ItemDeleteSummoned(ItemString)
   /delay 10s ${Bool[${Cursor.ID}]}
   /if (${Bool[${Cursor.ID}]} &&  ${Cursor.NoRent}) /destroy
   /call ClearCursor
-
      
-
 /RETURN
-
 |--------------------
 |Method currently used in bard twisting, but can be useful for other areas.
 |takes a snapshot of spells that were cast (non insta casts), to be used for later. 
@@ -3046,15 +3058,12 @@ SUB ItemDeleteSummoned(ItemString)
 |as it doesn't go through e3_Cast
 |------------------
 sub check_PreviousSpell
-
   /if (!${Bool[${Me.Casting.ID}]}) /return
   /declare currentSpellCasting int local 0
   /varset currentSpellCasting ${Me.Gem[${Me.Casting}]}
-
   /if (${Bool[${currentSpellCasting}]}) {
     /varset previousSpellGemThatWasCast ${currentSpellCasting}
   }
-
 /return
 sub check_Anchor
   /if (${anchorOn} && ${anchorChar.Length}>1 && !${Me.Moving} && ${Bool[${Spawn[${anchorChar}].ID}]} && ${Spawn[${anchorChar}].LineOfSight}) {
@@ -3090,7 +3099,6 @@ Sub check_Basics
  
   /for i 1 to 13
     /echo  checking ${i} xtarget : ${Me.XTarget[${i}].ID}
-
     /if (${Me.XTarget[${i}].ID} ) {
                /echo fixing ${i} xtarget
                 /xtarget set ${i} autohater
@@ -3102,5 +3110,18 @@ Sub check_Basics
   **|
   
 /return
-
-
+Footer
+© 2022 GitHub, Inc.
+Footer navigation
+Terms
+Privacy
+Security
+Status
+Docs
+Contact GitHub
+Pricing
+API
+Training
+Blog
+About
+You have no unread notifications
